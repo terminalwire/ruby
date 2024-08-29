@@ -3,10 +3,16 @@ PATH
   specs:
     terminalwire (0.1.0)
       async-websocket (~> 0.25)
+      launchy (~> 3.0)
+      msgpack (~> 1.7)
+      thor (~> 1.0)
+      zeitwerk (~> 2.0)
 
 GEM
   remote: https://rubygems.org/
   specs:
+    addressable (2.8.7)
+      public_suffix (>= 2.0.2, < 7.0)
     async (2.15.3)
       console (~> 1.26)
       fiber-annotation
@@ -27,6 +33,8 @@ GEM
       protocol-http (>= 0.28.1)
       protocol-rack (~> 0.5)
       protocol-websocket (~> 0.15)
+    childprocess (5.1.0)
+      logger (~> 1.5)
     console (1.27.0)
       fiber-annotation
       fiber-local (~> 1.1)
@@ -40,6 +48,11 @@ GEM
     io-event (1.6.5)
     io-stream (0.4.0)
     json (2.7.2)
+    launchy (3.0.1)
+      addressable (~> 2.8)
+      childprocess (~> 5.0)
+    logger (1.6.0)
+    msgpack (1.7.2)
     protocol-hpack (1.5.0)
     protocol-http (0.28.1)
     protocol-http1 (0.19.1)
@@ -52,6 +65,7 @@ GEM
       rack (>= 1.0)
     protocol-websocket (0.15.0)
       protocol-http (~> 0.2)
+    public_suffix (6.0.1)
     rack (3.1.7)
     rake (13.2.1)
     rspec (3.13.0)
@@ -67,7 +81,9 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
     rspec-support (3.13.1)
+    thor (1.3.2)
     traces (0.11.1)
+    zeitwerk (2.6.17)
 
 PLATFORMS
   arm64-darwin-23

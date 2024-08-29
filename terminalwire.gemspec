@@ -35,6 +35,10 @@ Gem::Specification.new do |spec|
 
   # Uncomment to register a new dependency of your gem
   spec.add_dependency "async-websocket", "~> 0.25"
+  spec.add_dependency "zeitwerk", "~> 2.0"
+  spec.add_dependency "thor", "~> 1.0"
+  spec.add_dependency "msgpack", "~> 1.7"
+  spec.add_dependency "launchy", "~> 3.0"
 
   # For more information and examples about making a new gem, check out our
   # guide at: https://bundler.io/guides/creating_gem.html
