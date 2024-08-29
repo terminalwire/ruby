@@ -1,8 +1,6 @@
 # Terminalwire
 
-TODO: Delete this and the text below, and describe your gem
-
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/terminalwire`. To experiment with that code, run `bin/console` for an interactive prompt.
+Unlike most command-line tools for web services that require an API, Terminalwire streams terminal I/O between a web server and client over WebSockets. This means you can use your preferred command-line parser within your favorite web server framework to deliver a delightful CLI experience to your users.
 
 ## Installation
 
@@ -14,9 +12,19 @@ If bundler is not being used to manage dependencies, install the gem by executin
 
     $ gem install terminalwire
 
-## Usage
+## Rails
 
-TODO: Write usage instructions here
+Run the intallation command:
+
+    $ rails g terminalwire:install my-app
+
+This generates the `./bin/my-app` file. Run it to verify that it connects to the server.
+
+    $ bin/my-app
+    Commands:
+      my-app help [COMMAND]  # Describe available commands or one specific command
+
+To edit the command-line, open `./app/cli/main_cli.rb` and make changes to the `MainCLI` class.
 
 ## Development
 
@@ -30,7 +38,7 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/termin
 
 ## License
 
-The gem is available as a propietary license. Email brad@terminalwire.com to discuss commercial licensing.
+The gem is available as a propietary license. Email brad@terminalwire.com to discuss licensing.
 
 ## Code of Conduct
 
