@@ -1,0 +1,9 @@
+Description:
+    Installs Terminalwire
+
+Example:
+    bin/rails generate terminalwire:install
+
+    This will create:
+        app/terminal/application_terminal.rb
+        bin/<your-app>

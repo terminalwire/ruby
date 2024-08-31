@@ -1,0 +1,36 @@
+# Learn how to use Thor at http://whatisthor.com.
+class ApplicationTerminal < Thor
+  include Terminalwire::Thor
+
+  def self.basename = "<%= binary_name %>"
+
+  desc "hello NAME", "say hello to NAME"
+  def hello(name)
+    puts "Hello #{name}"
+  end
+
+  desc "login", "Login to your account"
+  def login
+    print "Email: "
+    email = gets
+
+    print "Password: "
+    password = getch
+
+    if self.current_user = User.authenticate(email, password)
+      puts "Successfully logged in as #{user.email}."
+    else
+      puts "Could not find a user with that email and password."
+    end
+  end
+
+  private
+
+  def current_user=(user)
+    session["user_id"] = user.id
+  end
+
+  def current_user
+    @current_user ||= User.find(session.fetch("user_id"))
+  end
+end
