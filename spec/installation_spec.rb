@@ -28,11 +28,11 @@ RSpec.describe "Terminalwire Install", type: :system do
           system("bin/rails generate terminalwire:install #{binary_name}")
 
           # Boot the Puma server in the background
-          pid = spawn("bin/rails server -b 127.0.0.1 -p 3000")
+          pid = spawn("bin/rails server -b 0.0.0.0 -p 3000")
 
           begin
             # Poll until the server is ready
-            wait_for_server("127.0.0.1", 3000)
+            wait_for_server("0.0.0.0", 3000)
 
             # Run the test
             example.run
