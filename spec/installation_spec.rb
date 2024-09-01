@@ -12,13 +12,19 @@ RSpec.describe "Terminalwire Install", type: :system do
   around do |example|
     Dir.mktmpdir do |test_app_path|
       Dir.chdir(test_app_path) do
+        puts terminalwire_gem_path
+        puts test_app_path
+        p Dir.children(Dir.pwd)
+        p Dir.exist? terminalwire_gem_path
+        puts "Fucking CI"
+
         pwd = Pathname.new(test_app_path)
         Bundler.with_unbundled_env do
           # Create a bare Rails app
           system("rails new . --minimal --skip-bundle")
 
           # Add terminalwire gem to Gemfile
-          File.open(pwd.join("Gemfile"), "a") do |file|
+          File.open("Gemfile", "a") do |file|
             file.puts "\ngem 'terminalwire', path: '#{terminalwire_gem_path}'"
           end
 
@@ -26,10 +32,10 @@ RSpec.describe "Terminalwire Install", type: :system do
           system("bundle install")
 
           # Run the terminalwire install generator
-          system("#{pwd.join("bin/rails")} generate terminalwire:install #{binary_name}")
+          system("bin/rails generate terminalwire:install #{binary_name}")
 
           # Boot the Puma server in the background
-          pid = spawn("#{pwd.join("bin/rails")} server -b 0.0.0.0 -p 3000")
+          pid = spawn("bin/rails server -b 0.0.0.0 -p 3000")
 
           begin
             # Poll until the server is ready
