@@ -136,17 +136,22 @@ module Terminalwire
     end
 
     class Handler
+      VERSION = "0.1.0".freeze
+
       include Logging
 
-      def initialize(connection, resources = self.class.resources)
+      attr_reader :arguments, :program_name
+
+      def initialize(connection, resources = self.class.resources, arguments: ARGV, program_name: $0)
         @connection = connection
         @resources = resources
+        @arguments = arguments
       end
 
       def connect
         @devices = ResourceMapper.new(@connection, @resources)
 
-        @connection.write(event: "initialize", protocol: { version: "0.1.0" }, arguments: ARGV, program_name: $0)
+        @connection.write(event: "initialize", protocol: { version: VERSION }, arguments:, program_name:)
 
         loop do
           handle @connection.recv
@@ -191,7 +196,7 @@ module Terminalwire
       Terminalwire::Client::Handler.new(connection)
     end
 
-    def self.websocket(url)
+    def self.websocket(url:, arguments: ARGV)
       url = URI(url)
 
       Async do |task|
@@ -200,7 +205,7 @@ module Terminalwire
         Async::WebSocket::Client.connect(endpoint) do |connection|
           transport = Terminalwire::Transport::WebSocket.new(connection)
           connection = Terminalwire::Connection.new(transport)
-          Terminalwire::Client::Handler.new(connection).connect
+          Terminalwire::Client::Handler.new(connection, arguments:).connect
         end
       end
     end

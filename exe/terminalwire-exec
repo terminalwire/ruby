@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+require_relative "../lib/terminalwire.rb"
+
+begin
+  Terminalwire::Client::Binary.execute
+rescue Terminalwire::Error => e
+  puts e.message
+  exit 1
+end
