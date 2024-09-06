@@ -1,6 +1,2 @@
-#!/usr/bin/env ruby
-require_relative "../config/environment.rb"
-
-raise "This binary is only for use in a development environment" if Rails.env.production?
-
-Terminalwire::Client.websocket("ws://127.0.0.1:3000/terminal")
+#!/usr/bin/env terminalwire-exec
+url: "ws://localhost:3000/terminal"

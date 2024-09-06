@@ -7,19 +7,22 @@ require "pathname"
 
 RSpec.describe "Terminalwire Install", type: :system do
   let(:binary_name) { "hello" }
-  let(:terminalwire_gem_path) { File.expand_path('../../../', __FILE__) }
+  let(:gem_path) { File.expand_path('../../', __FILE__) }
+  let(:exe_path)  { File.join(gem_path, "exe") }
 
   around do |example|
     Dir.mktmpdir do |test_app_path|
       Dir.chdir(test_app_path) do
         pwd = Pathname.new(test_app_path)
         Bundler.with_unbundled_env do
+          ENV["PATH"] = "#{exe_path}:#{ENV["PATH"]}"
+
           # Create a bare Rails app
           system("rails new . --minimal --skip-bundle")
 
           # Add terminalwire gem to Gemfile
           File.open("Gemfile", "a") do |file|
-            file.puts "\ngem 'terminalwire', path: '#{terminalwire_gem_path}'"
+            file.puts "\ngem 'terminalwire', path: '#{gem_path}'"
           end
 
           # Bundle install
@@ -50,8 +53,8 @@ RSpec.describe "Terminalwire Install", type: :system do
   it "runs Terminalwire client against server" do
     # Run the binary and capture output
     output, status = Open3.capture2e("bin/#{binary_name} hello World")
-    expect(status.success?).to be(true)
     expect(output.strip).to eql "Hello World"
+    expect(status).to be_success
   end
 
   private
