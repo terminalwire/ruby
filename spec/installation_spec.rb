@@ -12,12 +12,6 @@ RSpec.describe "Terminalwire Install", type: :system do
   around do |example|
     Dir.mktmpdir do |test_app_path|
       Dir.chdir(test_app_path) do
-        puts terminalwire_gem_path
-        puts test_app_path
-        p Dir.children(Dir.pwd)
-        p Dir.exist? terminalwire_gem_path
-        puts "Fucking CI"
-
         pwd = Pathname.new(test_app_path)
         Bundler.with_unbundled_env do
           # Create a bare Rails app
