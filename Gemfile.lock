@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    terminalwire (0.1.0)
+    terminalwire (0.1.1)
       async-websocket (~> 0.25)
       launchy (~> 3.0)
       msgpack (~> 1.7)
@@ -263,4 +263,4 @@ DEPENDENCIES
   terminalwire!
 
 BUNDLED WITH
-   2.5.16
+   2.5.9

@@ -3,7 +3,7 @@ require "yaml"
 require "uri"
 
 module Terminalwire::Client
-  class Binary
+  class Exec
     attr_reader :arguments, :path, :configuration, :url
 
     def initialize(path:, arguments:)
@@ -23,7 +23,7 @@ module Terminalwire::Client
       Terminalwire::Client.websocket(url:, arguments:)
     end
 
-    def self.execute
+    def self.start
       case ARGV
       in path, *arguments
         new(path:, arguments:).start

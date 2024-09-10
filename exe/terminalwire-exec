@@ -2,7 +2,7 @@
 require_relative "../lib/terminalwire.rb"
 
 begin
-  Terminalwire::Client::Binary.execute
+  Terminalwire::Client::Exec.start
 rescue Terminalwire::Error => e
   puts e.message
   exit 1

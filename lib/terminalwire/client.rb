@@ -9,6 +9,12 @@ module Terminalwire
             raise "Unknown action #{action} for device ID #{@id}"
           end
         end
+
+        def prints(data:)
+        end
+
+        def puts(data:)
+        end
       end
 
       class STDOUT < IO
