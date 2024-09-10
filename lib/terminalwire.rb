@@ -52,7 +52,7 @@ module Terminalwire
       packed_data = @transport.read
       return nil if packed_data.nil?
       data = MessagePack.unpack(packed_data, symbolize_keys: true)
-      logger.debug "Connection: Recieved #{data.inspect}"
+      logger.debug "Connection: Received #{data.inspect}"
       data
     end
 
@@ -63,7 +63,7 @@ module Terminalwire
 
   class ResourceRegistry
     def initialize
-      @resources = Hash.new
+      @resources = {}
     end
 
     def register(name, to: nil)
@@ -81,10 +81,10 @@ module Terminalwire
 
   module Resource
     class Base
-      attr_reader :id, :connection
+      attr_reader :name, :connection
 
-      def initialize(id, connection)
-        @id = Integer(id)
+      def initialize(name, connection)
+        @name = name.to_s
         @connection = connection
       end
 
@@ -93,7 +93,7 @@ module Terminalwire
       def disconnect; end
 
       def respond(response, status: :success)
-        connection.write(event: "device", id: @id, status:, response:)
+        connection.write(event: "device", name: @name, status:, response:)
       end
 
       def self.protocol_key
@@ -127,7 +127,6 @@ module Terminalwire
       def initialize(cli_class)
         @cli_class = cli_class
 
-        # Check if the Terminalwire::Thor module is already included
         unless @cli_class.included_modules.include?(Terminalwire::Thor)
           raise 'Add `include Terminalwire::Thor` to the #{@cli_class.inspect} class.'
         end
@@ -169,7 +168,7 @@ module Terminalwire
         private
 
         def command(command, data: nil)
-          @connection.write(event: "device", id: @id, action: "command", command: command, data: data)
+          @connection.write(event: "device", name: @name, action: "command", command: command, data: data)
           @connection.recv&.fetch(:response)
         end
       end
@@ -210,7 +209,7 @@ module Terminalwire
         private
 
         def command(action, data)
-          @connection.write(event: "device", id: @id, action: "command", command: action, data: data)
+          @connection.write(event: "device", name: @name, action: "command", command: action, data: data)
           response = @connection.recv
           response.fetch(:response)
         end
@@ -224,7 +223,7 @@ module Terminalwire
         private
 
         def command(command, data: nil)
-          @connection.write(event: "device", id: @id, action: "command", command: command, data: data)
+          @connection.write(event: "device", name: @name, action: "command", command: command, data: data)
           @connection.recv.fetch(:response)
         end
       end
@@ -234,31 +233,25 @@ module Terminalwire
       include Logging
 
       def initialize(connection, resources = self.class.resources)
-        @id = -1
         @resources = resources
-        @devices = Hash.new { |h,k| h[Integer(k)] }
+        @devices = {}
         @connection = connection
       end
 
       def connect_device(type)
-        id = next_id
-        logger.debug "Server: Requesting client to connect device #{type} with ID #{id}"
-        @connection.write(event: "device", action: "connect", id: id, type: type)
+        logger.debug "Server: Requesting client to connect device #{type}"
+        @connection.write(event: "device", action: "connect", name: type, type: type)
         response = @connection.recv
         case response
         in { status: "success" }
-          logger.debug "Server: Resource #{type} connected with ID #{id}."
-          @devices[id] = @resources.find(type).new(id, @connection)
+          logger.debug "Server: Resource #{type} connected."
+          @devices[type] = @resources.find(type).new(type, @connection)
         else
-          logger.debug "Server: Failed to connect device #{type} with ID #{id}."
+          logger.debug "Server: Failed to connect device #{type}."
         end
       end
 
       private
-
-      def next_id
-        @id += 1
-      end
 
       def self.resources
         ResourceRegistry.new.tap do |resources|
@@ -330,7 +323,7 @@ module Terminalwire
       end
 
       def listen
-        logger.info "Socket: Sistening..."
+        logger.info "Socket: Listening..."
         loop do
           client_socket = @server_socket.accept
           logger.debug "Socket: Client #{client_socket.inspect} connected"
@@ -389,7 +382,6 @@ module Terminalwire
     module Resource
       class IO < Terminalwire::Resource::Base
         def dispatch(command, data)
-          # TODO: This is still trash; instead setup a `dispatch` class method that everything can read from.
           respond self.public_send(command, **data)
         end
       end
@@ -430,7 +422,7 @@ module Terminalwire
 
       class File < Terminalwire::Resource::Base
         def read(data:)
-          ::File.read ::File.expand_path(path)
+          ::File.read ::File.expand_path(data)
         end
 
         def write(path:, content:)
@@ -452,7 +444,7 @@ module Terminalwire
 
       class Browser < Terminalwire::Resource::Base
         def launch(data:)
-          Launchy.open(URL(data))
+          Launchy.open(URI(data))
         end
       end
     end
@@ -461,34 +453,34 @@ module Terminalwire
       def initialize(connection, resources)
         @connection = connection
         @resources = resources
-        @devices = Hash.new { |h,k| h[Integer(k)] }
+        @devices = {}
       end
 
-      def connect_device(id, type)
+      def connect_device(type)
         klass = @resources.find(type)
         if klass
-          device = klass.new(id, @connection)
+          device = klass.new(type, @connection)
           device.connect
-          @devices[id] = device
-          @connection.write(event: "device", action: "connect", status: "success", id: id, type: type)
+          @devices[type] = device
+          @connection.write(event: "device", action: "connect", status: "success", name: type, type: type)
         else
-          @connection.write(event: "device", action: "connect", status: "failure", id: id, type: type, message: "Unknown device type")
+          @connection.write(event: "device", action: "connect", status: "failure", name: type, type: type, message: "Unknown device type")
         end
       end
 
-      def dispatch(id, action, data)
-        device = @devices[id]
+      def dispatch(name, action, data)
+        device = @devices[name]
         if device
           device.dispatch(action, data)
         else
-          raise "Unknown device ID: #{id}"
+          raise "Unknown device: #{name}"
         end
       end
 
-      def disconnect_device(id)
-        device = @devices.delete(id)
+      def disconnect_device(name)
+        device = @devices.delete(name)
         device&.disconnect
-        @connection.write(event: "device", action: "disconnect", id: id)
+        @connection.write(event: "device", action: "disconnect", name: name)
       end
     end
 
@@ -503,6 +495,7 @@ module Terminalwire
         @connection = connection
         @resources = resources
         @arguments = arguments
+        @program_name = program_name
       end
 
       def connect
@@ -517,12 +510,12 @@ module Terminalwire
 
       def handle(message)
         case message
-        in { event: "device", action: "connect", id:, type: }
-          @devices.connect_device(id, type)
-        in { event: "device", action: "command", id:, command:, **data }
-          @devices.dispatch(id, command, data)
-        in { event: "device", action: "disconnect", id: }
-          @devices.disconnect_device(id)
+        in { event: "device", action: "connect", name:, type: }
+          @devices.connect_device(type)
+        in { event: "device", action: "command", name:, command:, **data }
+          @devices.dispatch(name, command, data)
+        in { event: "device", action: "disconnect", name: }
+          @devices.disconnect_device(name)
         in { event: "exit", status: }
           exit Integer(status)
         end
