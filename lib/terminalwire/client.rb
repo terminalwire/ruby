@@ -2,24 +2,28 @@ module Terminalwire
   module Client
     module Resource
       class IO < Terminalwire::Resource::Base
-        def dispatch(action, data)
-          if @device.respond_to?(action)
-            respond @device.public_send(action, data)
-          else
-            raise "Unknown action #{action} for device ID #{@id}"
-          end
-        end
-
-        def prints(data:)
-        end
-
-        def puts(data:)
+        def dispatch(command, data)
+          respond self.public_send(command, **data)
         end
       end
 
       class STDOUT < IO
         def connect
           @device = $stdout
+        end
+
+        def print(data:)
+          @device.print(data)
+        end
+
+        def puts(data:)
+          @device.puts(data)
+        end
+      end
+
+      class STDERR < STDOUT
+        def connect
+          @device = $stderr
         end
       end
 
@@ -28,21 +32,16 @@ module Terminalwire
           @device = $stdin
         end
 
-        def dispatch(action, data)
-          respond case action
-          when "puts"
-            @device.puts(data)
-          when "gets"
-            @device.gets
-          when "getpass"
-            @device.getpass
-          end
+        def puts(data:)
+          @device.puts(data)
         end
-      end
 
-      class STDERR < IO
-        def connect
-          @device = $stderr
+        def gets
+          @device.gets
+        end
+
+        def getpass
+          @device.getpass
         end
       end
 
@@ -51,41 +50,24 @@ module Terminalwire
           @files = {}
         end
 
-        def dispatch(action, data)
-          respond case action
-          when "read"
-            read_file(data)
-          when "write"
-            write_file(data.fetch(:path), data.fetch(:content))
-          when "append"
-            append_to_file(data.fetch(:path), data.fetch(:content))
-          when "mkdir"
-            mkdir(data.fetch(:path))
-          when "exist"
-            exist?(data.fetch(:path))
-          else
-            raise "Unknown action #{action} for file device"
-          end
-        end
-
-        def mkdir(path)
-          FileUtils.mkdir_p(::File.expand_path(path))
-        end
-
-        def exist?(path)
-          ::File.exist? ::File.expand_path(path)
-        end
-
-        def read_file(path)
+        def read(data:)
           ::File.read ::File.expand_path(path)
         end
 
-        def write_file(path, content)
+        def write(path:, content:)
           ::File.open(::File.expand_path(path), "w") { |f| f.write(content) }
         end
 
-        def append_to_file(path, content)
+        def append(path:, content:)
           ::File.open(::File.expand_path(path), "a") { |f| f.write(content) }
+        end
+
+        def mkdir(path:)
+          FileUtils.mkdir_p(::File.expand_path(path))
+        end
+
+        def exist(path:)
+          ::File.exist? ::File.expand_path(path)
         end
 
         def disconnect
@@ -94,14 +76,8 @@ module Terminalwire
       end
 
       class Browser < Terminalwire::Resource::Base
-        def dispatch(action, data)
-          respond case action
-          when "launch"
-            Launchy.open(data)
-            "Launched browser with URL: #{data}"
-          else
-            raise "Unknown action #{action} for browser device"
-          end
+        def launch(data:)
+          Launchy.open(URL(data))
         end
       end
     end
@@ -168,7 +144,7 @@ module Terminalwire
         case message
         in { event: "device", action: "connect", id:, type: }
           @devices.connect_device(id, type)
-        in { event: "device", action: "command", id:, command:, data: }
+        in { event: "device", action: "command", id:, command:, **data }
           @devices.dispatch(id, command, data)
         in { event: "device", action: "disconnect", id: }
           @devices.disconnect_device(id)
