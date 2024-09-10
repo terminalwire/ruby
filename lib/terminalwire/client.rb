@@ -3,6 +3,7 @@ module Terminalwire
     module Resource
       class IO < Terminalwire::Resource::Base
         def dispatch(command, data)
+          # TODO: This is still trash; instead setup a `dispatch` class method that everything can read from.
           respond self.public_send(command, **data)
         end
       end
@@ -16,7 +17,7 @@ module Terminalwire
           @device.print(data)
         end
 
-        def puts(data:)
+        def print_line(data:)
           @device.puts(data)
         end
       end
@@ -32,10 +33,6 @@ module Terminalwire
           @device = $stdin
         end
 
-        def puts(data:)
-          @device.puts(data)
-        end
-
         def gets
           @device.gets
         end
@@ -46,10 +43,6 @@ module Terminalwire
       end
 
       class File < Terminalwire::Resource::Base
-        def connect
-          @files = {}
-        end
-
         def read(data:)
           ::File.read ::File.expand_path(path)
         end
@@ -68,10 +61,6 @@ module Terminalwire
 
         def exist(path:)
           ::File.exist? ::File.expand_path(path)
-        end
-
-        def disconnect
-          @files.clear
         end
       end
 

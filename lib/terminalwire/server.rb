@@ -3,7 +3,7 @@ module Terminalwire
     module Resource
       class IO < Terminalwire::Resource::Base
         def puts(data)
-          command("puts", data: data)
+          command("print_line", data: data)
         end
 
         def print(data)
