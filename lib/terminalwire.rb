@@ -237,7 +237,8 @@ module Terminalwire
         @connection = connection
       end
 
-      def connect_device(type, resource)
+      def connect(resource)
+        type = resource.name
         logger.debug "Server: Requesting client to connect device #{type}"
         @connection.write(event: "device", action: "connect", name: type, type: type)
         response = @connection.recv
@@ -263,11 +264,11 @@ module Terminalwire
         @connection = connection
 
         @devices = ResourceMapper.new(@connection)
-        @stdout = @devices.connect_device "stdout", Server::Resource::STDOUT.new("stdout", @connection)
-        @stdin = @devices.connect_device "stdin", Server::Resource::STDIN.new("stdin", @connection)
-        @stderr = @devices.connect_device "stderr", Server::Resource::STDERR.new("stderr", @connection)
-        @browser = @devices.connect_device "browser", Server::Resource::Browser.new("browser", @connection)
-        @file = @devices.connect_device "file", Server::Resource::File.new("file", @connection)
+        @stdout = @devices.connect Server::Resource::STDOUT.new("stdout", @connection)
+        @stdin = @devices.connect Server::Resource::STDIN.new("stdin", @connection)
+        @stderr = @devices.connect Server::Resource::STDERR.new("stderr", @connection)
+        @browser = @devices.connect Server::Resource::Browser.new("browser", @connection)
+        @file = @devices.connect Server::Resource::File.new("file", @connection)
 
         if block_given?
           begin
