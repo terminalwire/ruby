@@ -55,24 +55,6 @@ module Terminalwire
     end
   end
 
-  class ResourceRegistry
-    def initialize
-      @resources = {}
-    end
-
-    def register(name, to: nil)
-      @resources[name.to_s] = to
-    end
-
-    def <<(resource_class)
-      register resource_class.protocol_key, to: resource_class
-    end
-
-    def find(name)
-      @resources.fetch(name.to_s)
-    end
-  end
-
   module Resource
     class Base
       attr_reader :name, :adapter

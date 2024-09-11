@@ -91,22 +91,26 @@ module Terminalwire
     end
 
     class ResourceMapper
-      def initialize(adapter, resources)
+      def initialize(adapter)
         @adapter = adapter
-        @resources = resources
         @devices = {}
       end
 
       def connect_device(type)
-        klass = @resources.find(type)
-        if klass
-          device = klass.new(type, @adapter)
-          device.connect
-          @devices[type] = device
-          @adapter.write(event: "device", action: "connect", status: "success", name: type, type: type)
+        klass = case type
+        when "stdout" then Client::Resource::STDOUT
+        when "stdin" then Client::Resource::STDIN
+        when "stderr" then Client::Resource::STDERR
+        when "browser" then Client::Resource::Browser
+        when "file" then Client::Resource::File
         else
           @adapter.write(event: "device", action: "connect", status: "failure", name: type, type: type, message: "Unknown device type")
         end
+
+        device = klass.new(type, @adapter)
+        device.connect
+        @devices[type] = device
+        @adapter.write(event: "device", action: "connect", status: "success", name: type, type: type)
       end
 
       def dispatch(name, action, data)
@@ -132,15 +136,15 @@ module Terminalwire
 
       attr_reader :arguments, :program_name
 
-      def initialize(adapter, resources = self.class.resources, arguments: ARGV, program_name: $0)
+      def initialize(adapter, arguments: ARGV, program_name: $0, authority:)
+        @authority = authority
         @adapter = adapter
-        @resources = resources
         @arguments = arguments
         @program_name = program_name
       end
 
       def connect
-        @devices = ResourceMapper.new(@adapter, @resources)
+        @devices = ResourceMapper.new(@adapter)
 
         @adapter.write(event: "initialize", protocol: { version: VERSION }, arguments:, program_name:)
 
@@ -187,6 +191,15 @@ module Terminalwire
       Terminalwire::Client::Handler.new(adapter)
     end
 
+    # Extracted from HTTP. This is so we can
+    def self.authority(url)
+      if url.port == url.default_port
+        url.host
+      else
+        "#{url.host}:#{url.port}"
+      end
+    end
+
     def self.websocket(url:, arguments: ARGV)
       url = URI(url)
 
@@ -196,7 +209,7 @@ module Terminalwire
         Async::WebSocket::Client.connect(endpoint) do |adapter|
           transport = Terminalwire::Transport::WebSocket.new(adapter)
           adapter = Terminalwire::Adapter.new(transport)
-          Terminalwire::Client::Handler.new(adapter, arguments:).connect
+          Terminalwire::Client::Handler.new(adapter, arguments:, authority: authority(url)).connect
         end
       end
     end
