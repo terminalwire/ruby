@@ -86,7 +86,11 @@ module Terminalwire
       def dispatch(action, data); end
       def disconnect; end
 
-      def respond(response, status: :success)
+      def respond(response = nil, status: "success")
+        adapter.write(event: "device", name: @name, status:, response:)
+      end
+
+      def fail(status: "fail", response:)
         adapter.write(event: "device", name: @name, status:, response:)
       end
 

@@ -43,6 +43,7 @@ module Terminalwire
 
       class File < Base
         File = ::File
+        ALLOWED_PATH = File.expand_path("~/.terminalwire")
 
         def read(path:)
           File.read File.expand_path(path)
@@ -62,6 +63,20 @@ module Terminalwire
 
         def exist(path:)
           File.exist? File.expand_path(path)
+        end
+
+        def dispatch(command, path:, **data)
+          if allowed?(path:)
+            super(command, path: File.expand_path(path), **data)
+          else
+            respond("Access to #{path} is not allowed by client", status: "failure")
+          end
+        end
+
+        protected
+
+        def allowed?(path:)
+          File.expand_path(path).start_with?(ALLOWED_PATH)
         end
       end
 
