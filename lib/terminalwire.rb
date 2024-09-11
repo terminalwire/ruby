@@ -180,7 +180,7 @@ module Terminalwire
 
       class File < Base
         def read(path)
-          command("read", path.to_s)
+          command("read", path: path.to_s)
         end
 
         def write(path, content)
@@ -384,8 +384,8 @@ module Terminalwire
       class File < Base
         File = ::File
 
-        def read(data:)
-          File.read File.expand_path(data)
+        def read(path:)
+          File.read File.expand_path(path)
         end
 
         def write(path:, content:)
