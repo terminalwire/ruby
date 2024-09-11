@@ -390,24 +390,26 @@ module Terminalwire
       end
 
       class File < Base
+        File = ::File
+
         def read(data:)
-          ::File.read ::File.expand_path(data)
+          File.read File.expand_path(data)
         end
 
         def write(path:, content:)
-          ::File.open(::File.expand_path(path), "w") { |f| f.write(content) }
+          File.open(File.expand_path(path), "w") { |f| f.write(content) }
         end
 
         def append(path:, content:)
-          ::File.open(::File.expand_path(path), "a") { |f| f.write(content) }
+          File.open(File.expand_path(path), "a") { |f| f.write(content) }
         end
 
         def mkdir(path:)
-          FileUtils.mkdir_p(::File.expand_path(path))
+          FileUtils.mkdir_p(File.expand_path(path))
         end
 
         def exist(path:)
-          ::File.exist? ::File.expand_path(path)
+          File.exist? File.expand_path(path)
         end
       end
 
