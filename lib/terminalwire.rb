@@ -416,6 +416,8 @@ module Terminalwire
       class Browser < Base
         def launch(url:)
           Launchy.open(URI(url))
+          # TODO: This is a hack to get the `respond` method to work.
+          # Maybe explicitly call a `suceed` and `fail` method?
           nil
         end
       end
