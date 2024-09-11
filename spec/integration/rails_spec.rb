@@ -7,7 +7,7 @@ require "pathname"
 
 RSpec.describe "Terminalwire Install", type: :system do
   let(:binary_name) { "hello" }
-  let(:gem_path) { File.expand_path('../../', __FILE__) }
+  let(:gem_path) { File.expand_path('../../../', __FILE__) }
   let(:exe_path)  { File.join(gem_path, "exe") }
 
   around do |example|
