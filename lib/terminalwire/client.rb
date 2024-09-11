@@ -2,7 +2,7 @@ module Terminalwire
   module Client
     module Resource
       class Base < Terminalwire::Resource::Base
-        def dispatch(command, data)
+        def dispatch(command, **data)
           respond self.public_send(command, **data)
         end
       end
@@ -97,7 +97,7 @@ module Terminalwire
       def dispatch(name, action, data)
         device = @devices[name]
         if device
-          device.dispatch(action, data)
+          device.dispatch(action, **data)
         else
           raise "Unknown device: #{name}"
         end
