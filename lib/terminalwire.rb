@@ -290,12 +290,6 @@ module Terminalwire
         end
       end
 
-      def exec(&shell)
-        instance_eval(&shell)
-      ensure
-        exit
-      end
-
       def exit(status = 0)
         @connection.write(event: "exit", status: status)
       end
