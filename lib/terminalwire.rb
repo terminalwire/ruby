@@ -232,34 +232,21 @@ module Terminalwire
     class ResourceMapper
       include Logging
 
-      def initialize(connection, resources = self.class.resources)
-        @resources = resources
+      def initialize(connection)
         @devices = {}
         @connection = connection
       end
 
-      def connect_device(type)
+      def connect_device(type, resource)
         logger.debug "Server: Requesting client to connect device #{type}"
         @connection.write(event: "device", action: "connect", name: type, type: type)
         response = @connection.recv
         case response
         in { status: "success" }
           logger.debug "Server: Resource #{type} connected."
-          @devices[type] = @resources.find(type).new(type, @connection)
+          @devices[type] = resource
         else
           logger.debug "Server: Failed to connect device #{type}."
-        end
-      end
-
-      private
-
-      def self.resources
-        ResourceRegistry.new.tap do |resources|
-          resources << Server::Resource::STDOUT
-          resources << Server::Resource::STDIN
-          resources << Server::Resource::STDERR
-          resources << Server::Resource::Browser
-          resources << Server::Resource::File
         end
       end
     end
@@ -274,12 +261,13 @@ module Terminalwire
 
       def initialize(connection:)
         @connection = connection
+
         @devices = ResourceMapper.new(@connection)
-        @stdout = @devices.connect_device("stdout")
-        @stdin = @devices.connect_device("stdin")
-        @stderr = @devices.connect_device("stderr")
-        @browser = @devices.connect_device("browser")
-        @file = @devices.connect_device("file")
+        @stdout = @devices.connect_device "stdout", Server::Resource::STDOUT.new("stdout", @connection)
+        @stdin = @devices.connect_device "stdin", Server::Resource::STDIN.new("stdin", @connection)
+        @stderr = @devices.connect_device "stderr", Server::Resource::STDERR.new("stderr", @connection)
+        @browser = @devices.connect_device "browser", Server::Resource::Browser.new("browser", @connection)
+        @file = @devices.connect_device "file", Server::Resource::File.new("file", @connection)
 
         if block_given?
           begin
