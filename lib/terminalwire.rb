@@ -96,50 +96,6 @@ module Terminalwire
     end
   end
 
-  module WebSocket
-    class Server
-      include Logging
-
-      def call(env)
-        Async::WebSocket::Adapters::Rack.open(env, protocols: ['ws']) do |connection|
-          run(Adapter.new(Terminalwire::Transport::WebSocket.new(connection)))
-        end or [200, { "Content-Type" => "text/plain" }, ["Connect via WebSockets"]]
-      end
-
-      private
-
-      def run(adapater)
-        while message = adapater.recv
-          puts message
-        end
-      end
-    end
-
-    class ThorServer < Server
-      include Logging
-
-      def initialize(cli_class)
-        @cli_class = cli_class
-
-        unless @cli_class.included_modules.include?(Terminalwire::Thor)
-          raise 'Add `include Terminalwire::Thor` to the #{@cli_class.inspect} class.'
-        end
-      end
-
-      def run(adapater)
-        logger.info "ThorServer: Running #{@cli_class.inspect}"
-        while message = adapater.recv
-          case message
-          in { event: "initialize", protocol: { version: _ }, arguments:, program_name: }
-            Terminalwire::Server::Session.new(adapater:) do |session|
-              @cli_class.start(arguments, session:)
-            end
-          end
-        end
-      end
-    end
-  end
-
   module Server
     module Resource
       class Base < Terminalwire::Resource::Base
@@ -301,6 +257,48 @@ module Terminalwire
         Thread.new do
           handler = Handler.new(adapater)
           handler.run
+        end
+      end
+    end
+
+    class WebSocket
+      include Logging
+
+      def call(env)
+        Async::WebSocket::Adapters::Rack.open(env, protocols: ['ws']) do |connection|
+          run(Adapter.new(Terminalwire::Transport::WebSocket.new(connection)))
+        end or [200, { "Content-Type" => "text/plain" }, ["Connect via WebSockets"]]
+      end
+
+      private
+
+      def run(adapater)
+        while message = adapater.recv
+          puts message
+        end
+      end
+    end
+
+    class Thor < WebSocket
+      include Logging
+
+      def initialize(cli_class)
+        @cli_class = cli_class
+
+        unless @cli_class.included_modules.include?(Terminalwire::Thor)
+          raise 'Add `include Terminalwire::Thor` to the #{@cli_class.inspect} class.'
+        end
+      end
+
+      def run(adapater)
+        logger.info "ThorServer: Running #{@cli_class.inspect}"
+        while message = adapater.recv
+          case message
+          in { event: "initialize", protocol: { version: _ }, arguments:, program_name: }
+            Terminalwire::Server::Session.new(adapater:) do |session|
+              @cli_class.start(arguments, session:)
+            end
+          end
         end
       end
     end
