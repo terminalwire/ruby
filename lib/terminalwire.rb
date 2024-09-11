@@ -75,11 +75,11 @@ module Terminalwire
 
   module Resource
     class Base
-      attr_reader :name, :adapater
+      attr_reader :name, :adapter
 
-      def initialize(name, adapater)
+      def initialize(name, adapter)
         @name = name.to_s
-        @adapater = adapater
+        @adapter = adapter
       end
 
       def connect; end
@@ -87,7 +87,7 @@ module Terminalwire
       def disconnect; end
 
       def respond(response, status: :success)
-        adapater.write(event: "device", name: @name, status:, response:)
+        adapter.write(event: "device", name: @name, status:, response:)
       end
 
       def self.protocol_key
@@ -102,8 +102,8 @@ module Terminalwire
         private
 
         def command(command, **parameters)
-          @adapater.write(event: "device", name: @name, action: "command", command: command, **parameters)
-          @adapater.recv&.fetch(:response)
+          @adapter.write(event: "device", name: @name, action: "command", command: command, **parameters)
+          @adapter.recv&.fetch(:response)
         end
       end
 
@@ -166,16 +166,16 @@ module Terminalwire
     class ResourceMapper
       include Logging
 
-      def initialize(adapater)
+      def initialize(adapter)
         @devices = {}
-        @adapater = adapater
+        @adapter = adapter
       end
 
       def connect(resource)
         type = resource.name
         logger.debug "Server: Requesting client to connect device #{type}"
-        @adapater.write(event: "device", action: "connect", name: type, type: type)
-        response = @adapater.recv
+        @adapter.write(event: "device", action: "connect", name: type, type: type)
+        response = @adapter.recv
         case response
         in { status: "success" }
           logger.debug "Server: Resource #{type} connected."
@@ -194,15 +194,15 @@ module Terminalwire
       def_delegators :@stdout, :puts, :print
       def_delegators :@stdin, :gets, :getpass
 
-      def initialize(adapater:)
-        @adapater = adapater
+      def initialize(adapter:)
+        @adapter = adapter
 
-        @devices = ResourceMapper.new(@adapater)
-        @stdout = @devices.connect Server::Resource::STDOUT.new("stdout", @adapater)
-        @stdin = @devices.connect Server::Resource::STDIN.new("stdin", @adapater)
-        @stderr = @devices.connect Server::Resource::STDERR.new("stderr", @adapater)
-        @browser = @devices.connect Server::Resource::Browser.new("browser", @adapater)
-        @file = @devices.connect Server::Resource::File.new("file", @adapater)
+        @devices = ResourceMapper.new(@adapter)
+        @stdout = @devices.connect Server::Resource::STDOUT.new("stdout", @adapter)
+        @stdin = @devices.connect Server::Resource::STDIN.new("stdin", @adapter)
+        @stderr = @devices.connect Server::Resource::STDERR.new("stderr", @adapter)
+        @browser = @devices.connect Server::Resource::Browser.new("browser", @adapter)
+        @file = @devices.connect Server::Resource::File.new("file", @adapter)
 
         if block_given?
           begin
@@ -214,11 +214,11 @@ module Terminalwire
       end
 
       def exit(status = 0)
-        @adapater.write(event: "exit", status: status)
+        @adapter.write(event: "exit", status: status)
       end
 
       def close
-        @adapater.close
+        @adapter.close
       end
     end
 
@@ -252,10 +252,10 @@ module Terminalwire
 
       def handle_client(socket)
         transport = Transport::Socket.new(socket)
-        adapater = Adapter.new(transport)
+        adapter = Adapter.new(transport)
 
         Thread.new do
-          handler = Handler.new(adapater)
+          handler = Handler.new(adapter)
           handler.run
         end
       end
@@ -272,8 +272,8 @@ module Terminalwire
 
       private
 
-      def run(adapater)
-        while message = adapater.recv
+      def run(adapter)
+        while message = adapter.recv
           puts message
         end
       end
@@ -290,12 +290,12 @@ module Terminalwire
         end
       end
 
-      def run(adapater)
+      def run(adapter)
         logger.info "ThorServer: Running #{@cli_class.inspect}"
-        while message = adapater.recv
+        while message = adapter.recv
           case message
           in { event: "initialize", protocol: { version: _ }, arguments:, program_name: }
-            Terminalwire::Server::Session.new(adapater:) do |session|
+            Terminalwire::Server::Session.new(adapter:) do |session|
               @cli_class.start(arguments, session:)
             end
           end
@@ -306,17 +306,17 @@ module Terminalwire
     class Handler
       include Logging
 
-      def initialize(adapater)
-        @adapater = adapater
+      def initialize(adapter)
+        @adapter = adapter
       end
 
       def run
         logger.info "Server Handler: Running"
         loop do
-          message = @adapater.recv
+          message = @adapter.recv
           case message
           in { event: "initialize", arguments:, program_name: }
-            Session.new(adapater: @adapater) do |session|
+            Session.new(adapter: @adapter) do |session|
               MyCLI.start(arguments, session: session)
             end
           end
@@ -324,7 +324,7 @@ module Terminalwire
       rescue EOFError, Errno::ECONNRESET
         logger.info "Server Handler: Client disconnected"
       ensure
-        @adapater.close
+        @adapter.close
       end
     end
 
@@ -414,8 +414,8 @@ module Terminalwire
     end
 
     class ResourceMapper
-      def initialize(adapater, resources)
-        @adapater = adapater
+      def initialize(adapter, resources)
+        @adapter = adapter
         @resources = resources
         @devices = {}
       end
@@ -423,12 +423,12 @@ module Terminalwire
       def connect_device(type)
         klass = @resources.find(type)
         if klass
-          device = klass.new(type, @adapater)
+          device = klass.new(type, @adapter)
           device.connect
           @devices[type] = device
-          @adapater.write(event: "device", action: "connect", status: "success", name: type, type: type)
+          @adapter.write(event: "device", action: "connect", status: "success", name: type, type: type)
         else
-          @adapater.write(event: "device", action: "connect", status: "failure", name: type, type: type, message: "Unknown device type")
+          @adapter.write(event: "device", action: "connect", status: "failure", name: type, type: type, message: "Unknown device type")
         end
       end
 
@@ -444,7 +444,7 @@ module Terminalwire
       def disconnect_device(name)
         device = @devices.delete(name)
         device&.disconnect
-        @adapater.write(event: "device", action: "disconnect", name: name)
+        @adapter.write(event: "device", action: "disconnect", name: name)
       end
     end
 
@@ -455,20 +455,20 @@ module Terminalwire
 
       attr_reader :arguments, :program_name
 
-      def initialize(adapater, resources = self.class.resources, arguments: ARGV, program_name: $0)
-        @adapater = adapater
+      def initialize(adapter, resources = self.class.resources, arguments: ARGV, program_name: $0)
+        @adapter = adapter
         @resources = resources
         @arguments = arguments
         @program_name = program_name
       end
 
       def connect
-        @devices = ResourceMapper.new(@adapater, @resources)
+        @devices = ResourceMapper.new(@adapter, @resources)
 
-        @adapater.write(event: "initialize", protocol: { version: VERSION }, arguments:, program_name:)
+        @adapter.write(event: "initialize", protocol: { version: VERSION }, arguments:, program_name:)
 
         loop do
-          handle @adapater.recv
+          handle @adapter.recv
         end
       end
 
@@ -499,15 +499,15 @@ module Terminalwire
     def self.tcp(...)
       socket = TCPSocket.new(...)
       transport = Terminalwire::Transport::Socket.new(socket)
-      adapater = Terminalwire::Adapter.new(transport)
-      Terminalwire::Client::Handler.new(adapater)
+      adapter = Terminalwire::Adapter.new(transport)
+      Terminalwire::Client::Handler.new(adapter)
     end
 
     def self.socket(...)
       socket = UNIXSocket.new(...)
       transport = Terminalwire::Transport::Socket.new(socket)
-      adapater = Terminalwire::Adapter.new(transport)
-      Terminalwire::Client::Handler.new(adapater)
+      adapter = Terminalwire::Adapter.new(transport)
+      Terminalwire::Client::Handler.new(adapter)
     end
 
     def self.websocket(url:, arguments: ARGV)
@@ -516,10 +516,10 @@ module Terminalwire
       Async do |task|
         endpoint = Async::HTTP::Endpoint.parse(url)
 
-        Async::WebSocket::Client.connect(endpoint) do |adapater|
-          transport = Terminalwire::Transport::WebSocket.new(adapater)
-          adapater = Terminalwire::Adapter.new(transport)
-          Terminalwire::Client::Handler.new(adapater, arguments:).connect
+        Async::WebSocket::Client.connect(endpoint) do |adapter|
+          transport = Terminalwire::Transport::WebSocket.new(adapter)
+          adapter = Terminalwire::Adapter.new(transport)
+          Terminalwire::Client::Handler.new(adapter, arguments:).connect
         end
       end
     end

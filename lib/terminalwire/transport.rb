@@ -94,8 +94,8 @@ module Terminalwire
       def self.connect(url)
         uri = URI(url)
         endpoint = Async::HTTP::Endpoint.parse(uri)
-        adapater = Async::WebSocket::Client.connect(endpoint)
-        new(adapater)
+        adapter = Async::WebSocket::Client.connect(endpoint)
+        new(adapter)
       end
 
       def self.listen(url)
