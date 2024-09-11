@@ -148,7 +148,16 @@ module Terminalwire
 
   module Server
     module Resource
-      class IO < Terminalwire::Resource::Base
+      class Base < Terminalwire::Resource::Base
+        private
+
+        def command(command, **parameters)
+          @connection.write(event: "device", name: @name, action: "command", command: command, **parameters)
+          @connection.recv&.fetch(:response)
+        end
+      end
+
+      class IO < Base
         def puts(data)
           command("print_line", data: data)
         end
@@ -162,14 +171,6 @@ module Terminalwire
         end
 
         def flush
-          # @connection.flush
-        end
-
-        private
-
-        def command(command, data: nil)
-          @connection.write(event: "device", name: @name, action: "command", command: command, data: data)
-          @connection.recv&.fetch(:response)
         end
       end
 
@@ -185,46 +186,31 @@ module Terminalwire
       class STDERR < IO
       end
 
-      class File < Terminalwire::Resource::Base
+      class File < Base
         def read(path)
           command("read", path.to_s)
         end
 
         def write(path, content)
-          command("write", { 'path' => path.to_s, 'content' => content })
+          command("write", path: path.to_s, content:)
         end
 
         def append(path, content)
-          command("append", { 'path' => path.to_s, 'content' => content })
+          command("append", path: path.to_s, content:)
         end
 
         def mkdir(path)
-          command("mkdir", { 'path' => path.to_s })
+          command("mkdir", path: path.to_s)
         end
 
         def exist?(path)
-          command("exist", { 'path' => path.to_s })
-        end
-
-        private
-
-        def command(action, data)
-          @connection.write(event: "device", name: @name, action: "command", command: action, data: data)
-          response = @connection.recv
-          response.fetch(:response)
+          command("exist", path: path.to_s)
         end
       end
 
-      class Browser < Terminalwire::Resource::Base
+      class Browser < Base
         def launch(url)
-          command("launch", data: url)
-        end
-
-        private
-
-        def command(command, data: nil)
-          @connection.write(event: "device", name: @name, action: "command", command: command, data: data)
-          @connection.recv.fetch(:response)
+          command("launch", url: url)
         end
       end
     end
@@ -363,13 +349,13 @@ module Terminalwire
 
   module Client
     module Resource
-      class IO < Terminalwire::Resource::Base
+      class Base < Terminalwire::Resource::Base
         def dispatch(command, data)
           respond self.public_send(command, **data)
         end
       end
 
-      class STDOUT < IO
+      class STDOUT < Base
         def connect
           @device = $stdout
         end
@@ -389,7 +375,7 @@ module Terminalwire
         end
       end
 
-      class STDIN < IO
+      class STDIN < Base
         def connect
           @device = $stdin
         end
@@ -403,7 +389,7 @@ module Terminalwire
         end
       end
 
-      class File < Terminalwire::Resource::Base
+      class File < Base
         def read(data:)
           ::File.read ::File.expand_path(data)
         end
@@ -425,9 +411,10 @@ module Terminalwire
         end
       end
 
-      class Browser < Terminalwire::Resource::Base
-        def launch(data:)
-          Launchy.open(URI(data))
+      class Browser < Base
+        def launch(url:)
+          Launchy.open(URI(url))
+          nil
         end
       end
     end
