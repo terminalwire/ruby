@@ -5,7 +5,6 @@ require_relative "terminalwire/version"
 require 'socket'
 require 'msgpack'
 require 'launchy'
-require 'logger'
 require 'io/console'
 require 'forwardable'
 require 'uri'
@@ -25,11 +24,6 @@ module Terminalwire
   Loader = Zeitwerk::Loader.for_gem.tap do |loader|
     loader.ignore("#{__dir__}/generators")
     loader.setup
-  end
-
-  module Logging
-    DEVICE = Logger.new($stdout, level: ENV.fetch("LOG_LEVEL", "info"))
-    def logger = DEVICE
   end
 
   class Adapter
