@@ -32,11 +32,11 @@ module Terminalwire
           @device = $stdin
         end
 
-        def gets
+        def read_line
           @device.gets
         end
 
-        def getpass
+        def read_password
           @device.getpass
         end
       end

@@ -19,10 +19,6 @@ module Terminalwire
           command("print", data: data)
         end
 
-        def gets
-          command("gets")
-        end
-
         def flush
           # Do nothing
         end
@@ -33,7 +29,11 @@ module Terminalwire
 
       class STDIN < Base
         def getpass
-          command("getpass")
+          command("read_password")
+        end
+
+        def gets
+          command("read_line")
         end
       end
 
