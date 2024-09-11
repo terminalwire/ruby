@@ -157,7 +157,7 @@ module Terminalwire
         end
       end
 
-      class IO < Base
+      class STDOUT < Base
         def puts(data)
           command("print_line", data: data)
         end
@@ -171,19 +171,17 @@ module Terminalwire
         end
 
         def flush
+          # Do nothing
         end
       end
 
-      class STDOUT < IO
+      class STDERR < STDOUT
       end
 
       class STDIN < IO
         def getpass
           command("getpass")
         end
-      end
-
-      class STDERR < IO
       end
 
       class File < Base
