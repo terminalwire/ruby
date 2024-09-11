@@ -2,6 +2,11 @@ module Terminalwire
   module Client
     module Resource
       class Base < Terminalwire::Resource::Base
+        def initialize(*, entitlement:, **)
+          super(*, **)
+          @entitlement = entitlement
+        end
+
         def dispatch(command, **data)
           respond self.public_send(command, **data)
         end
@@ -43,7 +48,6 @@ module Terminalwire
 
       class File < Base
         File = ::File
-        ALLOWED_PATH = File.expand_path("~/.terminalwire")
 
         def read(path:)
           File.read File.expand_path(path)
@@ -66,7 +70,7 @@ module Terminalwire
         end
 
         def dispatch(command, path:, **data)
-          if allowed?(path:)
+          if @entitlement.paths.permitted? path
             super(command, path: File.expand_path(path), **data)
           else
             respond("Access to #{path} is not allowed by client", status: "failure")
@@ -91,8 +95,9 @@ module Terminalwire
     end
 
     class ResourceMapper
-      def initialize(adapter)
+      def initialize(adapter:, entitlement:)
         @adapter = adapter
+        @entitlement = entitlement
         @devices = {}
       end
 
@@ -107,7 +112,7 @@ module Terminalwire
           @adapter.write(event: "device", action: "connect", status: "failure", name: type, type: type, message: "Unknown device type")
         end
 
-        device = klass.new(type, @adapter)
+        device = klass.new(type, @adapter, entitlement: @entitlement)
         device.connect
         @devices[type] = device
         @adapter.write(event: "device", action: "connect", status: "success", name: type, type: type)
@@ -136,15 +141,15 @@ module Terminalwire
 
       attr_reader :arguments, :program_name
 
-      def initialize(adapter, arguments: ARGV, program_name: $0, authority:)
-        @authority = authority
+      def initialize(adapter, arguments: ARGV, program_name: $0, entitlement:)
+        @entitlement = entitlement
         @adapter = adapter
         @arguments = arguments
         @program_name = program_name
       end
 
       def connect
-        @devices = ResourceMapper.new(@adapter)
+        @devices = ResourceMapper.new(adapter: @adapter, entitlement: @entitlement)
 
         @adapter.write(event: "initialize", protocol: { version: VERSION }, arguments:, program_name:)
 
@@ -163,16 +168,6 @@ module Terminalwire
           @devices.disconnect_device(name)
         in { event: "exit", status: }
           exit Integer(status)
-        end
-      end
-
-      def self.resources
-        ResourceRegistry.new.tap do |resources|
-          resources << Client::Resource::STDOUT
-          resources << Client::Resource::STDIN
-          resources << Client::Resource::STDERR
-          resources << Client::Resource::Browser
-          resources << Client::Resource::File
         end
       end
     end
@@ -209,7 +204,8 @@ module Terminalwire
         Async::WebSocket::Client.connect(endpoint) do |adapter|
           transport = Terminalwire::Transport::WebSocket.new(adapter)
           adapter = Terminalwire::Adapter.new(transport)
-          Terminalwire::Client::Handler.new(adapter, arguments:, authority: authority(url)).connect
+          entitlement = Entitlement.from_url(url)
+          Terminalwire::Client::Handler.new(adapter, arguments:, entitlement:).connect
         end
       end
     end

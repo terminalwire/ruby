@@ -24,7 +24,8 @@ end
 
 RSpec.describe Terminalwire::Client::Resource::File do
   let(:adapter) { TestAdapter.new }
-  let(:file) { Terminalwire::Client::Resource::File.new("file", adapter) }
+  let(:entitlement) { Terminalwire::Client::Entitlement.new(authority: "test") }
+  let(:file) { Terminalwire::Client::Resource::File.new("file", adapter, entitlement:) }
   let(:response) { adapter.response }
   subject { response }
 
@@ -40,7 +41,7 @@ RSpec.describe Terminalwire::Client::Resource::File do
     end
 
     context "authorized access" do
-      before{ file.dispatch("mkdir", path: "~/.terminalwire/junks") }
+      before{ file.dispatch("mkdir", path: "~/.terminalwire/domains/test/files/howdy") }
       it { is_expected.to include(
         event: "device",
         status: "success",
