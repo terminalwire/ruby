@@ -27,13 +27,38 @@ module Terminalwire::Client
       end
     end
 
-    attr_reader :paths, :authority
+    class Schemes
+      include Enumerable
+
+      def initialize
+        @permitted = Set.new
+      end
+
+      def each(&)
+        @permitted.each(&)
+      end
+
+      def permit(scheme)
+        @permitted << scheme.to_s
+      end
+
+      def permitted?(url)
+        include? URI(url).scheme
+      end
+    end
+
+    attr_reader :paths, :authority, :schemes
 
     def initialize(authority:)
       @authority = authority
       @paths = Paths.new
       # Permit the domain directory. This is necessary for basic operation of the client.
       @paths.permit domain_path
+
+      @schemes = Schemes.new
+      # Permit http & https by default.
+      @schemes.permit "http"
+      @schemes.permit "https"
     end
 
     def domain_path
