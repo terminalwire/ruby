@@ -85,15 +85,19 @@ module Terminalwire
       end
 
       class Browser < Base
-        def launch(url:)
+        def dispatch(command, url:, **data)
           if @entitlement.schemes.permitted? url
-            Launchy.open(URI(url))
-            # TODO: This is a hack to get the `respond` method to work.
-            # Maybe explicitly call a `suceed` and `fail` method?
-            nil
+            super(command, url:, **data)
           else
             respond("Access to #{url} denied", status: "failure")
           end
+        end
+
+        def launch(url:)
+          Launchy.open(URI(url))
+          # TODO: This is a hack to get the `respond` method to work.
+          # Maybe explicitly call a `suceed` and `fail` method?
+          nil
         end
       end
     end

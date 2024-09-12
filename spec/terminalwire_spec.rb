@@ -34,7 +34,7 @@ RSpec.describe Terminalwire::Client::Resource::File do
       before{ file.dispatch("mkdir", path: "/usr/bin/danger") }
       it { is_expected.to include(
         event: "device",
-        response: "Access to /usr/bin/danger is not allowed by client",
+        response: "Access to /usr/bin/danger denied",
         status: "failure",
         name: "file")
       }
@@ -50,3 +50,35 @@ RSpec.describe Terminalwire::Client::Resource::File do
     end
   end
 end
+
+RSpec.describe Terminalwire::Client::Resource::Browser do
+  let(:adapter) { TestAdapter.new }
+  let(:entitlement) { Terminalwire::Client::Entitlement.new(authority: "test") }
+  let(:browser) { Terminalwire::Client::Resource::Browser.new("browser", adapter, entitlement:) }
+  let(:response) { adapter.response }
+  subject { response }
+
+  describe "#launch" do
+    context "unauthorized scheme" do
+      before{ browser.dispatch("launch", url: "file:///usr/bin/env") }
+      it { is_expected.to include(
+        event: "device",
+        response: "Access to file:///usr/bin/env denied",
+        status: "failure",
+        name: "browser")
+      }
+    end
+
+    context "authorized scheme" do
+      # Intercept the call that actually launches the browser window.
+      before { expect(Launchy).to receive(:open).once }
+      before{ browser.dispatch("launch", url: "http://example.com") }
+      it { is_expected.to include(
+        event: "device",
+        status: "success",
+        name: "browser")
+      }
+    end
+  end
+end
+
