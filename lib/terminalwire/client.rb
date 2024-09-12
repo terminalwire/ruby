@@ -73,7 +73,7 @@ module Terminalwire
           if @entitlement.paths.permitted? path
             super(command, path: File.expand_path(path), **data)
           else
-            respond("Access to #{path} is not allowed by client", status: "failure")
+            respond("Access to #{path} denied", status: "failure")
           end
         end
 
@@ -86,10 +86,14 @@ module Terminalwire
 
       class Browser < Base
         def launch(url:)
-          Launchy.open(URI(url))
-          # TODO: This is a hack to get the `respond` method to work.
-          # Maybe explicitly call a `suceed` and `fail` method?
-          nil
+          if @entitlement.schemes.permitted? url
+            Launchy.open(URI(url))
+            # TODO: This is a hack to get the `respond` method to work.
+            # Maybe explicitly call a `suceed` and `fail` method?
+            nil
+          else
+            respond("Access to #{url} denied", status: "failure")
+          end
         end
       end
     end
