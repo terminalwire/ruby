@@ -52,8 +52,10 @@ module Terminalwire::Client
     def initialize(authority:)
       @authority = authority
       @paths = Paths.new
+
       # Permit the domain directory. This is necessary for basic operation of the client.
-      @paths.permit domain_path
+      @paths.permit files_path
+      @paths.permit files_pattern
 
       @schemes = Schemes.new
       # Permit http & https by default.
@@ -62,7 +64,15 @@ module Terminalwire::Client
     end
 
     def domain_path
-      Pathname.new("~/.terminalwire/domains/#{@authority}/files/**/*").expand_path
+      Pathname.new("~/.terminalwire/domains/#{@authority}").expand_path
+    end
+
+    def files_path
+      domain_path.join("files")
+    end
+
+    def files_pattern
+      files_path.join("**/*")
     end
 
     def self.from_url(url)

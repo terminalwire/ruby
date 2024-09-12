@@ -71,6 +71,11 @@ RSpec.describe Terminalwire::Client::Entitlement do
       expect(entitlement.paths.permitted?(permitted_path)).to be_truthy
     end
 
+    it 'initializes the paths and permits the domain directory' do
+      permitted_path = Pathname.new("~/.terminalwire/domains/#{authority}/files")
+      expect(entitlement.paths.permitted?(permitted_path)).to be_truthy
+    end
+
     it 'initializes the paths and permits the http scheme' do
       permitted_url = "http://#{authority}"
       expect(entitlement.schemes.permitted?(permitted_url)).to be_truthy
