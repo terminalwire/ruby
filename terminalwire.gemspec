@@ -39,6 +39,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "thor", "~> 1.3"
   spec.add_dependency "msgpack", "~> 1.7"
   spec.add_dependency "launchy", "~> 3.0"
+  spec.add_dependency "jwt", "~> 2.0"
 
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "rspec", "~> 3.0"
