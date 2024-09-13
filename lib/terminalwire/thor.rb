@@ -3,7 +3,7 @@ module Terminalwire
     class Shell < ::Thor::Shell::Basic
       extend Forwardable
 
-      # Encapsulates all of the IO devices for a Terminalwire adapter.
+      # Encapsulates all of the IO resources for a Terminalwire adapter.
       attr_reader :session
 
       def_delegators :@session, :stdin, :stdout, :stderr

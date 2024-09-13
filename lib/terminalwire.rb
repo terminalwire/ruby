@@ -69,11 +69,11 @@ module Terminalwire
       def disconnect; end
 
       def respond(response = nil, status: "success")
-        adapter.write(event: "device", name: @name, status:, response:)
+        adapter.write(event: "resource", name: @name, status:, response:)
       end
 
       def fail(status: "fail", response:)
-        adapter.write(event: "device", name: @name, status:, response:)
+        adapter.write(event: "resource", name: @name, status:, response:)
       end
 
       def self.protocol_key

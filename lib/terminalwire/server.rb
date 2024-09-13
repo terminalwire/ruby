@@ -5,7 +5,7 @@ module Terminalwire
         private
 
         def command(command, **parameters)
-          @adapter.write(event: "device", name: @name, action: "command", command: command, **parameters)
+          @adapter.write(event: "resource", name: @name, action: "command", command: command, **parameters)
           @adapter.recv&.fetch(:response)
         end
       end
@@ -70,21 +70,21 @@ module Terminalwire
       include Logging
 
       def initialize(adapter)
-        @devices = {}
+        @resources = {}
         @adapter = adapter
       end
 
       def connect(resource)
         type = resource.name
-        logger.debug "Server: Requesting client to connect device #{type}"
-        @adapter.write(event: "device", action: "connect", name: type, type: type)
+        logger.debug "Server: Requesting client to connect resource #{type}"
+        @adapter.write(event: "resource", action: "connect", name: type, type: type)
         response = @adapter.recv
         case response
         in { status: "success" }
           logger.debug "Server: Resource #{type} connected."
-          @devices[type] = resource
+          @resources[type] = resource
         else
-          logger.debug "Server: Failed to connect device #{type}."
+          logger.debug "Server: Failed to connect resource #{type}."
         end
       end
     end
@@ -100,12 +100,12 @@ module Terminalwire
       def initialize(adapter:)
         @adapter = adapter
 
-        @devices = ResourceMapper.new(@adapter)
-        @stdout = @devices.connect Server::Resource::STDOUT.new("stdout", @adapter)
-        @stdin = @devices.connect Server::Resource::STDIN.new("stdin", @adapter)
-        @stderr = @devices.connect Server::Resource::STDERR.new("stderr", @adapter)
-        @browser = @devices.connect Server::Resource::Browser.new("browser", @adapter)
-        @file = @devices.connect Server::Resource::File.new("file", @adapter)
+        @resources = ResourceMapper.new(@adapter)
+        @stdout = @resources.connect Server::Resource::STDOUT.new("stdout", @adapter)
+        @stdin = @resources.connect Server::Resource::STDIN.new("stdin", @adapter)
+        @stderr = @resources.connect Server::Resource::STDERR.new("stderr", @adapter)
+        @browser = @resources.connect Server::Resource::Browser.new("browser", @adapter)
+        @file = @resources.connect Server::Resource::File.new("file", @adapter)
 
         if block_given?
           begin

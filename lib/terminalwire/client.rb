@@ -14,35 +14,35 @@ module Terminalwire
 
       class STDOUT < Base
         def connect
-          @device = $stdout
+          @io = $stdout
         end
 
         def print(data:)
-          @device.print(data)
+          @io.print(data)
         end
 
         def print_line(data:)
-          @device.puts(data)
+          @io.puts(data)
         end
       end
 
       class STDERR < STDOUT
         def connect
-          @device = $stderr
+          @io = $stderr
         end
       end
 
       class STDIN < Base
         def connect
-          @device = $stdin
+          @io = $stdin
         end
 
         def read_line
-          @device.gets
+          @io.gets
         end
 
         def read_password
-          @device.getpass
+          @io.getpass
         end
       end
 
@@ -106,10 +106,10 @@ module Terminalwire
       def initialize(adapter:, entitlement:)
         @adapter = adapter
         @entitlement = entitlement
-        @devices = {}
+        @resources = {}
       end
 
-      def connect_device(type)
+      def connect_resource(type)
         klass = case type
         when "stdout" then Client::Resource::STDOUT
         when "stdin" then Client::Resource::STDIN
@@ -117,28 +117,28 @@ module Terminalwire
         when "browser" then Client::Resource::Browser
         when "file" then Client::Resource::File
         else
-          @adapter.write(event: "device", action: "connect", status: "failure", name: type, type: type, message: "Unknown device type")
+          @adapter.write(event: "resource", action: "connect", status: "failure", name: type, type: type, message: "Unknown resource type")
         end
 
-        device = klass.new(type, @adapter, entitlement: @entitlement)
-        device.connect
-        @devices[type] = device
-        @adapter.write(event: "device", action: "connect", status: "success", name: type, type: type)
+        resource = klass.new(type, @adapter, entitlement: @entitlement)
+        resource.connect
+        @resources[type] = resource
+        @adapter.write(event: "resource", action: "connect", status: "success", name: type, type: type)
       end
 
       def dispatch(name, action, data)
-        device = @devices[name]
-        if device
-          device.dispatch(action, **data)
+        resource = @resources[name]
+        if resource
+          resource.dispatch(action, **data)
         else
-          raise "Unknown device: #{name}"
+          raise "Unknown resource: #{name}"
         end
       end
 
-      def disconnect_device(name)
-        device = @devices.delete(name)
-        device&.disconnect
-        @adapter.write(event: "device", action: "disconnect", name: name)
+      def disconnect_resource(name)
+        resource = @resources.delete(name)
+        resource&.disconnect
+        @adapter.write(event: "resource", action: "disconnect", name: name)
       end
     end
 
@@ -157,7 +157,7 @@ module Terminalwire
       end
 
       def connect
-        @devices = ResourceMapper.new(adapter: @adapter, entitlement: @entitlement)
+        @resources = ResourceMapper.new(adapter: @adapter, entitlement: @entitlement)
 
         @adapter.write(event: "initialize", protocol: { version: VERSION }, arguments:, program_name:)
 
@@ -168,12 +168,12 @@ module Terminalwire
 
       def handle(message)
         case message
-        in { event: "device", action: "connect", name:, type: }
-          @devices.connect_device(type)
-        in { event: "device", action: "command", name:, command:, **data }
-          @devices.dispatch(name, command, data)
-        in { event: "device", action: "disconnect", name: }
-          @devices.disconnect_device(name)
+        in { event: "resource", action: "connect", name:, type: }
+          @resources.connect_resource(type)
+        in { event: "resource", action: "command", name:, command:, **data }
+          @resources.dispatch(name, command, data)
+        in { event: "resource", action: "disconnect", name: }
+          @resources.disconnect_resource(name)
         in { event: "exit", status: }
           exit Integer(status)
         end

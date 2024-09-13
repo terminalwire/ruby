@@ -33,7 +33,7 @@ RSpec.describe Terminalwire::Client::Resource::File do
     context "unauthorized access" do
       before{ file.dispatch("mkdir", path: "/usr/bin/danger") }
       it { is_expected.to include(
-        event: "device",
+        event: "resource",
         response: "Access to /usr/bin/danger denied",
         status: "failure",
         name: "file")
@@ -43,7 +43,7 @@ RSpec.describe Terminalwire::Client::Resource::File do
     context "authorized access" do
       before{ file.dispatch("mkdir", path: "~/.terminalwire/domains/test/files/howdy") }
       it { is_expected.to include(
-        event: "device",
+        event: "resource",
         status: "success",
         name: "file")
       }
@@ -62,7 +62,7 @@ RSpec.describe Terminalwire::Client::Resource::Browser do
     context "unauthorized scheme" do
       before{ browser.dispatch("launch", url: "file:///usr/bin/env") }
       it { is_expected.to include(
-        event: "device",
+        event: "resource",
         response: "Access to file:///usr/bin/env denied",
         status: "failure",
         name: "browser")
@@ -74,11 +74,10 @@ RSpec.describe Terminalwire::Client::Resource::Browser do
       before { expect(Launchy).to receive(:open).once }
       before{ browser.dispatch("launch", url: "http://example.com") }
       it { is_expected.to include(
-        event: "device",
+        event: "resource",
         status: "success",
         name: "browser")
       }
     end
   end
 end
-
