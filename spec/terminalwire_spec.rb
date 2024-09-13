@@ -41,7 +41,7 @@ RSpec.describe Terminalwire::Client::Resource::File do
     end
 
     context "authorized access" do
-      before{ file.dispatch("mkdir", path: "~/.terminalwire/domains/test/files/howdy") }
+      before{ file.dispatch("mkdir", path: "~/.terminalwire/authorities/test/files/howdy") }
       it { is_expected.to include(
         event: "resource",
         status: "success",

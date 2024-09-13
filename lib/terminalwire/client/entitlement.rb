@@ -64,7 +64,7 @@ module Terminalwire::Client
     end
 
     def domain_path
-      Pathname.new("~/.terminalwire/domains/#{@authority}").expand_path
+      Pathname.new("~/.terminalwire/authorities/#{@authority}").expand_path
     end
 
     def files_path
