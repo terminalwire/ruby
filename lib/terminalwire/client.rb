@@ -123,12 +123,12 @@ module Terminalwire
       end
       alias :<< :add
 
-      def dispatch(name:,**message)
-        resource = @resources.fetch(name)
-        # Non-destructively remove the event and action keys
-        message.delete(:event)
-        message.delete(:action)
-        resource.dispatch(**message)
+      def dispatch(**message)
+        case message
+        in { event:, action:, name:, **data }
+          resource = @resources.fetch(name)
+          resource.dispatch(**data)
+        end
       end
     end
 
