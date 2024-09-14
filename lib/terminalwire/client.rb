@@ -76,12 +76,6 @@ module Terminalwire
             respond("Access to #{path} denied", status: "failure")
           end
         end
-
-        protected
-
-        def allowed?(path:)
-          File.expand_path(path).start_with?(ALLOWED_PATH)
-        end
       end
 
       class Browser < Base
