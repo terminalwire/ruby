@@ -4,15 +4,17 @@ require 'forwardable'
 
 module Terminalwire::Rails
   class Cookie
+    FILENAME = "config.jwt"
+
     extend Forwardable
 
     # Delegate `dig` and `fetch` to the `read` method
     def_delegators :read, :dig, :fetch
 
-    def initialize(path:, session:, secret_key:)
+    def initialize(path: nil, session:, secret_key: self.class.secret_key)
       @session = session
-      @path = path
-      @config_file_path = path.join("config.jwt")
+      @path = path || session.storage_path
+      @config_file_path = @path.join(FILENAME)
       @secret_key = secret_key
 
       ensure_file
@@ -43,6 +45,10 @@ module Terminalwire::Rails
       return if @session.file.exist? @config_file_path
       @session.file.mkdir(@path) unless @session.file.exist?(@path)
       write({})  # Write an empty configuration on initialization
+    end
+
+    def self.secret_key
+      Rails.application.secret_key_base
     end
   end
 end

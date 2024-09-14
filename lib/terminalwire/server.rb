@@ -69,13 +69,17 @@ module Terminalwire
     class Session
       extend Forwardable
 
-      attr_reader :stdout, :stdin, :stderr, :browser, :file
+      attr_reader :stdout, :stdin, :stderr, :browser, :file, :storage_path
 
       def_delegators :@stdout, :puts, :print
       def_delegators :@stdin, :gets, :getpass
 
-      def initialize(adapter:)
+      def initialize(adapter:, entitlement:)
         @adapter = adapter
+
+        # TODO: Encapsulate entitlement in a class instead of a hash.
+        @entitlement = entitlement
+        @storage_path = Pathname.new(entitlement.fetch(:storage_path))
 
         @stdout = Server::Resource::STDOUT.new("stdout", @adapter)
         @stdin = Server::Resource::STDIN.new("stdin", @adapter)
@@ -173,8 +177,8 @@ module Terminalwire
         logger.info "ThorServer: Running #{@cli_class.inspect}"
         while message = adapter.recv
           case message
-          in { event: "initialization", protocol:, program: { arguments: } }
-            Terminalwire::Server::Session.new(adapter:) do |session|
+          in { event: "initialization", protocol:, program: { arguments: }, entitlement: }
+            Terminalwire::Server::Session.new(adapter:, entitlement:) do |session|
               @cli_class.start(arguments, session:)
             end
           end
@@ -194,9 +198,9 @@ module Terminalwire
         loop do
           message = @adapter.recv
           case message
-          in { event: "initialization", protocol:, program: { arguments: } }
+          in { event: "initialization", protocol:, program: { arguments: }, entitlement: }
             Session.new(adapter: @adapter) do |session|
-              MyCLI.start(arguments, session: session)
+              MyCLI.start(arguments, session:)
             end
           end
         end

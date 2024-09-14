@@ -19,6 +19,10 @@ module Terminalwire::Client
         @permitted.find { |pattern| matches?(permitted: pattern, path:) }
       end
 
+      def serialize
+        @permitted.to_a.map(&:to_s)
+      end
+
       private
       def matches?(permitted:, path:)
         # This MUST be done via File.fnmatch because Pathname#fnmatch does not work. If you
@@ -44,6 +48,10 @@ module Terminalwire::Client
 
       def permitted?(url)
         include? URI(url).scheme
+      end
+
+      def serialize
+        @permitted.to_a.map(&:to_s)
       end
     end
 
@@ -73,6 +81,15 @@ module Terminalwire::Client
 
     def storage_pattern
       storage_path.join("**/*")
+    end
+
+    def serialize
+      {
+        authority: @authority,
+        schemes: @schemes.serialize,
+        paths: @paths.serialize,
+        storage_path: storage_path.to_s,
+      }
     end
 
     def self.from_url(url)

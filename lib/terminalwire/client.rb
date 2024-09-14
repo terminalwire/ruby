@@ -165,6 +165,7 @@ module Terminalwire
       def connect
         @adapter.write(event: "initialization",
          protocol: { version: VERSION },
+         entitlement: @entitlement.serialize,
          program: {
            name: @program_name,
            arguments: @program_arguments
