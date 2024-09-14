@@ -197,7 +197,7 @@ module Terminalwire
         logger.info "ThorServer: Running #{@cli_class.inspect}"
         while message = adapter.recv
           case message
-          in { event: "initialize", protocol: { version: _ }, arguments:, program_name: }
+          in { event: "initialization", protocol:, program: { arguments: } }
             Terminalwire::Server::Session.new(adapter:) do |session|
               @cli_class.start(arguments, session:)
             end
@@ -218,7 +218,7 @@ module Terminalwire
         loop do
           message = @adapter.recv
           case message
-          in { event: "initialize", arguments:, program_name: }
+          in { event: "initialization", protocol:, program: { arguments: } }
             Session.new(adapter: @adapter) do |session|
               MyCLI.start(arguments, session: session)
             end

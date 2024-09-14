@@ -147,19 +147,22 @@ module Terminalwire
 
       include Logging
 
-      attr_reader :arguments, :program_name
-
       def initialize(adapter, arguments: ARGV, program_name: $0, entitlement:)
         @entitlement = entitlement
         @adapter = adapter
-        @arguments = arguments
+        @program_arguments = arguments
         @program_name = program_name
       end
 
       def connect
         @resources = ResourceMapper.new(adapter: @adapter, entitlement: @entitlement)
 
-        @adapter.write(event: "initialize", protocol: { version: VERSION }, arguments:, program_name:)
+        @adapter.write(event: "initialization",
+         protocol: { version: VERSION },
+         program: {
+           name: @program_name,
+           arguments: @program_arguments
+         })
 
         loop do
           handle @adapter.recv
