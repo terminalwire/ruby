@@ -54,16 +54,24 @@ module Terminalwire
       class File < Base
         File = ::File
 
+        # Ensure the default file mode is read/write for owner only. This ensures
+        # that if the server tries uploading an executable file, it won't be when it
+        # lands on the client.
+        #
+        # Eventually we'll move this into entitlements so the client can set maximum
+        # permissions for files and directories.
+        FILE_PERMISSIONS = 0o600 # rw-------
+
         def read(path:)
           File.read File.expand_path(path)
         end
 
         def write(path:, content:)
-          File.open(File.expand_path(path), "w") { |f| f.write(content) }
+          File.open(File.expand_path(path), "w", FILE_PERMISSIONS) { |f| f.write(content) }
         end
 
         def append(path:, content:)
-          File.open(File.expand_path(path), "a") { |f| f.write(content) }
+          File.open(File.expand_path(path), "a", FILE_PERMISSIONS) { |f| f.write(content) }
         end
 
         def mkdir(path:)
