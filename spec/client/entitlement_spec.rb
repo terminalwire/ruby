@@ -67,12 +67,12 @@ RSpec.describe Terminalwire::Client::Entitlement do
     end
 
     it 'initializes the paths and permits the domain directory' do
-      permitted_path = Pathname.new("~/.terminalwire/authorities/#{authority}/files/junk.txt")
+      permitted_path = Pathname.new("~/.terminalwire/authorities/#{authority}/storage/junk.txt")
       expect(entitlement.paths.permitted?(permitted_path)).to be_truthy
     end
 
     it 'initializes the paths and permits the domain directory' do
-      permitted_path = Pathname.new("~/.terminalwire/authorities/#{authority}/files")
+      permitted_path = Pathname.new("~/.terminalwire/authorities/#{authority}/storage")
       expect(entitlement.paths.permitted?(permitted_path)).to be_truthy
     end
 
