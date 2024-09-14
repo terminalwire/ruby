@@ -66,29 +66,6 @@ module Terminalwire
       end
     end
 
-    class ResourceMapper
-      include Logging
-
-      def initialize(adapter)
-        @resources = {}
-        @adapter = adapter
-      end
-
-      def connect(resource)
-        type = resource.name
-        logger.debug "Server: Requesting client to connect resource #{type}"
-        @adapter.write(event: "resource", action: "connect", name: type, type: type)
-        response = @adapter.recv
-        case response
-        in { status: "success" }
-          logger.debug "Server: Resource #{type} connected."
-          @resources[type] = resource
-        else
-          logger.debug "Server: Failed to connect resource #{type}."
-        end
-      end
-    end
-
     class Session
       extend Forwardable
 
@@ -100,12 +77,11 @@ module Terminalwire
       def initialize(adapter:)
         @adapter = adapter
 
-        @resources = ResourceMapper.new(@adapter)
-        @stdout = @resources.connect Server::Resource::STDOUT.new("stdout", @adapter)
-        @stdin = @resources.connect Server::Resource::STDIN.new("stdin", @adapter)
-        @stderr = @resources.connect Server::Resource::STDERR.new("stderr", @adapter)
-        @browser = @resources.connect Server::Resource::Browser.new("browser", @adapter)
-        @file = @resources.connect Server::Resource::File.new("file", @adapter)
+        @stdout = Server::Resource::STDOUT.new("stdout", @adapter)
+        @stdin = Server::Resource::STDIN.new("stdin", @adapter)
+        @stderr = Server::Resource::STDERR.new("stderr", @adapter)
+        @browser = Server::Resource::Browser.new("browser", @adapter)
+        @file = Server::Resource::File.new("file", @adapter)
 
         if block_given?
           begin

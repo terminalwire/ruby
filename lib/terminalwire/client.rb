@@ -5,10 +5,15 @@ module Terminalwire
         def initialize(*, entitlement:, **)
           super(*, **)
           @entitlement = entitlement
+          connect
         end
 
-        def dispatch(command, **data)
+        def dispatch(command:, **data)
           respond self.public_send(command, **data)
+        end
+
+        def deconstruct_keys(keys)
+          { event: "resource", action: "command", name: @name }
         end
       end
 
@@ -69,9 +74,9 @@ module Terminalwire
           File.exist? File.expand_path(path)
         end
 
-        def dispatch(command, path:, **data)
+        def dispatch(path:, **data)
           if @entitlement.paths.permitted? path
-            super(command, path: File.expand_path(path), **data)
+            super(path: File.expand_path(path), **data)
           else
             respond("Access to #{path} denied", status: "failure")
           end
@@ -79,9 +84,9 @@ module Terminalwire
       end
 
       class Browser < Base
-        def dispatch(command, url:, **data)
+        def dispatch(url:, **data)
           if @entitlement.schemes.permitted? url
-            super(command, url:, **data)
+            super(url:, **data)
           else
             respond("Access to #{url} denied", status: "failure")
           end
@@ -96,43 +101,34 @@ module Terminalwire
       end
     end
 
-    class ResourceMapper
-      def initialize(adapter:, entitlement:)
-        @adapter = adapter
-        @entitlement = entitlement
+    class ResourceHandler
+      include Enumerable
+
+      def initialize
         @resources = {}
+        yield self if block_given?
       end
 
-      def connect_resource(type)
-        klass = case type
-        when "stdout" then Client::Resource::STDOUT
-        when "stdin" then Client::Resource::STDIN
-        when "stderr" then Client::Resource::STDERR
-        when "browser" then Client::Resource::Browser
-        when "file" then Client::Resource::File
-        else
-          @adapter.write(event: "resource", action: "connect", status: "failure", name: type, type: type, message: "Unknown resource type")
-        end
-
-        resource = klass.new(type, @adapter, entitlement: @entitlement)
-        resource.connect
-        @resources[type] = resource
-        @adapter.write(event: "resource", action: "connect", status: "success", name: type, type: type)
+      def each(&block)
+        @resources.values.each(&block)
       end
 
-      def dispatch(name, action, data)
-        resource = @resources[name]
-        if resource
-          resource.dispatch(action, **data)
+      def add(resource)
+        # Detect if the resource is already registered and throw an error
+        if @resources.key?(resource.name)
+          raise "Resource #{resource.name} already registered"
         else
-          raise "Unknown resource: #{name}"
+          @resources[resource.name] = resource
         end
       end
+      alias :<< :add
 
-      def disconnect_resource(name)
-        resource = @resources.delete(name)
-        resource&.disconnect
-        @adapter.write(event: "resource", action: "disconnect", name: name)
+      def dispatch(name:,**message)
+        resource = @resources.fetch(name)
+        # Non-destructively remove the event and action keys
+        message.delete(:event)
+        message.delete(:action)
+        resource.dispatch(**message)
       end
     end
 
@@ -141,16 +137,24 @@ module Terminalwire
 
       include Logging
 
+      attr_reader :adapter, :entitlement, :resources
+
       def initialize(adapter, arguments: ARGV, program_name: $0, entitlement:)
         @entitlement = entitlement
         @adapter = adapter
         @program_arguments = arguments
         @program_name = program_name
+
+        @resources = ResourceHandler.new do |it|
+          it << Resource::STDOUT.new("stdout", @adapter, entitlement:)
+          it << Resource::STDIN.new("stdin", @adapter, entitlement:)
+          it << Resource::STDERR.new("stderr", @adapter, entitlement:)
+          it << Resource::Browser.new("browser", @adapter, entitlement:)
+          it << Resource::File.new("file", @adapter, entitlement:)
+        end
       end
 
       def connect
-        @resources = ResourceMapper.new(adapter: @adapter, entitlement: @entitlement)
-
         @adapter.write(event: "initialization",
          protocol: { version: VERSION },
          program: {
@@ -167,8 +171,8 @@ module Terminalwire
         case message
         in { event: "resource", action: "connect", name:, type: }
           @resources.connect_resource(type)
-        in { event: "resource", action: "command", name:, command:, **data }
-          @resources.dispatch(name, command, data)
+        in { event: "resource", action: "command", name: }
+          @resources.dispatch(**message)
         in { event: "resource", action: "disconnect", name: }
           @resources.disconnect_resource(name)
         in { event: "exit", status: }
