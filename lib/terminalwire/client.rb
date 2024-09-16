@@ -37,11 +37,23 @@ module Terminalwire
 
         def command(command, **parameters)
           begin
-            succeed response: self.public_send(command, **parameters)
+            if permit(command, **parameters)
+              succeed self.public_send(command, **parameters)
+            else
+              fail "Client denied #{command}",
+                denial: {
+                  command: command,
+                  parameters: parameters
+                }
+            end
           rescue => e
-            fail response: e.message
+            fail e.message
             raise
           end
+        end
+
+        def permit(...)
+          false
         end
       end
 
@@ -56,6 +68,10 @@ module Terminalwire
 
         def print_line(data:)
           @io.puts(data)
+        end
+
+        def permit(...)
+          true
         end
       end
 
@@ -76,6 +92,10 @@ module Terminalwire
 
         def read_password
           @io.getpass
+        end
+
+        def permit(...)
+          true
         end
       end
 
@@ -110,22 +130,14 @@ module Terminalwire
           File.exist? File.expand_path(path)
         end
 
-        def command(*, path:, **)
-          if @entitlement.paths.permitted? path
-            super(*, path: File.expand_path(path), **)
-          else
-            fail("Access to #{path} denied")
-          end
+        def permit(command, path:, **)
+          @entitlement.paths.permitted? path
         end
       end
 
       class Browser < Base
-        def command(*, url:, **)
-          if @entitlement.schemes.permitted? url
-            super(*, url:, **)
-          else
-            fail("Access to #{url} denied")
-          end
+        def permit(command, url:, **)
+          @entitlement.schemes.permitted? url
         end
 
         def launch(url:)

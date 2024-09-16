@@ -34,9 +34,13 @@ RSpec.describe Terminalwire::Client::Resource::File do
       before{ file.command("mkdir", path: "/usr/bin/danger") }
       it { is_expected.to include(
         event: "resource",
-        response: "Access to /usr/bin/danger denied",
+        response: "Client denied mkdir",
         status: "failure",
-        name: "file")
+        name: "file",
+        denial: {
+          command: "mkdir",
+          parameters: { path: "/usr/bin/danger" }
+        })
       }
     end
 
@@ -63,9 +67,13 @@ RSpec.describe Terminalwire::Client::Resource::Browser do
       before{ browser.command("launch", url: "file:///usr/bin/env") }
       it { is_expected.to include(
         event: "resource",
-        response: "Access to file:///usr/bin/env denied",
+        response: "Client denied launch",
         status: "failure",
-        name: "browser")
+        name: "browser",
+        denial: {
+          command: "launch",
+          parameters: { url: "file:///usr/bin/env" }
+        })
       }
     end
 

@@ -32,12 +32,12 @@ module Terminalwire
       def connect; end
       def disconnect; end
 
-      def fail(response)
-        respond(status: "failure", response:)
+      def fail(response, **data)
+        respond(status: "failure", response:, **data)
       end
 
-      def succeed(response)
-        respond(status: "success", response:)
+      def succeed(response, **data)
+        respond(status: "success", response:, **data)
       end
 
       def self.protocol_key
