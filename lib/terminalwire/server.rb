@@ -5,7 +5,13 @@ module Terminalwire
         private
 
         def command(command, **parameters)
-          @adapter.write(event: "resource", name: @name, action: "command", command: command, **parameters)
+          @adapter.write(
+            event: "resource",
+            name: @name,
+            action: "command",
+            command: command,
+            parameters: parameters
+          )
           @adapter.recv&.fetch(:response)
         end
       end

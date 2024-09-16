@@ -8,12 +8,8 @@ module Terminalwire
           connect
         end
 
-        def dispatch(command:, **data)
-          respond self.public_send(command, **data)
-        end
-
-        def deconstruct_keys(keys)
-          { event: "resource", action: "command", name: @name }
+        def dispatch(command, **parameters)
+          respond self.public_send(command, **parameters)
         end
       end
 
@@ -82,9 +78,9 @@ module Terminalwire
           File.exist? File.expand_path(path)
         end
 
-        def dispatch(path:, **data)
+        def dispatch(*, path:, **)
           if @entitlement.paths.permitted? path
-            super(path: File.expand_path(path), **data)
+            super(*, path: File.expand_path(path), **)
           else
             respond("Access to #{path} denied", status: "failure")
           end
@@ -92,9 +88,9 @@ module Terminalwire
       end
 
       class Browser < Base
-        def dispatch(url:, **data)
+        def dispatch(*, url:, **)
           if @entitlement.schemes.permitted? url
-            super(url:, **data)
+            super(*, url:, **)
           else
             respond("Access to #{url} denied", status: "failure")
           end
@@ -133,9 +129,9 @@ module Terminalwire
 
       def dispatch(**message)
         case message
-        in { event:, action:, name:, **data }
+        in { event:, action:, name:, command:, parameters: }
           resource = @resources.fetch(name)
-          resource.dispatch(**data)
+          resource.dispatch(command, **parameters)
         end
       end
     end
@@ -178,12 +174,8 @@ module Terminalwire
 
       def handle(message)
         case message
-        in { event: "resource", action: "connect", name:, type: }
-          @resources.connect_resource(type)
-        in { event: "resource", action: "command", name: }
+        in { event: "resource", action: "command", name:, parameters: }
           @resources.dispatch(**message)
-        in { event: "resource", action: "disconnect", name: }
-          @resources.disconnect_resource(name)
         in { event: "exit", status: }
           exit Integer(status)
         end
