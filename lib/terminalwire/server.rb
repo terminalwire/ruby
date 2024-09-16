@@ -66,7 +66,7 @@ module Terminalwire
       end
     end
 
-    class Session
+    class Context
       extend Forwardable
 
       attr_reader :stdout, :stdin, :stderr, :browser, :file, :storage_path
@@ -178,8 +178,8 @@ module Terminalwire
         while message = adapter.recv
           case message
           in { event: "initialization", protocol:, program: { arguments: }, entitlement: }
-            Terminalwire::Server::Session.new(adapter:, entitlement:) do |session|
-              @cli_class.start(arguments, session:)
+            Terminalwire::Server::Context.new(adapter:, entitlement:) do |context|
+              @cli_class.start(arguments, context:)
             end
           end
         end
@@ -199,8 +199,8 @@ module Terminalwire
           message = @adapter.recv
           case message
           in { event: "initialization", protocol:, program: { arguments: }, entitlement: }
-            Session.new(adapter: @adapter) do |session|
-              MyCLI.start(arguments, session:)
+            Context.new(adapter: @adapter) do |context|
+              MyCLI.start(arguments, context:)
             end
           end
         end
