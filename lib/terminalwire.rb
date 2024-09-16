@@ -65,7 +65,6 @@ module Terminalwire
       end
 
       def connect; end
-      def dispatch(action, data); end
       def disconnect; end
 
       def respond(response = nil, status: "success")
