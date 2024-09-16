@@ -1,3 +1,7 @@
+require 'fileutils'
+require 'launchy'
+require 'io/console'
+
 module Terminalwire
   module Client
     module Resource

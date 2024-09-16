@@ -1,3 +1,5 @@
+require 'thor'
+
 module Terminalwire
   module Thor
     class Shell < ::Thor::Shell::Basic
