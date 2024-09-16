@@ -8,7 +8,7 @@ module Terminalwire
           connect
         end
 
-        def dispatch(command, **parameters)
+        def command(command, **parameters)
           respond self.public_send(command, **parameters)
         end
       end
@@ -78,7 +78,7 @@ module Terminalwire
           File.exist? File.expand_path(path)
         end
 
-        def dispatch(*, path:, **)
+        def command(*, path:, **)
           if @entitlement.paths.permitted? path
             super(*, path: File.expand_path(path), **)
           else
@@ -88,7 +88,7 @@ module Terminalwire
       end
 
       class Browser < Base
-        def dispatch(*, url:, **)
+        def command(*, url:, **)
           if @entitlement.schemes.permitted? url
             super(*, url:, **)
           else
@@ -131,7 +131,7 @@ module Terminalwire
         case message
         in { event:, action:, name:, command:, parameters: }
           resource = @resources.fetch(name)
-          resource.dispatch(command, **parameters)
+          resource.command(command, **parameters)
         end
       end
     end

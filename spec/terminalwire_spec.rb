@@ -31,7 +31,7 @@ RSpec.describe Terminalwire::Client::Resource::File do
 
   describe "#mkdir" do
     context "unauthorized access" do
-      before{ file.dispatch(command: "mkdir", path: "/usr/bin/danger") }
+      before{ file.command("mkdir", path: "/usr/bin/danger") }
       it { is_expected.to include(
         event: "resource",
         response: "Access to /usr/bin/danger denied",
@@ -41,7 +41,7 @@ RSpec.describe Terminalwire::Client::Resource::File do
     end
 
     context "authorized access" do
-      before{ file.dispatch(command: "mkdir", path: "~/.terminalwire/authorities/test/storage/howdy") }
+      before{ file.command("mkdir", path: "~/.terminalwire/authorities/test/storage/howdy") }
       it { is_expected.to include(
         event: "resource",
         status: "success",
@@ -60,7 +60,7 @@ RSpec.describe Terminalwire::Client::Resource::Browser do
 
   describe "#launch" do
     context "unauthorized scheme" do
-      before{ browser.dispatch(command: "launch", url: "file:///usr/bin/env") }
+      before{ browser.command("launch", url: "file:///usr/bin/env") }
       it { is_expected.to include(
         event: "resource",
         response: "Access to file:///usr/bin/env denied",
@@ -72,7 +72,7 @@ RSpec.describe Terminalwire::Client::Resource::Browser do
     context "authorized scheme" do
       # Intercept the call that actually launches the browser window.
       before { expect(Launchy).to receive(:open).once }
-      before{ browser.dispatch(command: "launch", url: "http://example.com") }
+      before{ browser.command("launch", url: "http://example.com") }
       it { is_expected.to include(
         event: "resource",
         status: "success",
