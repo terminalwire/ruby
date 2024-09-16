@@ -60,6 +60,10 @@ module Terminalwire
           command("mkdir", path: path.to_s)
         end
 
+        def delete(path)
+          command("delete", path: path.to_s)
+        end
+
         def exist?(path)
           command("exist", path: path.to_s)
         end

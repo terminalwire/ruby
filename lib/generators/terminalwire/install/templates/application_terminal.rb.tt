@@ -15,7 +15,7 @@ class ApplicationTerminal < Thor
     email = gets
 
     print "Password: "
-    password = getch
+    password = getpass
 
     if self.current_user = User.authenticate(email, password)
       puts "Successfully logged in as #{user.email}."
@@ -24,9 +24,27 @@ class ApplicationTerminal < Thor
     end
   end
 
+  desc "whoami", "Displays current user information."
+  def whoami
+    if self.current_user
+      puts "Logged in as #{user.email}."
+    else
+      puts "Not logged in. Run `#{self.class.basename} login` to login."
+    end
+  end
+
+  desc "logout", "Logout of your account"
+  def logout
+    session.reset
+    puts "Successfully logged out."
+  end
+
   private
 
   def current_user=(user)
+    # The Session object is a hash-like object that encrypts and signs a hash that's
+    # stored on the client's file sytem. Conceptually, it's similar to Rails signed
+    # and encrypted client-side cookies.
     session["user_id"] = user.id
   end
 

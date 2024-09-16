@@ -126,6 +126,10 @@ module Terminalwire::Client::Resource
       FileUtils.mkdir_p(File.expand_path(path))
     end
 
+    def delete(path:)
+      File.delete(File.expand_path(path))
+    end
+
     def exist(path:)
       File.exist? File.expand_path(path)
     end

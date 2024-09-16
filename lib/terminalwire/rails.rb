@@ -4,13 +4,17 @@ require 'forwardable'
 
 module Terminalwire::Rails
   class Session
+    # JWT file name for the session file.
     FILENAME = "session.jwt"
+
+    # Empty dictionary the user can stash all their session data into.
+    EMPTY_SESSION = {}.freeze
 
     extend Forwardable
 
     # Delegate `dig` and `fetch` to the `read` method
     def_delegators :read,
-      :dig, :fetch
+      :dig, :fetch, :[]
 
     def initialize(context:, path: nil, secret_key: self.class.secret_key)
       @context = context
@@ -29,10 +33,18 @@ module Terminalwire::Rails
       raise "Invalid or tampered file: #{e.message}"
     end
 
+    def reset
+      @context.file.delete @config_file_path
+    end
+
     def edit
       config = read
       yield config
       write(config)
+    end
+
+    def []=(key, value)
+      edit { |config| config[key] = value }
     end
 
     def write(config)
@@ -43,9 +55,11 @@ module Terminalwire::Rails
     private
 
     def ensure_file
-      return if @context.file.exist? @config_file_path
+      return true if @context.file.exist? @config_file_path
+      # Create the path if it doesn't exist on the client.
       @context.file.mkdir(@path) unless @context.file.exist?(@path)
-      write({})  # Write an empty configuration on initialization
+      # Write an empty configuration on initialization
+      write(EMPTY_SESSION)
     end
 
     def self.secret_key
