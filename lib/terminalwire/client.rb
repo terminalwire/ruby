@@ -5,30 +5,7 @@ require 'io/console'
 module Terminalwire
   module Client
     module Resource
-      # TODO: Add a `dispatch` class method that permits the client to
-      # dispatch a command to a resource without having to instantiate it.
-      #
-      # TODO: Add a `permit` method that authorizes methods that can be called
-      # the client. How about we call it `connect def print()` since it means
-      # the client can connect to it?
-      #
       class Base < Terminalwire::Resource::Base
-        class Commander
-          def initialize(resource)
-            @resource = resource
-          end
-
-          def dispatch(command, **parameters)
-            @resource.command(command, **parameters)
-          end
-
-          def fail
-          end
-
-          def succeed
-          end
-        end
-
         def initialize(*, entitlement:, **)
           super(*, **)
           @entitlement = entitlement
