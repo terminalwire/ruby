@@ -37,10 +37,8 @@ RSpec.describe Terminalwire::Client::Resource::File do
         response: "Client denied mkdir",
         status: "failure",
         name: "file",
-        denial: {
-          command: "mkdir",
-          parameters: { path: "/usr/bin/danger" }
-        })
+        command: "mkdir",
+        parameters: { path: "/usr/bin/danger" })
       }
     end
 
@@ -70,10 +68,8 @@ RSpec.describe Terminalwire::Client::Resource::Browser do
         response: "Client denied launch",
         status: "failure",
         name: "browser",
-        denial: {
-          command: "launch",
-          parameters: { url: "file:///usr/bin/env" }
-        })
+        command: "launch",
+        parameters: { url: "file:///usr/bin/env" })
       }
     end
 

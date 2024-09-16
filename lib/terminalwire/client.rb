@@ -40,14 +40,10 @@ module Terminalwire
             if permit(command, **parameters)
               succeed self.public_send(command, **parameters)
             else
-              fail "Client denied #{command}",
-                denial: {
-                  command: command,
-                  parameters: parameters
-                }
+              fail "Client denied #{command}", command:, parameters:
             end
           rescue => e
-            fail e.message
+            fail e.message, command:, parameters:
             raise
           end
         end
