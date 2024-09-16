@@ -1,7 +1,30 @@
 module Terminalwire
   module Client
     module Resource
+      # TODO: Add a `dispatch` class method that permits the client to
+      # dispatch a command to a resource without having to instantiate it.
+      #
+      # TODO: Add a `permit` method that authorizes methods that can be called
+      # the client. How about we call it `connect def print()` since it means
+      # the client can connect to it?
+      #
       class Base < Terminalwire::Resource::Base
+        class Commander
+          def initialize(resource)
+            @resource = resource
+          end
+
+          def dispatch(command, **parameters)
+            @resource.command(command, **parameters)
+          end
+
+          def fail
+          end
+
+          def succeed
+          end
+        end
+
         def initialize(*, entitlement:, **)
           super(*, **)
           @entitlement = entitlement
@@ -9,7 +32,12 @@ module Terminalwire
         end
 
         def command(command, **parameters)
-          respond self.public_send(command, **parameters)
+          begin
+            succeed response: self.public_send(command, **parameters)
+          rescue => e
+            fail response: e.message
+            raise
+          end
         end
       end
 
@@ -82,7 +110,7 @@ module Terminalwire
           if @entitlement.paths.permitted? path
             super(*, path: File.expand_path(path), **)
           else
-            respond("Access to #{path} denied", status: "failure")
+            fail("Access to #{path} denied")
           end
         end
       end
@@ -92,7 +120,7 @@ module Terminalwire
           if @entitlement.schemes.permitted? url
             super(*, url:, **)
           else
-            respond("Access to #{url} denied", status: "failure")
+            fail("Access to #{url} denied")
           end
         end
 

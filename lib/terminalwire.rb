@@ -67,16 +67,22 @@ module Terminalwire
       def connect; end
       def disconnect; end
 
-      def respond(response = nil, status: "success")
-        adapter.write(event: "resource", name: @name, status:, response:)
+      def fail(response)
+        respond(status: "failure", response:)
       end
 
-      def fail(status: "fail", response:)
-        adapter.write(event: "resource", name: @name, status:, response:)
+      def succeed(response)
+        respond(status: "success", response:)
       end
 
       def self.protocol_key
         name.split("::").last.downcase
+      end
+
+      private
+
+      def respond(**response)
+        adapter.write(event: "resource", name: @name, **response)
       end
     end
   end
