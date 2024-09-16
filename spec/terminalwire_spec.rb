@@ -38,7 +38,9 @@ RSpec.describe Terminalwire::Client::Resource::File do
         status: "failure",
         name: "file",
         command: "mkdir",
-        parameters: { path: "/usr/bin/danger" })
+        parameters: {
+          path: "/usr/bin/danger"
+        })
       }
     end
 
@@ -69,7 +71,9 @@ RSpec.describe Terminalwire::Client::Resource::Browser do
         status: "failure",
         name: "browser",
         command: "launch",
-        parameters: { url: "file:///usr/bin/env" })
+        parameters: {
+          url: "file:///usr/bin/env"
+        })
       }
     end
 
