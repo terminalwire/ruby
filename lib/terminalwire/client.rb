@@ -77,7 +77,10 @@ module Terminalwire
       url = URI(url)
 
       Async do |task|
-        endpoint = Async::HTTP::Endpoint.parse(url)
+        endpoint = Async::HTTP::Endpoint.parse(
+          url,
+          alpn_protocols: Async::HTTP::Protocol::HTTP11.names
+        )
 
         Async::WebSocket::Client.connect(endpoint) do |adapter|
           transport = Terminalwire::Transport::WebSocket.new(adapter)
