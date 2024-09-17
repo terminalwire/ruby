@@ -1,5 +1,5 @@
 module Terminalwire::Client
-  class Entitlement
+  module Entitlement
     class Paths
       include Enumerable
 
@@ -55,53 +55,88 @@ module Terminalwire::Client
       end
     end
 
-    attr_reader :paths, :authority, :schemes
+    class Policy
+      attr_reader :paths, :authority, :schemes
 
-    def initialize(authority:)
-      @authority = authority
-      @paths = Paths.new
+      ROOT_PATH = "~/.terminalwire".freeze
 
-      # Permit the domain directory. This is necessary for basic operation of the client.
-      @paths.permit storage_path
-      @paths.permit storage_pattern
+      def initialize(authority:)
+        @authority = authority
+        @paths = Paths.new
 
-      @schemes = Schemes.new
-      # Permit http & https by default.
-      @schemes.permit "http"
-      @schemes.permit "https"
+        # Permit the domain directory. This is necessary for basic operation of the client.
+        @paths.permit storage_path
+        @paths.permit storage_pattern
+
+        @schemes = Schemes.new
+        # Permit http & https by default.
+        @schemes.permit "http"
+        @schemes.permit "https"
+      end
+
+      def root_path
+        Pathname.new(ROOT_PATH)
+      end
+
+      def authority_path
+        root_path.join("authorities/#{authority}")
+      end
+
+      def storage_path
+        authority_path.join("storage")
+      end
+
+      def storage_pattern
+        storage_path.join("**/*")
+      end
+
+      def serialize
+        {
+          authority: @authority,
+          schemes: @schemes.serialize,
+          paths: @paths.serialize,
+          storage_path: storage_path.to_s,
+        }
+      end
     end
 
-    def domain_path
-      Pathname.new("~/.terminalwire/authorities/#{@authority}").expand_path
-    end
+    class RootPolicy < Policy
+      HOST = "terminalwire.com".freeze
 
-    def storage_path
-      domain_path.join("storage")
-    end
+      def initialize(*, **, &)
+        # Make damn sure the authority is set to Terminalwire.
+        super(*, authority: HOST, **, &)
 
-    def storage_pattern
-      storage_path.join("**/*")
-    end
+        # Now setup special permitted paths.
+        @paths.permit root_pattern
+      end
 
-    def serialize
-      {
-        authority: @authority,
-        schemes: @schemes.serialize,
-        paths: @paths.serialize,
-        storage_path: storage_path.to_s,
-      }
+      # Grant access to the `~/.terminalwire/**/*` path so users can install
+      # terminalwire apps via `terminalwire install svbtle`, etc.
+      def root_pattern
+        root_path.join("**/*")
+      end
     end
 
     def self.from_url(url)
+      url = URI(url)
+
+      case url.host
+      when RootPolicy::HOST
+        RootPolicy.new
+      else
+        Policy.new authority: url_authority(url)
+      end
+    end
+
+    def self.url_authority(url)
       # I had to lift this from URI::HTTP because `ws://` doesn't
       # have an authority method.
-      authority = if url.port == url.default_port
+      if url.port == url.default_port
         url.host
       else
         "#{url.host}:#{url.port}"
       end
-
-      new authority:
     end
   end
 end

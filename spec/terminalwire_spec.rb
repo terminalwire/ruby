@@ -24,7 +24,7 @@ end
 
 RSpec.describe Terminalwire::Client::Resource::File do
   let(:adapter) { TestAdapter.new }
-  let(:entitlement) { Terminalwire::Client::Entitlement.new(authority: "test") }
+  let(:entitlement) { Terminalwire::Client::Entitlement::Policy.new(authority: "test") }
   let(:file) { Terminalwire::Client::Resource::File.new("file", adapter, entitlement:) }
   let(:response) { adapter.response }
   subject { response }
@@ -57,7 +57,7 @@ end
 
 RSpec.describe Terminalwire::Client::Resource::Browser do
   let(:adapter) { TestAdapter.new }
-  let(:entitlement) { Terminalwire::Client::Entitlement.new(authority: "test") }
+  let(:entitlement) { Terminalwire::Client::Entitlement::Policy.new(authority: "test") }
   let(:browser) { Terminalwire::Client::Resource::Browser.new("browser", adapter, entitlement:) }
   let(:response) { adapter.response }
   subject { response }
