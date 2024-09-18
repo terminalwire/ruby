@@ -73,7 +73,7 @@ module Terminalwire
       end
     end
 
-    def self.websocket(url:, arguments: ARGV)
+    def self.websocket(url:, arguments: ARGV, entitlement: nil)
       url = URI(url)
 
       Async do |task|
@@ -85,7 +85,7 @@ module Terminalwire
         Async::WebSocket::Client.connect(endpoint) do |adapter|
           transport = Terminalwire::Transport::WebSocket.new(adapter)
           adapter = Terminalwire::Adapter.new(transport)
-          entitlement = Entitlement.from_url(url)
+          entitlement ||= Entitlement.from_url(url)
           Terminalwire::Client::Handler.new(adapter, arguments:, entitlement:).connect
         end
       end
