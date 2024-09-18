@@ -108,6 +108,7 @@ module Terminalwire::Client
         super(*, authority: HOST, **, &)
 
         # Now setup special permitted paths.
+        @paths.permit root_path
         @paths.permit root_pattern
       end
 
