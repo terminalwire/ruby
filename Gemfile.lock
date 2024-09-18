@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    terminalwire (0.1.5)
+    terminalwire (0.1.6)
       async-websocket (~> 0.25)
       jwt (~> 2.0)
       launchy (~> 3.0)
