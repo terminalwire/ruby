@@ -1,2 +1,9 @@
-#!/usr/bin/env terminalwire-exec
-url: "wss://terminalwire.com/terminal"
+#!/usr/bin/env ruby
+require_relative "../lib/terminalwire.rb"
+
+begin
+  Terminalwire::Client.websocket(url: "wss://terminalwire.com/terminal")
+rescue Terminalwire::Error => e
+  puts e.message
+  exit 1
+end

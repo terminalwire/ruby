@@ -1,3 +1,5 @@
+require "pathname"
+
 module Terminalwire::Client
   module Entitlement
     class Paths
