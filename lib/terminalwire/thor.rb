@@ -36,6 +36,10 @@ module Terminalwire
             :puts, :print
           def_delegators :stdin,
             :gets
+
+          # Feels more naturual to call `client.files` etc. from
+          # the serve since it's more apparent that it's a client.
+          alias :client :context
         end
       end
     end
