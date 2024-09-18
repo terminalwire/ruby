@@ -9,7 +9,7 @@ module Terminalwire::Client
     def initialize(path:, arguments:)
       @arguments = arguments
       @path = Pathname.new(path)
-      @configuration = YAML.load_file(@path)
+      @configuration = YAML.safe_load_file(@path)
       @url = URI(@configuration.fetch("url"))
     rescue Errno::ENOENT => e
       raise Terminalwire::Error, "File not found: #{@path}"
