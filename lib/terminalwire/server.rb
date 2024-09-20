@@ -1,3 +1,5 @@
+require "thor"
+
 module Terminalwire
   module Server
     module Resource
