@@ -69,6 +69,32 @@ RSpec.describe Terminalwire::Client::Entitlement::Paths::Permit do
       end
     end
   end
+  describe "boundaries" do
+    context "mode: -1" do
+      let(:permit) { described_class.new(path:, mode: -1) }
+      it "does not permit 0o005" do
+        expect{permit.permitted_mode?(0o005)}.to raise_error(ArgumentError)
+      end
+    end
+    context "mode: 0o1000" do
+      let(:permit) { described_class.new(path:, mode: 0o1000) }
+      it "does not permit 0o1000" do
+        expect{permit.permitted_mode?(0o005)}.to raise_error(ArgumentError)
+      end
+    end
+    context "mode: 0o777" do
+      let(:permit) { described_class.new(path:, mode: 0o777) }
+      it "permits 0o777" do
+        expect(permit.permitted_mode?(0o777)).to be_truthy
+      end
+    end
+    context "mode: 0o000" do
+      let(:permit) { described_class.new(path:, mode: 0o000) }
+      it "permits 0o000" do
+        expect(permit.permitted_mode?(0o000)).to be_truthy
+      end
+    end
+  end
 end
 
 RSpec.describe Terminalwire::Client::Entitlement::Paths do

@@ -18,9 +18,12 @@ module Terminalwire::Client
         GROUP_PERMISSIONS = 0o070 # ---rwx---
         OTHERS_PERMISSIONS = 0o007 # ------rwx
 
+        # We'll validate that modes are within this range.
+        MODE_RANGE = 0o000..0o777
+
         def initialize(path:, mode: MODE)
           @path = Pathname.new(path).expand_path
-          @mode = Integer(mode)
+          @mode = convert(mode)
         end
 
         def permitted_path?(path)
@@ -29,9 +32,9 @@ module Terminalwire::Client
           File.fnmatch @path.to_s, File.expand_path(path), File::FNM_PATHNAME
         end
 
-        def permitted_mode?(mode)
+        def permitted_mode?(value)
           # Ensure the mode is at least as permissive as the permitted mode.
-          mode = Integer(mode)
+          mode = convert(value)
 
           # Extract permission bits for owner, group, and others
           owner_bits = mode & OWNER_PERMISSIONS
@@ -53,6 +56,17 @@ module Terminalwire::Client
             location: @path.to_s,
             mode: @mode
           }
+        end
+
+        protected
+        def convert(value)
+          mode = Integer(value)
+          raise ArgumentError, "The mode #{format_octet value} must be an octet value between #{format_octet MODE_RANGE.first} and #{format_octet MODE_RANGE.last}" unless MODE_RANGE.cover?(mode)
+          mode
+        end
+
+        def format_octet(value)
+          format("0o%03o", value)
         end
       end
 
