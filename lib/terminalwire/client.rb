@@ -53,14 +53,14 @@ module Terminalwire
     def self.tcp(...)
       socket = TCPSocket.new(...)
       transport = Terminalwire::Transport::Socket.new(socket)
-      adapter = Terminalwire::Adapter.new(transport)
+      adapter = Terminalwire::Adapter::Socket.new(transport)
       Terminalwire::Client::Handler.new(adapter)
     end
 
     def self.socket(...)
       socket = UNIXSocket.new(...)
       transport = Terminalwire::Transport::Socket.new(socket)
-      adapter = Terminalwire::Adapter.new(transport)
+      adapter = Terminalwire::Adapter::Socket.new(transport)
       Terminalwire::Client::Handler.new(adapter)
     end
 

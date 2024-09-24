@@ -1,8 +1,9 @@
 require 'msgpack'
 
-module Terminalwire
-  class Adapter
-    include Logging
+module Terminalwire::Adapter
+  # Works with TCP, Unix, WebSocket, and other socket-like abstractions.
+  class Socket
+    include Terminalwire::Logging
 
     attr_reader :transport
 
@@ -27,6 +28,26 @@ module Terminalwire
 
     def close
       @transport.close
+    end
+  end
+
+  # This is a test adapter that can be used for testing purposes.
+  class Test
+    attr_reader :responses
+
+    def initialize(responses = [])
+      @responses = responses
+    end
+
+    def write(**data)
+      @responses << data
+    end
+
+    def response
+      @responses.pop
+    end
+
+    def close
     end
   end
 end
