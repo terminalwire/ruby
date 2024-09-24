@@ -114,16 +114,12 @@ module Terminalwire::Client::Resource
       File.read File.expand_path(path)
     end
 
-    def write(path:, content:)
+    def write(path:, content: nil)
       File.open(File.expand_path(path), "w", FILE_PERMISSIONS) { |f| f.write(content) }
     end
 
     def append(path:, content:)
       File.open(File.expand_path(path), "a", FILE_PERMISSIONS) { |f| f.write(content) }
-    end
-
-    def mkdir(path:)
-      FileUtils.mkdir_p(File.expand_path(path))
     end
 
     def delete(path:)
@@ -132,6 +128,41 @@ module Terminalwire::Client::Resource
 
     def exist(path:)
       File.exist? File.expand_path(path)
+    end
+
+    def mode(path:, mode:)
+      File.chmod(mode, File.expand_path(path))
+    end
+
+    def permit(*, **)
+      case [*, **]
+      in command, { path:, mode: }
+        @entitlement.paths.permitted?(path) #and @entitlement.modes.permitted?(mode)
+      in command, { path: }
+        @entitlement.paths.permitted? path
+      end
+    end
+  end
+
+  class Directory < Base
+    File = ::File
+
+    def list(path:)
+      Dir.glob(File.expand_path(path))
+    end
+
+    def create(path:)
+      Dir.mkdir(File.expand_path(path))
+    rescue Errno::EEXIST
+      # Do nothing
+    end
+
+    def exist(path:)
+      Dir.exist? File.expand_path(path)
+    end
+
+    def delete(path:)
+      Dir.delete(File.expand_path(path))
     end
 
     def permit(command, path:, **)

@@ -13,7 +13,7 @@ module Terminalwire::Client
         @permitted.each(&)
       end
 
-      def permit(path)
+      def permit(path, mode: nil)
         @permitted.append Pathname.new(path).expand_path
       end
 
@@ -112,12 +112,25 @@ module Terminalwire::Client
         # Now setup special permitted paths.
         @paths.permit root_path
         @paths.permit root_pattern
+
+        # Permit terminalwire to grant execute permissions to the binary stubs.
+        @paths.permit binary_pattern, mode: 0755
       end
 
       # Grant access to the `~/.terminalwire/**/*` path so users can install
       # terminalwire apps via `terminalwire install svbtle`, etc.
       def root_pattern
         root_path.join("**/*")
+      end
+
+      # Path where the terminalwire binary stubs are stored.
+      def binary_path
+        root_path.join("bin")
+      end
+
+      # Pattern for the binary path.
+      def binary_pattern
+        binary_path.join("*")
       end
     end
 

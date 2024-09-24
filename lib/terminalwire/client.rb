@@ -23,6 +23,7 @@ module Terminalwire
           it << Resource::STDERR.new("stderr", @adapter, entitlement:)
           it << Resource::Browser.new("browser", @adapter, entitlement:)
           it << Resource::File.new("file", @adapter, entitlement:)
+          it << Resource::Directory.new("directory", @adapter, entitlement:)
         end
       end
 
@@ -84,7 +85,7 @@ module Terminalwire
 
         Async::WebSocket::Client.connect(endpoint) do |adapter|
           transport = Terminalwire::Transport::WebSocket.new(adapter)
-          adapter = Terminalwire::Adapter.new(transport)
+          adapter = Terminalwire::Adapter::Socket.new(transport)
           entitlement ||= Entitlement.from_url(url)
           Terminalwire::Client::Handler.new(adapter, arguments:, entitlement:).connect
         end
