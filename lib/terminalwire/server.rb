@@ -46,7 +46,7 @@ module Terminalwire
 
       def call(env)
         Async::WebSocket::Adapters::Rack.open(env, protocols: ['ws']) do |connection|
-          run(Adapter.new(Terminalwire::Transport::WebSocket.new(connection)))
+          run(Adapter::Socket.new(Terminalwire::Transport::WebSocket.new(connection)))
         end or [200, { "Content-Type" => "text/plain" }, ["Connect via WebSockets"]]
       end
 
