@@ -13,9 +13,14 @@ module Terminalwire::Client
         # permissions for files and directories.
         MODE = 0o600 # rw-------
 
+        # Constants for permission bit masks
+        OWNER_PERMISSIONS = 0o700 # rwx------
+        GROUP_PERMISSIONS = 0o070 # ---rwx---
+        OTHERS_PERMISSIONS = 0o007 # ------rwx
+
         def initialize(path:, mode: MODE)
           @path = Pathname.new(path).expand_path
-          @mode = mode
+          @mode = Integer(mode)
         end
 
         def permitted_path?(path)
@@ -25,7 +30,22 @@ module Terminalwire::Client
         end
 
         def permitted_mode?(mode)
-          false
+          # Ensure the mode is at least as permissive as the permitted mode.
+          mode = Integer(mode)
+
+          # Extract permission bits for owner, group, and others
+          owner_bits = mode & OWNER_PERMISSIONS
+          group_bits = mode & GROUP_PERMISSIONS
+          others_bits = mode & OTHERS_PERMISSIONS
+
+          # Ensure that the mode doesn't grant more permissions than @mode in any class (owner, group, others)
+          (owner_bits <= @mode & OWNER_PERMISSIONS) &&
+          (group_bits <= @mode & GROUP_PERMISSIONS) &&
+          (others_bits <= @mode & OTHERS_PERMISSIONS)
+        end
+
+        def permitted?(path:, mode: @mode)
+          permitted_path?(path) && permitted_mode?(mode)
         end
 
         def serialize

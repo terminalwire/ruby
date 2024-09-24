@@ -3,6 +3,74 @@ require "pathname"
 require "uri"
 require "rspec"
 
+RSpec.describe Terminalwire::Client::Entitlement::Paths::Permit do
+  let(:permit) { described_class.new(path:) }
+  let(:path) { "/some/path" }
+  describe "#permitted_path?" do
+    it "permits /some/path" do
+      expect(permit.permitted_path?("/some/path")).to be_truthy
+    end
+    it "does not permit /some/path/far/far/away" do
+      expect(permit.permitted_path?("/some/path/far/far/away")).to be_falsey
+    end
+    it "does not permit /another/path" do
+      expect(permit.permitted_path?("/another/path")).to be_falsey
+    end
+  end
+  describe "#permitted_mode?" do
+    context "default MODE = '0o600'" do
+      it "permits 0o600" do
+        expect(permit.permitted_mode?(0o600)).to be_truthy
+      end
+      it "permits 0o500" do
+        expect(permit.permitted_mode?(0o500)).to be_truthy
+      end
+      it "does not permit 0o700" do
+        expect(permit.permitted_mode?(0o700)).to be_falsey
+      end
+      it "does not permit 0o601" do
+        expect(permit.permitted_mode?(0o601)).to be_falsey
+      end
+      it "does not permit 0o610" do
+        expect(permit.permitted_mode?(0o610)).to be_falsey
+      end
+      it "does not permit 0o501" do
+        expect(permit.permitted_mode?(0o501)).to be_falsey
+      end
+    end
+    context "mode: 0o700" do
+      let(:permit) { described_class.new(path:, mode: 0o700) }
+      it "permits 0o700" do
+        expect(permit.permitted_mode?(0o700)).to be_truthy
+      end
+      it "permits 0o600" do
+        expect(permit.permitted_mode?(0o600)).to be_truthy
+      end
+      it "does not permit 0o701" do
+        expect(permit.permitted_mode?(0o701)).to be_falsey
+      end
+    end
+    context "mode: 0o005" do
+      let(:permit) { described_class.new(path:, mode: 0o005) }
+      it "permits 0o005" do
+        expect(permit.permitted_mode?(0o005)).to be_truthy
+      end
+      it "permits 0o003" do
+        expect(permit.permitted_mode?(0o003)).to be_truthy
+      end
+      it "does not permit 0o007" do
+        expect(permit.permitted_mode?(0o007)).to be_falsey
+      end
+      it "does not permit 0o600" do
+        expect(permit.permitted_mode?(0o600)).to be_falsey
+      end
+      it "does not permit 0o105" do
+        expect(permit.permitted_mode?(0o105)).to be_falsey
+      end
+    end
+  end
+end
+
 RSpec.describe Terminalwire::Client::Entitlement::Paths do
   let(:paths) { described_class.new }
 
