@@ -84,8 +84,13 @@ module Terminalwire::Client
         @permitted.append Permit.new(path:, **)
       end
 
-      def permitted?(path)
-        find { |permit| permit.permitted_path?(path) }
+      def permitted?(path, mode: nil)
+        permit = find { |permit| permit.permitted_path?(path) }
+        if mode
+          permit.permitted_mode?(mode) ? permit : false
+        else
+          permit
+        end
       end
 
       def serialize

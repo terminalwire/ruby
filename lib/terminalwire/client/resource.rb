@@ -106,12 +106,12 @@ module Terminalwire::Client::Resource
       File.read File.expand_path(path)
     end
 
-    def write(path:, content: nil)
-      File.open(File.expand_path(path), "w", Terminalwire::Client::Entitlement::Paths::Permit::MODE) { |f| f.write(content) }
+    def write(path:, content:, mode: nil)
+      File.open(File.expand_path(path), "w", mode) { |f| f.write(content) }
     end
 
-    def append(path:, content:)
-      File.open(File.expand_path(path), "a", Terminalwire::Client::Entitlement::Paths::Permit::MODE) { |f| f.write(content) }
+    def append(path:, content:, mode: nil)
+      File.open(File.expand_path(path), "a", mode) { |f| f.write(content) }
     end
 
     def delete(path:)
@@ -126,13 +126,9 @@ module Terminalwire::Client::Resource
       File.chmod(mode, File.expand_path(path))
     end
 
-    def permit(*, **)
-      case [*, **]
-      in command, { path:, mode: }
-        @entitlement.paths.permitted?(path) #and @entitlement.modes.permitted?(mode)
-      in command, { path: }
-        @entitlement.paths.permitted? path
-      end
+    protected
+    def permit(command, path:, mode: nil, ** )
+      @entitlement.paths.permitted? path, mode:
     end
   end
 

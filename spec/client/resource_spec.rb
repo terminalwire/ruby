@@ -9,7 +9,7 @@ RSpec.describe Terminalwire::Client::Resource::File do
   after { FileUtils.rm_rf(entitlement.authority_path) }
 
   describe "#write" do
-    context "unauthorized access" do
+    context "unauthorized path" do
       before{ file.command("write", path: "/usr/bin/howdy.txt") }
       it { is_expected.to include(
         event: "resource",
@@ -23,13 +23,40 @@ RSpec.describe Terminalwire::Client::Resource::File do
       }
     end
 
-    context "authorized access" do
-      before{ file.command("write", path: "~/.terminalwire/authorities/test/storage/howdy.txt") }
-      it { is_expected.to include(
-        event: "resource",
-        status: "success",
-        name: "file")
-      }
+    context "authorized path" do
+      describe "authorized implicit mode" do
+        before{ file.command("write", path: "~/.terminalwire/authorities/test/storage/howdy.txt", content: "") }
+        it { is_expected.to include(
+          event: "resource",
+          status: "success",
+          name: "file")
+        }
+      end
+
+      describe "authorized explicit mode" do
+        before{ file.command("write", path: "~/.terminalwire/authorities/test/storage/howdy.txt", content: "", mode: 0o500) }
+        it { is_expected.to include(
+          event: "resource",
+          status: "success",
+          name: "file")
+        }
+      end
+
+      describe "unauthorized explicit mode" do
+        before{ file.command("write", path: "~/.terminalwire/authorities/test/storage/howdy.txt", content: "", mode: 0o700) }
+        it { is_expected.to include(
+          event: "resource",
+          response: "Client denied write",
+          status: "failure",
+          name: "file",
+          command: "write",
+          parameters: {
+            path: "~/.terminalwire/authorities/test/storage/howdy.txt",
+            mode: 0o700,
+            content: ""
+          })
+        }
+      end
     end
   end
 end
