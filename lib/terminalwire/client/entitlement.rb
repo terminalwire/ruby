@@ -3,6 +3,39 @@ require "pathname"
 module Terminalwire::Client
   module Entitlement
     class Paths
+      class Permit
+        attr_reader :path, :mode
+        # Ensure the default file mode is read/write for owner only. This ensures
+        # that if the server tries uploading an executable file, it won't be when it
+        # lands on the client.
+        #
+        # Eventually we'll move this into entitlements so the client can set maximum
+        # permissions for files and directories.
+        MODE = 0o600 # rw-------
+
+        def initialize(path:, mode: MODE)
+          @path = Pathname.new(path).expand_path
+          @mode = mode
+        end
+
+        def permitted_path?(path)
+          # This MUST be done via File.fnmatch because Pathname#fnmatch does not work. If you
+          # try changing this 🚨 YOU MAY CIRCUMVENT THE SECURITY MEASURES IN PLACE. 🚨
+          File.fnmatch @path.to_s, File.expand_path(path), File::FNM_PATHNAME
+        end
+
+        def permitted_mode?(mode)
+          false
+        end
+
+        def serialize
+          {
+            location: @path.to_s,
+            mode: @mode
+          }
+        end
+      end
+
       include Enumerable
 
       def initialize
@@ -13,23 +46,16 @@ module Terminalwire::Client
         @permitted.each(&)
       end
 
-      def permit(path, mode: nil)
-        @permitted.append Pathname.new(path).expand_path
+      def permit(path, **)
+        @permitted.append Permit.new(path:, **)
       end
 
       def permitted?(path)
-        @permitted.find { |pattern| matches?(permitted: pattern, path:) }
+        find { |permit| permit.permitted_path?(path) }
       end
 
       def serialize
-        @permitted.to_a.map(&:to_s)
-      end
-
-      private
-      def matches?(permitted:, path:)
-        # This MUST be done via File.fnmatch because Pathname#fnmatch does not work. If you
-        # try changing this 🚨 YOU MAY CIRCUMVENT THE SECURITY MEASURES IN PLACE. 🚨
-        File.fnmatch permitted.to_s, File.expand_path(path), File::FNM_PATHNAME
+        map(&:serialize)
       end
     end
 

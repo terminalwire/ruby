@@ -12,7 +12,7 @@ RSpec.describe Terminalwire::Client::Entitlement::Paths do
       expanded_path = Pathname.new(path).expand_path
 
       paths.permit(path)
-      expect(paths).to include(expanded_path)
+      expect(paths.map(&:path)).to include(expanded_path)
     end
   end
 
