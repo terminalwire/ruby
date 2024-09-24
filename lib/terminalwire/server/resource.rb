@@ -64,10 +64,10 @@ module Terminalwire::Server
         command("exist", path: path.to_s)
       end
 
-      def mode(path, mode)
-        command("mode", path: path.to_s, mode: mode)
+      def change_mode(path, mode)
+        command("change_mode", path: path.to_s, mode: mode)
       end
-      alias :chmod :mode
+      alias :chmod :change_mode
     end
 
     class Directory < Base

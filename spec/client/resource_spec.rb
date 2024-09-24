@@ -6,10 +6,11 @@ RSpec.describe Terminalwire::Client::Resource::File do
   let(:file) { Terminalwire::Client::Resource::File.new("file", adapter, entitlement:) }
   let(:response) { adapter.response }
   subject { response }
-  after { FileUtils.rm_rf(entitlement.authority_path) }
+  before { FileUtils.mkdir_p(entitlement.storage_path.expand_path) }
+  after { FileUtils.rm_rf(entitlement.storage_path.expand_path) }
 
   describe "#write" do
-    context "unauthorized path" do
+    context "unpermitted path" do
       before{ file.command("write", path: "/usr/bin/howdy.txt") }
       it { is_expected.to include(
         event: "resource",
@@ -23,8 +24,8 @@ RSpec.describe Terminalwire::Client::Resource::File do
       }
     end
 
-    context "authorized path" do
-      describe "authorized implicit mode" do
+    context "permitted path" do
+      describe "permitted implicit mode" do
         before{ file.command("write", path: "~/.terminalwire/authorities/test/storage/howdy.txt", content: "") }
         it { is_expected.to include(
           event: "resource",
@@ -33,7 +34,7 @@ RSpec.describe Terminalwire::Client::Resource::File do
         }
       end
 
-      describe "authorized explicit mode" do
+      describe "permitted explicit mode" do
         before{ file.command("write", path: "~/.terminalwire/authorities/test/storage/howdy.txt", content: "", mode: 0o500) }
         it { is_expected.to include(
           event: "resource",
@@ -42,7 +43,7 @@ RSpec.describe Terminalwire::Client::Resource::File do
         }
       end
 
-      describe "unauthorized explicit mode" do
+      describe "unpermitted explicit mode" do
         before{ file.command("write", path: "~/.terminalwire/authorities/test/storage/howdy.txt", content: "", mode: 0o700) }
         it { is_expected.to include(
           event: "resource",
@@ -59,6 +60,37 @@ RSpec.describe Terminalwire::Client::Resource::File do
       end
     end
   end
+
+  describe "#change_mode" do
+    let(:path) { "~/.terminalwire/authorities/test/storage/howdy.txt" }
+    before { file.command("write", path:, content: "") }
+    before { file.command("change_mode", path:, mode:) }
+
+    context "permitted_mode" do
+      let(:mode) { 0o500 }
+      it { is_expected.to include(
+        event: "resource",
+        status: "success",
+        name: "file")
+      }
+    end
+    context "unpermitted mode" do
+      let(:mode) { 0o700 }
+      it { is_expected.to include(
+            command: "change_mode",
+            event: "resource",
+            name: "file",
+            status: "success",
+            parameters: {
+              mode: 448,
+              path:"~/.terminalwire/authorities/test/storage/howdy.txt"
+            },
+            response: "Client denied change_mode",
+            status: "failure"
+          )
+      }
+    end
+  end
 end
 
 RSpec.describe Terminalwire::Client::Resource::Directory do
@@ -66,10 +98,12 @@ RSpec.describe Terminalwire::Client::Resource::Directory do
   let(:entitlement) { Terminalwire::Client::Entitlement::Policy.new(authority: "test") }
   let(:directory) { Terminalwire::Client::Resource::Directory.new("directory", adapter, entitlement:) }
   let(:response) { adapter.response }
+  before { FileUtils.mkdir_p(entitlement.storage_path.expand_path) }
+  after { FileUtils.rm_rf(entitlement.storage_path.expand_path) }
   subject { response }
 
   describe "#create" do
-    context "unauthorized access" do
+    context "unpermitted access" do
       before{ directory.command("create", path: "/usr/bin/howdy") }
       it { is_expected.to include(
         event: "resource",
@@ -83,7 +117,7 @@ RSpec.describe Terminalwire::Client::Resource::Directory do
       }
     end
 
-    context "authorized access" do
+    context "permitted access" do
       before{ directory.command("create", path: "~/.terminalwire/authorities/test/storage/howdy") }
       it { is_expected.to include(
         event: "resource",
@@ -102,7 +136,7 @@ RSpec.describe Terminalwire::Client::Resource::Browser do
   subject { response }
 
   describe "#launch" do
-    context "unauthorized scheme" do
+    context "unpermitted scheme" do
       before{ browser.command("launch", url: "file:///usr/bin/env") }
       it { is_expected.to include(
         event: "resource",
@@ -116,7 +150,7 @@ RSpec.describe Terminalwire::Client::Resource::Browser do
       }
     end
 
-    context "authorized scheme" do
+    context "permitted scheme" do
       # Intercept the call that actually launches the browser window.
       before { expect(Launchy).to receive(:open).once }
       before{ browser.command("launch", url: "http://example.com") }

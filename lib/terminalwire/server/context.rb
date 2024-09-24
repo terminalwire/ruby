@@ -1,3 +1,5 @@
+require "fileutils"
+
 module Terminalwire::Server
   class Context
     extend Forwardable
@@ -10,7 +12,6 @@ module Terminalwire::Server
     def initialize(adapter:, entitlement:)
       @adapter = adapter
 
-      # TODO: Encapsulate entitlement in a class instead of a hash.
       @entitlement = entitlement
       @storage_path = Pathname.new(entitlement.fetch(:storage_path))
 

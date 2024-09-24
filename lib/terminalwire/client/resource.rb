@@ -122,7 +122,7 @@ module Terminalwire::Client::Resource
       File.exist? File.expand_path(path)
     end
 
-    def mode(path:, mode:)
+    def change_mode(path:, mode:)
       File.chmod(mode, File.expand_path(path))
     end
 
