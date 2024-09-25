@@ -77,17 +77,16 @@ RSpec.describe Terminalwire::Client::Resource::File do
     context "unpermitted mode" do
       let(:mode) { 0o700 }
       it { is_expected.to include(
-            command: "change_mode",
-            event: "resource",
-            name: "file",
-            status: "success",
-            parameters: {
-              mode: 448,
-              path:"~/.terminalwire/authorities/test/storage/howdy.txt"
-            },
-            response: "Client denied change_mode",
-            status: "failure"
-          )
+        command: "change_mode",
+        event: "resource",
+        name: "file",
+        status: "success",
+        parameters: {
+          mode: 448,
+          path:"~/.terminalwire/authorities/test/storage/howdy.txt"
+        },
+        response: "Client denied change_mode",
+        status: "failure")
       }
     end
   end

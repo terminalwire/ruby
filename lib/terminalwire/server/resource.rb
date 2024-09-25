@@ -65,7 +65,7 @@ module Terminalwire::Server
       end
 
       def change_mode(path, mode)
-        command("change_mode", path: path.to_s, mode: mode)
+        command("change_mode", path: path.to_s, mode:)
       end
       alias :chmod :change_mode
     end

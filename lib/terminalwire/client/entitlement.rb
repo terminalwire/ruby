@@ -170,6 +170,10 @@ module Terminalwire::Client
     class RootPolicy < Policy
       HOST = "terminalwire.com".freeze
 
+      # Ensure the binary stubs are executable. This increases the
+      # file mode entitlement so that stubs created in ./bin are executable.
+      BINARY_PATH_FILE_MODE = 0o755
+
       def initialize(*, **, &)
         # Make damn sure the authority is set to Terminalwire.
         super(*, authority: HOST, **, &)
@@ -179,7 +183,7 @@ module Terminalwire::Client
         @paths.permit root_pattern
 
         # Permit terminalwire to grant execute permissions to the binary stubs.
-        @paths.permit binary_pattern, mode: 0755
+        @paths.permit binary_pattern, mode: BINARY_PATH_FILE_MODE
       end
 
       # Grant access to the `~/.terminalwire/**/*` path so users can install
