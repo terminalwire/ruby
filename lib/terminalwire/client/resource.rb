@@ -127,7 +127,7 @@ module Terminalwire::Client::Resource
     end
 
     protected
-    def permit(command, path:, mode: nil, ** )
+    def permit(command, path:, mode: nil, **)
       @entitlement.paths.permitted? path, mode:
     end
   end

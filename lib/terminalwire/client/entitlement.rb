@@ -85,11 +85,10 @@ module Terminalwire::Client
       end
 
       def permitted?(path, mode: nil)
-        permit = find { |permit| permit.permitted_path?(path) }
         if mode
-          permit.permitted_mode?(mode) ? permit : false
+          find { |it| it.permitted_path?(path) and it.permitted_mode?(mode) }
         else
-          permit
+          find { |it| it.permitted_path?(path) }
         end
       end
 

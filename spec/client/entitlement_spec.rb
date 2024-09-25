@@ -201,9 +201,18 @@ RSpec.describe Terminalwire::Client::Entitlement::Policy do
     end
 
     context "terminalwire.com" do
+      let(:url) { URI("https://terminalwire.com") }
+      let(:entitlement) { Terminalwire::Client::Entitlement.from_url(URI(url)) }
       it "returns RootPolicy" do
-        url = URI("https://terminalwire.com")
-        expect(Terminalwire::Client::Entitlement.from_url(url)).to be_a Terminalwire::Client::Entitlement::RootPolicy
+        expect(entitlement).to be_a Terminalwire::Client::Entitlement::RootPolicy
+      end
+      describe "~/.terminalwire/bin" do
+        it "has access to directory" do
+          expect(entitlement.paths.permitted?(Pathname.new("~/.terminalwire/bin"))).to be_truthy
+        end
+        it "has change mode to executable permit" do
+          expect(entitlement.paths.permitted?(Pathname.new("~/.terminalwire/bin/my-app"), mode: 0o755)).to be_truthy
+        end
       end
     end
   end
