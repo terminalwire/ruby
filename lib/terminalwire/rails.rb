@@ -57,7 +57,7 @@ module Terminalwire::Rails
     def ensure_file
       return true if @context.file.exist? @config_file_path
       # Create the path if it doesn't exist on the client.
-      @context.file.mkdir(@path) unless @context.file.exist?(@path)
+      @context.directory.create(@path) unless @context.file.exist?(@path)
       # Write an empty configuration on initialization
       write(EMPTY_SESSION)
     end
