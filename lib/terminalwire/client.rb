@@ -17,7 +17,7 @@ module Terminalwire
         @program_arguments = arguments
         @program_name = program_name
 
-        FileUtils.mkdir_p entitlement.storage_path
+        FileUtils.mkdir_p entitlement.storage_path.expand_path
 
         @resources = Resource::Handler.new do |it|
           it << Resource::STDOUT.new("stdout", @adapter, entitlement:)
