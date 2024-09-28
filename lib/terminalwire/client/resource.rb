@@ -1,3 +1,5 @@
+require "fileutils"
+
 module Terminalwire::Client::Resource
   # Dispatches messages from the Client::Handler to the appropriate resource.
   class Handler
@@ -136,11 +138,11 @@ module Terminalwire::Client::Resource
     File = ::File
 
     def list(path:)
-      Dir.glob(File.expand_path(path))
+      Dir.glob File.expand_path(path)
     end
 
     def create(path:)
-      Dir.mkdir(File.expand_path(path))
+      FileUtils.mkdir_p File.expand_path(path)
     rescue Errno::EEXIST
       # Do nothing
     end
