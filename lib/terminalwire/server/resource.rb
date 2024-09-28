@@ -11,7 +11,14 @@ module Terminalwire::Server
           command: command,
           parameters: parameters
         )
-        @adapter.recv&.fetch(:response)
+
+        response = @adapter.recv
+        case response.fetch(:status)
+        when "success"
+          response.fetch(:response)
+        when "failure"
+          raise Terminalwire::Error, response.inspect
+        end
       end
     end
 
