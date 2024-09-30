@@ -37,7 +37,7 @@ module Terminalwire
          })
 
         loop do
-          handle @adapter.recv
+          handle @adapter.read
         end
       end
 

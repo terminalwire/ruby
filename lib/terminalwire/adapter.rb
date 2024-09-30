@@ -17,7 +17,7 @@ module Terminalwire::Adapter
       @transport.write(packed_data)
     end
 
-    def recv
+    def read
       logger.debug "Adapter: Reading"
       packed_data = @transport.read
       return nil if packed_data.nil?

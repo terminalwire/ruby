@@ -53,7 +53,7 @@ module Terminalwire
       private
 
       def run(adapter)
-        while message = adapter.recv
+        while message = adapter.read
           puts message
         end
       end
@@ -72,7 +72,7 @@ module Terminalwire
 
       def run(adapter)
         logger.info "ThorServer: Running #{@cli_class.inspect}"
-        while message = adapter.recv
+        while message = adapter.read
           case message
           in { event: "initialization", protocol:, program: { arguments: }, entitlement: }
             Terminalwire::Server::Context.new(adapter:, entitlement:) do |context|
@@ -93,7 +93,7 @@ module Terminalwire
       def run
         logger.info "Server Handler: Running"
         loop do
-          message = @adapter.recv
+          message = @adapter.read
           case message
           in { event: "initialization", protocol:, program: { arguments: }, entitlement: }
             Context.new(adapter: @adapter) do |context|

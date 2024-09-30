@@ -12,7 +12,7 @@ module Terminalwire::Server
           parameters: parameters
         )
 
-        response = @adapter.recv
+        response = @adapter.read
         case response.fetch(:status)
         when "success"
           response.fetch(:response)
