@@ -35,7 +35,7 @@ module Terminalwire
           def_delegators :stdout,
             :puts, :print
           def_delegators :stdin,
-            :gets
+            :gets, :getpass
 
           # Feels more naturual to call `client.files` etc. from
           # the serve since it's more apparent that it's a client.

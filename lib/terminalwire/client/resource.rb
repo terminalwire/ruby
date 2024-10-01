@@ -1,4 +1,5 @@
 require "fileutils"
+require "io/console"
 
 module Terminalwire::Client::Resource
   # Dispatches messages from the Client::Handler to the appropriate resource.
