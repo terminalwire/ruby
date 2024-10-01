@@ -60,6 +60,8 @@ module Terminalwire
     end
 
     class Thor < WebSocket
+      Rails = ::Rails
+
       include Logging
 
       def initialize(cli_class)
@@ -70,13 +72,29 @@ module Terminalwire
         end
       end
 
+      def error_message
+        "An error occurred. Please try again."
+      end
+
       def run(adapter)
         logger.info "ThorServer: Running #{@cli_class.inspect}"
         while message = adapter.read
           case message
           in { event: "initialization", protocol:, program: { arguments: }, entitlement: }
-            Terminalwire::Server::Context.new(adapter:, entitlement:) do |context|
+            context = Terminalwire::Server::Context.new(adapter:, entitlement:)
+
+            begin
               @cli_class.start(arguments, context:)
+              context.exit
+            rescue StandardError => e
+              if Rails.application.config.consider_all_requests_local
+                # Show the full error message with stack trace in development
+                context.stderr.puts "#{e.inspect}\n#{e.backtrace.join("\n")}"
+              else
+                # Show a generic message in production
+                context.stderr.puts error_message
+              end
+              context.exit 1
             end
           end
         end
