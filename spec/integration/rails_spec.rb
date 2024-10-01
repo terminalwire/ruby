@@ -4,6 +4,8 @@ require "open3"
 require "tmpdir"
 require "socket"
 require "pathname"
+require "pty"
+require "io/wait"
 
 RSpec.describe "Terminalwire Install", type: :system do
   let(:binary_name) { "hello" }
@@ -89,28 +91,22 @@ RSpec.describe "Terminalwire Install", type: :system do
     expect(status).to be_success
   end
 
-
   it "logs in successfully" do
-    Open3.popen3("bin/#{binary_name} login") do |stdin, stdout, stderr, wait_thr|
+    PTY.spawn("bin/#{binary_name} login") do |stdout, stdin, pid|
+      stdout.readpartial("Email: ".size)
       # Simulate entering email and password
       stdin.puts "brad@example.com"
+
+      stdout.readpartial("Password: ".size)
       stdin.puts "password123"
 
-      output = stdout.read
+      stdout.readpartial("Successfully logged in as brad@example.com.".size)
 
-      binding.irb
-
-      # Ensure the correct output
-      expect(output).to include("Successfully logged in as.")
-
-      # Ensure email is visible
-      expect(output).to include("brad@example.com")
-
-      # Ensure password is not visible
-      expect(output).not_to include("password123")
+      expect{stdout.read_nonblock(1)}.to raise_error(IO::EAGAINWaitReadable)
 
       # Ensure the process was successful
-      expect(wait_thr.value).to be_success
+      Process.wait(pid)
+      expect($?.success?).to be_truthy
     end
   end
 
