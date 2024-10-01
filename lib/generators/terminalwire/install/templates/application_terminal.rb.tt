@@ -12,13 +12,13 @@ class ApplicationTerminal < Thor
   desc "login", "Login to your account"
   def login
     print "Email: "
-    email = gets
+    email = gets.chomp
 
     print "Password: "
     password = getpass
 
     if self.current_user = User.authenticate(email, password)
-      puts "Successfully logged in as #{user.email}."
+      puts "Successfully logged in as #{current_user.email}."
     else
       puts "Could not find a user with that email and password."
     end
@@ -27,7 +27,7 @@ class ApplicationTerminal < Thor
   desc "whoami", "Displays current user information."
   def whoami
     if self.current_user
-      puts "Logged in as #{user.email}."
+      puts "Logged in as #{current_user.email}."
     else
       puts "Not logged in. Run `#{self.class.basename} login` to login."
     end
@@ -49,6 +49,6 @@ class ApplicationTerminal < Thor
   end
 
   def current_user
-    @current_user ||= User.find(session.fetch("user_id"))
+    @current_user ||= User.find(session["user_id"])
   end
 end
