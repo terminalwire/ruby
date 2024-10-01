@@ -10,44 +10,45 @@ RSpec.describe "Terminalwire Install", type: :system do
   let(:gem_path) { File.expand_path('../../../', __FILE__) }
   let(:exe_path)  { File.join(gem_path, "exe") }
 
-  around do |example|
-    Dir.mktmpdir do |test_app_path|
-      Dir.chdir(test_app_path) do
-        pwd = Pathname.new(test_app_path)
-        Bundler.with_unbundled_env do
-          ENV["PATH"] = "#{exe_path}:#{ENV["PATH"]}"
+  before(:all) do
+    # Set up the Rails app once for this test suite
+    @test_app_path = Dir.mktmpdir
+    @gem_path = File.expand_path('../../../', __FILE__)
+    @exe_path = File.join(@gem_path, "exe")
 
-          # Create a bare Rails app
-          system("rails new . --minimal --skip-bundle")
+    @original_path = Dir.pwd
+    Dir.chdir(@test_app_path)
 
-          # Add terminalwire gem to Gemfile
-          File.open("Gemfile", "a") do |file|
-            file.puts "\ngem 'terminalwire', path: '#{gem_path}'"
-          end
+    Bundler.with_unbundled_env do
+      ENV["PATH"] = "#{@exe_path}:#{ENV["PATH"]}"
 
-          # Bundle install
-          system("bundle install")
+      # Create a bare Rails app
+      system("rails new . --minimal --skip-bundle")
 
-          # Run the terminalwire install generator
-          system("bin/rails generate terminalwire:install #{binary_name}")
+      # Add the terminalwire gem to the Gemfile
+      system("bundle add terminalwire")
 
-          # Boot the Puma server in the background
-          pid = spawn("bin/rails server -b 0.0.0.0 -p 3000")
+      # Run the terminalwire install generator
+      system("bin/rails generate terminalwire:install hello")
 
-          begin
-            # Poll until the server is ready
-            wait_for_server("0.0.0.0", 3000)
+      # Boot the Puma server in the background
+      @pid = spawn("bin/rails server -b 0.0.0.0 -p 3000")
 
-            # Run the test
-            example.run
-          ensure
-            # Kill the server after the test
-            Process.kill("TERM", pid)
-            Process.wait(pid)
-          end
-        end
-      end
+      # Poll until the server is ready
+      wait_for_server("0.0.0.0", 3000)
     end
+  end
+
+  after(:all) do
+    Dir.chdir(@original_path)
+
+    # Clean up after the tests are finished
+    if @pid
+      Process.kill("TERM", @pid)
+      Process.wait(@pid)
+    end
+
+    FileUtils.remove_entry(@test_app_path) if @test_app_path
   end
 
   it "runs Terminalwire client against server" do
