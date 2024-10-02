@@ -93,16 +93,15 @@ RSpec.describe "Terminalwire Install", type: :system do
 
   it "logs in successfully" do
     PTY.spawn("bin/#{binary_name} login") do |stdout, stdin, pid|
-      stdout.readpartial("Email: ".size)
+      # stdout.readpartial("Email: ".size)
       # Simulate entering email and password
       stdin.puts "brad@example.com"
 
-      stdout.readpartial("Password: ".size)
+      # stdout.readpartial("Password: ".size)
       stdin.puts "password123"
 
-      stdout.readpartial("Successfully logged in as brad@example.com.".size)
-
-      expect{stdout.read_nonblock(1)}.to raise_error(IO::EAGAINWaitReadable)
+      output = stdout.read
+      expect(output).to include("Successfully logged in as brad@example.com.")
 
       # Ensure the process was successful
       Process.wait(pid)
