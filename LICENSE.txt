@@ -1,1 +1,9 @@
-Copyright (c) 2024 Brad Gessler. Email brad@terminalwire.com to discuss licensing.
+Copyright (c) 2024 Brad Gessler.
+
+License is propietary. Here's the deal:
+
+* You need to pay for Terminalwire if your business has more than $1m in assets or makes more than $100k/year in revenue.
+* Terminalwire is free for personal use, hobbyists, or businesses that are just starting out, but server licenses still need to be registered at https://terminalwire.com/developers/licenses.
+* You can only use the Terminalwire client with licensed Terminalwire servers.
+
+This list is not exhaustive, please read the full license text at https://terminalwire.com/license.
