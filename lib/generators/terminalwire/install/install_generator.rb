@@ -7,6 +7,7 @@ class Terminalwire::InstallGenerator < Rails::Generators::Base
 
   def create_terminal_files
     template "application_terminal.rb.tt", Rails.root.join("app/terminal/application_terminal.rb")
+    template "main_terminal.rb", Rails.root.join("app/terminal/main_terminal.rb")
   end
 
   def create_binary_files
@@ -17,7 +18,7 @@ class Terminalwire::InstallGenerator < Rails::Generators::Base
   def add_route
     route <<~ROUTE
       match "/terminal",
-        to: Terminalwire::Server::Thor.new(ApplicationTerminal),
+        to: Terminalwire::Server::Thor.new(MainTerminal),
         via: [:get, :connect]
     ROUTE
   end

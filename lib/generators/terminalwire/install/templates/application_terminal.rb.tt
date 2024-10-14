@@ -1,43 +1,10 @@
 # Learn how to use Thor at http://whatisthor.com.
 class ApplicationTerminal < Thor
+  # Enables IO Streaming.
   include Terminalwire::Thor
 
+  # The name of your binary. Thor uses this for its help output.
   def self.basename = "<%= binary_name %>"
-
-  desc "hello NAME", "say hello to NAME"
-  def hello(name)
-    puts "Hello #{name}"
-  end
-
-  desc "login", "Login to your account"
-  def login
-    print "Email: "
-    email = gets.chomp
-
-    print "Password: "
-    password = getpass
-
-    if self.current_user = User.authenticate(email, password)
-      puts "Successfully logged in as #{current_user.email}."
-    else
-      puts "Could not find a user with that email and password."
-    end
-  end
-
-  desc "whoami", "Displays current user information."
-  def whoami
-    if self.current_user
-      puts "Logged in as #{current_user.email}."
-    else
-      puts "Not logged in. Run `#{self.class.basename} login` to login."
-    end
-  end
-
-  desc "logout", "Logout of your account"
-  def logout
-    session.reset
-    puts "Successfully logged out."
-  end
 
   private
 
