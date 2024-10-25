@@ -7,11 +7,11 @@ module Terminalwire
 
       def call(env)
         Async::WebSocket::Adapters::Rack.open(env, protocols: ['ws']) do |connection|
-          run(Adapter::Socket.new(Terminalwire::Transport::WebSocket.new(connection)))
+          handle(Adapter::Socket.new(Terminalwire::Transport::WebSocket.new(connection)))
         end or [200, { "Content-Type" => "text/plain" }, ["Connect via WebSockets"]]
       end
 
-      def run(adapter)
+      def handle(adapter)
         while message = adapter.read
           puts message
         end
@@ -35,7 +35,7 @@ module Terminalwire
         "An error occurred. Please try again."
       end
 
-      def run(adapter)
+      def handle(adapter)
         logger.info "ThorServer: Running #{@cli_class.inspect}"
         while message = adapter.read
           case message
