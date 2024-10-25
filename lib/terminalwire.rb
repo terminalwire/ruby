@@ -2,7 +2,6 @@
 
 require_relative "terminalwire/version"
 
-require 'socket'
 require 'forwardable'
 require 'uri'
 require 'zeitwerk'

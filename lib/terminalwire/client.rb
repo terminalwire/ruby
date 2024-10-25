@@ -51,20 +51,6 @@ module Terminalwire
       end
     end
 
-    def self.tcp(...)
-      socket = TCPSocket.new(...)
-      transport = Terminalwire::Transport::Socket.new(socket)
-      adapter = Terminalwire::Adapter::Socket.new(transport)
-      Terminalwire::Client::Handler.new(adapter)
-    end
-
-    def self.socket(...)
-      socket = UNIXSocket.new(...)
-      transport = Terminalwire::Transport::Socket.new(socket)
-      adapter = Terminalwire::Adapter::Socket.new(transport)
-      Terminalwire::Client::Handler.new(adapter)
-    end
-
     # Extracted from HTTP. This is so we can
     def self.authority(url)
       if url.port == url.default_port
