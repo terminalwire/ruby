@@ -40,10 +40,6 @@ module Terminalwire
         respond(status: "success", response:, **data)
       end
 
-      def self.protocol_key
-        name.split("::").last.downcase
-      end
-
       private
 
       def respond(**response)
