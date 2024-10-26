@@ -14,6 +14,10 @@ module Terminalwire::Licensing
     generate_private_key.to_pem
   end
 
+  def self.time
+    Time.now.utc
+  end
+
   # Handles encoding data into a license key with prefixes that can be packed and unpacked.
   module Key
     # Mix into classes that need to generate or read keys
@@ -84,10 +88,10 @@ module Terminalwire::Licensing
 
       VERSION = "1.0".freeze
 
-      def initialize(public_key:, license_url:)
+      def initialize(public_key:, license_url:, generated_at: Terminalwire::Licensing.time)
         @public_key = public_key
         @license_url = URI(license_url)
-        @generated_at = Time.now.utc
+        @generated_at = generated_at
       end
 
       def to_h
@@ -111,7 +115,7 @@ module Terminalwire::Licensing
 
       # This means the server will tolerate a 10 minute drift in the generated_at time.
       def self.drift
-        now = Time.now.utc
+        now = Terminalwire::Licensing.time
         (now - DRIFT_SECONDS)...(now + DRIFT_SECONDS)
       end
 
@@ -147,10 +151,10 @@ module Terminalwire::Licensing
       include Key::Serialization
       PREFIX = "client_key_".freeze
 
-      def initialize(server_key:)
+      def initialize(server_key:, generated_at: Terminalwire::Licensing.time)
         @data = Issuer::ServerKeyGenerator.deserialize server_key
-        @generated_at = Time.now.utc
         @license_url = URI(@data.fetch("license_url"))
+        @generated_at = generated_at
       end
 
       def to_h
