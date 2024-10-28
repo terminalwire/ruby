@@ -23,6 +23,11 @@ class Terminalwire::Authority
     end
   end
 
+  # Useful for identifying the authority in UI without the protocol.
+  def name
+    [domain, path].join
+  end
+
   # Make sure there's always a / at the end of the path.
   def path
     path_keys.join(PATH_SEPERATOR).prepend(PATH_SEPERATOR)

@@ -34,6 +34,11 @@ RSpec.describe Terminalwire::Authority do
     end
   end
 
+  describe "name" do
+    subject { authority.name }
+    it { is_expected.to eq("example.com/terminal") }
+  end
+
   describe "#key" do
     let(:key) { authority.key }
     subject { key }
