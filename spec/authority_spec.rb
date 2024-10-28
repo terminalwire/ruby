@@ -58,5 +58,10 @@ RSpec.describe Terminalwire::Authority do
       subject { described_class.new(url: authority.to_s).to_s }
       it { is_expected.to eq("terminalwire://example.com/terminal") }
     end
+
+    context "non-standard port" do
+      let(:url) { "http://localhost:8080/terminal#anchor" }
+      it { is_expected.to eq("terminalwire://localhost:8080/terminal") }
+    end
   end
 end

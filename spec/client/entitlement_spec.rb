@@ -152,8 +152,8 @@ RSpec.describe Terminalwire::Client::Entitlement::Schemes do
 end
 
 RSpec.describe Terminalwire::Client::Entitlement::Policy do
-  let(:authority) { "localhost:3000" }
-  let(:entitlement) { described_class.new(authority: authority) }
+  let(:authority) { Terminalwire::Authority.new(url: "authority://localhost:3000") }
+  let(:entitlement) { described_class.new(authority:) }
 
   describe "#initialize" do
     it "sets the authority attribute" do
@@ -161,22 +161,22 @@ RSpec.describe Terminalwire::Client::Entitlement::Policy do
     end
 
     it "initializes the paths and permits the domain directory" do
-      permitted_path = Pathname.new("~/.terminalwire/authorities/#{authority}/storage/junk.txt")
+      permitted_path = Pathname.new("~/.terminalwire/authorities/localhost:3000/storage/junk.txt")
       expect(entitlement.paths.permitted?(permitted_path)).to be_truthy
     end
 
     it "initializes the paths and permits the domain directory" do
-      permitted_path = Pathname.new("~/.terminalwire/authorities/#{authority}/storage")
+      permitted_path = Pathname.new("~/.terminalwire/authorities/localhost:3000/storage")
       expect(entitlement.paths.permitted?(permitted_path)).to be_truthy
     end
 
     it "initializes the paths and permits the http scheme" do
-      permitted_url = "http://#{authority}"
+      permitted_url = "http://localhost:3000"
       expect(entitlement.schemes.permitted?(permitted_url)).to be_truthy
     end
 
     it "initializes the paths and permits the https scheme" do
-      permitted_url = "https://#{authority}"
+      permitted_url = "https://localhost:3000"
       expect(entitlement.schemes.permitted?(permitted_url)).to be_truthy
     end
   end
@@ -185,13 +185,13 @@ RSpec.describe Terminalwire::Client::Entitlement::Policy do
     it "creates a new Entitlement object from a URL" do
       url = URI("ws://example.com:8080")
       entitlement_from_url = Terminalwire::Client::Entitlement.from_url(url)
-      expect(entitlement_from_url.authority).to eq("example.com:8080")
+      expect(entitlement_from_url.authority.domain).to eq("example.com:8080")
     end
 
     it "uses only the host as authority if the port is default" do
       url = URI("wss://example.com")
       entitlement_from_url = Terminalwire::Client::Entitlement.from_url(url)
-      expect(entitlement_from_url.authority).to eq("example.com")
+      expect(entitlement_from_url.authority.domain).to eq("example.com")
     end
 
     it "uses only the host as authority if the port is default" do
@@ -219,8 +219,8 @@ RSpec.describe Terminalwire::Client::Entitlement::Policy do
 end
 
 RSpec.describe Terminalwire::Client::Entitlement::RootPolicy do
-  let(:authority) { "terminalwire.com" }
-  let(:entitlement) { described_class.new }
+  let(:authority) { Terminalwire::Authority.new(url: "authority://terminalwire.com") }
+  let(:entitlement) { described_class.new(authority:) }
 
   describe "#initialize" do
     it "permits paths to authorities directory" do

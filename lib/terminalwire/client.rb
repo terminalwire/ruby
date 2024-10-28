@@ -53,15 +53,6 @@ module Terminalwire
       end
     end
 
-    # Extracted from HTTP. This is so we can
-    def self.authority(url)
-      if url.port == url.default_port
-        url.host
-      else
-        "#{url.host}:#{url.port}"
-      end
-    end
-
     def self.websocket(url:, arguments: ARGV, entitlement: nil)
       url = URI(url)
 

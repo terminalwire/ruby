@@ -145,7 +145,8 @@ module Terminalwire::Client
       end
 
       def authority_path
-        root_path.join("authorities/#{authority}")
+        # TODO: Change this so it's per endpoint and not domain
+        root_path.join("authorities/#{authority.domain}")
       end
 
       def storage_path
@@ -158,7 +159,7 @@ module Terminalwire::Client
 
       def serialize
         {
-          authority: @authority,
+          authority: @authority.to_s,
           schemes: @schemes.serialize,
           paths: @paths.serialize,
           storage_path: storage_path.to_s,
@@ -203,23 +204,13 @@ module Terminalwire::Client
     end
 
     def self.from_url(url)
-      url = URI(url)
+      authority = Terminalwire::Authority.new(url:)
 
-      case url.host
+      case authority.domain
       when RootPolicy::HOST
-        RootPolicy.new
+        RootPolicy.new authority:
       else
-        Policy.new authority: url_authority(url)
-      end
-    end
-
-    def self.url_authority(url)
-      # I had to lift this from URI::HTTP because `ws://` doesn't
-      # have an authority method.
-      if url.port == url.default_port
-        url.host
-      else
-        "#{url.host}:#{url.port}"
+        Policy.new authority:
       end
     end
   end

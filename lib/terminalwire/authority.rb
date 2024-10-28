@@ -19,7 +19,7 @@ class Terminalwire::Authority
     if @url.port == @url.default_port
       @url.host
     else
-      "#{url.host}:#{url.port}"
+      "#{@url.host}:#{@url.port}"
     end
   end
 
