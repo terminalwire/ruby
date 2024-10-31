@@ -13,7 +13,7 @@ module Terminalwire::Cache
       include Enumerable
 
       def initialize(path:)
-        @path = Pathname.new(path)
+        @path = Pathname.new(path).expand_path
         FileUtils.mkdir_p(@path) unless @path.directory?
       end
 
