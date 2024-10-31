@@ -10,14 +10,21 @@ require 'async'
 require 'async/http/endpoint'
 require 'async/websocket/client'
 require 'async/websocket/adapters/rack'
+require 'uri-builder'
 
 module Terminalwire
   class Error < StandardError; end
 
+  # Zeitwerk loader for the Terminalwire gem.
   Loader = Zeitwerk::Loader.for_gem.tap do |loader|
     loader.ignore("#{__dir__}/generators")
     loader.setup
   end
+
+  # Used by Terminalwire client to connect to Terminalire.com for license
+  # validations, etc.
+  TERMINALWIRE_URL = "https://terminalwire.com".freeze
+  def self.url = URI.build(TERMINALWIRE_URL)
 
   module Resource
     class Base
