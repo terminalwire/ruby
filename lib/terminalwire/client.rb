@@ -11,7 +11,8 @@ module Terminalwire
 
       attr_reader :adapter, :entitlement, :resources
 
-      def initialize(adapter, arguments: ARGV, program_name: $0, entitlement:)
+      def initialize(adapter, arguments: ARGV, program_name: $0, entitlement:, endpoint:)
+        @endpoint = endpoint
         @entitlement = entitlement
         @adapter = adapter
         @program_arguments = arguments
@@ -27,7 +28,15 @@ module Terminalwire
         end
       end
 
+      def verify_license
+        # Connect to the Terminalwire license server to verify the URL endpoint
+        # and displays a message to the user, if any are present.
+        print Terminalwire::Client::ServerLicenseVerification.new(url: @endpoint.to_url).message
+      end
+
       def connect
+        verify_license
+
         @adapter.write(
           event: "initialization",
           protocol: { version: VERSION },
@@ -53,15 +62,6 @@ module Terminalwire
       end
     end
 
-    # Extracted from HTTP. This is so we can
-    def self.authority(url)
-      if url.port == url.default_port
-        url.host
-      else
-        "#{url.host}:#{url.port}"
-      end
-    end
-
     def self.websocket(url:, arguments: ARGV, entitlement: nil)
       url = URI(url)
 
@@ -75,7 +75,7 @@ module Terminalwire
           transport = Terminalwire::Transport::WebSocket.new(adapter)
           adapter = Terminalwire::Adapter::Socket.new(transport)
           entitlement ||= Entitlement.from_url(url)
-          Terminalwire::Client::Handler.new(adapter, arguments:, entitlement:).connect
+          Terminalwire::Client::Handler.new(adapter, arguments:, entitlement:, endpoint:).connect
         end
       end
     end

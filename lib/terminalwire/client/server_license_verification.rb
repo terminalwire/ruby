@@ -5,7 +5,7 @@ require "fileutils"
 
 module Terminalwire
   module Client
-    class LicenseVerification
+    class ServerLicenseVerification
       include Logging
 
       attr_reader :url, :internet
