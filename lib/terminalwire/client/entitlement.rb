@@ -167,7 +167,7 @@ module Terminalwire::Client
     end
 
     class RootPolicy < Policy
-      HOST = "terminalwire.com".freeze
+      AUTHORITY = "terminalwire.com".freeze
 
       # Ensure the binary stubs are executable. This increases the
       # file mode entitlement so that stubs created in ./bin are executable.
@@ -175,7 +175,7 @@ module Terminalwire::Client
 
       def initialize(*, **, &)
         # Make damn sure the authority is set to Terminalwire.
-        super(*, authority: HOST, **, &)
+        super(*, authority: AUTHORITY, **, &)
 
         # Now setup special permitted paths.
         @paths.permit root_path
@@ -202,24 +202,12 @@ module Terminalwire::Client
       end
     end
 
-    def self.from_url(url)
-      url = URI(url)
-
-      case url.host
-      when RootPolicy::HOST
-        RootPolicy.new
+    def self.resolve(*, authority:, **, &)
+      case authority
+      when RootPolicy::AUTHORITY
+        RootPolicy.new(*, **, &)
       else
-        Policy.new authority: url_authority(url)
-      end
-    end
-
-    def self.url_authority(url)
-      # I had to lift this from URI::HTTP because `ws://` doesn't
-      # have an authority method.
-      if url.port == url.default_port
-        url.host
-      else
-        "#{url.host}:#{url.port}"
+        Policy.new *, authority:, **, &
       end
     end
   end

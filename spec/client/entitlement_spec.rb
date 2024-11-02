@@ -181,28 +181,17 @@ RSpec.describe Terminalwire::Client::Entitlement::Policy do
     end
   end
 
-  describe ".from_url" do
+  describe ".resolve" do
+    let(:authority) { "example.com:8080" }
+
     it "creates a new Entitlement object from a URL" do
-      url = URI("ws://example.com:8080")
-      entitlement_from_url = Terminalwire::Client::Entitlement.from_url(url)
-      expect(entitlement_from_url.authority).to eq("example.com:8080")
-    end
-
-    it "uses only the host as authority if the port is default" do
-      url = URI("wss://example.com")
-      entitlement_from_url = Terminalwire::Client::Entitlement.from_url(url)
-      expect(entitlement_from_url.authority).to eq("example.com")
-    end
-
-    it "uses only the host as authority if the port is default" do
-      url = URI("https://example.com")
-      entitlement_from_url = Terminalwire::Client::Entitlement.from_url(url)
-      expect(entitlement_from_url).to be_a Terminalwire::Client::Entitlement::Policy
+      entitlement_resolve = Terminalwire::Client::Entitlement.resolve(authority:)
+      expect(entitlement_resolve.authority).to eq("example.com:8080")
     end
 
     context "terminalwire.com" do
-      let(:url) { URI("https://terminalwire.com") }
-      let(:entitlement) { Terminalwire::Client::Entitlement.from_url(URI(url)) }
+      let(:authority) { "terminalwire.com" }
+      let(:entitlement) { Terminalwire::Client::Entitlement.resolve(authority:) }
       it "returns RootPolicy" do
         expect(entitlement).to be_a Terminalwire::Client::Entitlement::RootPolicy
       end
@@ -239,10 +228,10 @@ RSpec.describe Terminalwire::Client::Entitlement::RootPolicy do
     end
   end
 
-  describe ".from_url" do
+  describe ".resolve" do
     it "returns RootPolicy" do
       url = URI("https://terminalwire.com")
-      expect(Terminalwire::Client::Entitlement.from_url(url)).to be_a Terminalwire::Client::Entitlement::RootPolicy
+      expect(Terminalwire::Client::Entitlement.resolve(authority:)).to be_a Terminalwire::Client::Entitlement::RootPolicy
     end
   end
 end
