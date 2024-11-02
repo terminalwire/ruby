@@ -17,10 +17,10 @@ module Terminalwire::Cache
         FileUtils.mkdir_p(@path) unless @path.directory?
       end
 
-      def find(key)
+      def entry(key)
         Entry.new(path: @path.join(Entry.key_path(key)))
       end
-      alias :[] :find
+      alias :[] :entry
 
       def evict
         each(&:evict)

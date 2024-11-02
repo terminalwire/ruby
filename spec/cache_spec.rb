@@ -5,7 +5,7 @@ RSpec.describe Terminalwire::Cache::File::Store do
   let(:cache_dir) { Dir.mktmpdir }
   let(:store) { described_class.new(path: cache_dir) }
   let(:key) { "test_key" }
-  let(:entry) { store.find(key) }
+  let(:entry) { store.entry(key) }
 
   after do
     FileUtils.remove_entry(cache_dir)
@@ -65,7 +65,7 @@ RSpec.describe Terminalwire::Cache::File::Entry do
   let(:cache_dir) { Dir.mktmpdir }
   let(:store) { Terminalwire::Cache::File::Store.new(path: cache_dir) }
   let(:key) { "test_key" }
-  let(:entry) { store.find(key) }
+  let(:entry) { store.entry(key) }
   subject { entry }
 
   after do
@@ -172,7 +172,7 @@ RSpec.describe Terminalwire::Cache::File::Entry do
     end
 
     it "loads the value and expiration from the file" do
-      new_entry = store.find(key)
+      new_entry = store.entry(key)
       expect(new_entry.value).to eq(value)
       expect(new_entry.expires).to be_within(1).of(expires)
     end
