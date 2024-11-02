@@ -9,7 +9,8 @@ module Terminalwire
 
       include Logging
 
-      attr_reader :adapter, :resources, :entitlement, :endpoint
+      attr_reader :adapter, :resources, :endpoint
+      attr_accessor :entitlement
 
       def initialize(adapter, arguments: ARGV, program_name: $0, endpoint:)
         @endpoint = endpoint
@@ -17,6 +18,8 @@ module Terminalwire
         @program_arguments = arguments
         @program_name = program_name
         @entitlement = Entitlement.resolve(authority: @endpoint.authority)
+
+        yield self if block_given?
 
         @resources = Resource::Handler.new do |it|
           it << Resource::STDOUT.new("stdout", @adapter, entitlement:)
@@ -62,7 +65,7 @@ module Terminalwire
       end
     end
 
-    def self.websocket(url:, arguments: ARGV, entitlement: nil)
+    def self.websocket(url:, arguments: ARGV, &configuration)
       url = URI(url)
 
       Async do |task|
@@ -74,7 +77,7 @@ module Terminalwire
         Async::WebSocket::Client.connect(endpoint) do |adapter|
           transport = Terminalwire::Transport::WebSocket.new(adapter)
           adapter = Terminalwire::Adapter::Socket.new(transport)
-          Terminalwire::Client::Handler.new(adapter, arguments:, endpoint:).connect
+          Terminalwire::Client::Handler.new(adapter, arguments:, endpoint:, &configuration).connect
         end
       end
     end
