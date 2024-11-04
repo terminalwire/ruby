@@ -124,8 +124,6 @@ module Terminalwire::Client
     class Policy
       attr_reader :paths, :authority, :schemes
 
-      ROOT_PATH = "~/.terminalwire".freeze
-
       def initialize(authority:)
         @authority = authority
         @paths = Paths.new
@@ -141,7 +139,7 @@ module Terminalwire::Client
       end
 
       def root_path
-        Pathname.new(ROOT_PATH)
+        Terminalwire::Client.root_path
       end
 
       def authority_path
