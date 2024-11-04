@@ -34,7 +34,9 @@ module Terminalwire
       def verify_license
         # Connect to the Terminalwire license server to verify the URL endpoint
         # and displays a message to the user, if any are present.
-        print Terminalwire::Client::ServerLicenseVerification.new(url: @endpoint.to_url).message
+        $stdout.print Terminalwire::Client::ServerLicenseVerification.new(url: @endpoint.to_url).message
+      rescue
+        $stderr.puts "Failed to verify server license."
       end
 
       def connect
