@@ -8,10 +8,6 @@ module Terminalwire
     class ServerLicenseVerification
       include Logging
 
-      attr_reader :url, :internet
-
-      Validation = Struct.new(:status, :message)
-
       def initialize(url:)
         @url = URI(url)
         @internet = Async::HTTP::Internet.new
@@ -37,12 +33,12 @@ module Terminalwire
             # Process based on the response code.
             case response.status
             in 200
-              logger.debug "License for #{url} found."
+              logger.debug "License for #{@url} found."
               data = self.class.unpack response.read
               cache.value = data
               return data
             in 404
-              logger.debug "License for #{url} not found."
+              logger.debug "License for #{@url} not found."
               return self.class.unpack response.read
             end
           end
@@ -52,7 +48,7 @@ module Terminalwire
       end
 
       def message
-        payload.dig(:shell, :message)
+        payload.dig(:shell, :output)
       end
 
       protected
