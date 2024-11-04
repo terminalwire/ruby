@@ -10,7 +10,7 @@ module Terminalwire::Client
     def initialize(url:)
       @url = URI(url)
       @internet = Async::HTTP::Internet.new
-      @cache_store = Terminalwire::Cache::File::Store.new(path: "~/.terminalwire/cache/licenses/verifications")
+      @cache_store = Terminalwire::Cache::File::Store.new(path: Terminalwire::Client.root_path.join("cache/licenses/verifications"))
     end
 
     def key
