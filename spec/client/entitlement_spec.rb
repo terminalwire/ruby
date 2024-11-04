@@ -161,12 +161,12 @@ RSpec.describe Terminalwire::Client::Entitlement::Policy do
     end
 
     it "initializes the paths and permits the domain directory" do
-      permitted_path = Pathname.new("~/.terminalwire/authorities/#{authority}/storage/junk.txt")
+      permitted_path = Terminalwire::Client.root_path.join("authorities/#{authority}/storage/junk.txt")
       expect(entitlement.paths.permitted?(permitted_path)).to be_truthy
     end
 
     it "initializes the paths and permits the domain directory" do
-      permitted_path = Pathname.new("~/.terminalwire/authorities/#{authority}/storage")
+      permitted_path = Terminalwire::Client.root_path.join("authorities/#{authority}/storage")
       expect(entitlement.paths.permitted?(permitted_path)).to be_truthy
     end
 
@@ -197,10 +197,10 @@ RSpec.describe Terminalwire::Client::Entitlement::Policy do
       end
       describe "~/.terminalwire/bin" do
         it "has access to directory" do
-          expect(entitlement.paths.permitted?(Pathname.new("~/.terminalwire/bin"))).to be_truthy
+          expect(entitlement.paths.permitted?(Terminalwire::Client.root_path.join("bin"))).to be_truthy
         end
         it "has change mode to executable permit" do
-          expect(entitlement.paths.permitted?(Pathname.new("~/.terminalwire/bin/my-app"), mode: 0o755)).to be_truthy
+          expect(entitlement.paths.permitted?(Terminalwire::Client.root_path.join("bin/my-app"), mode: 0o755)).to be_truthy
         end
       end
     end
@@ -213,12 +213,12 @@ RSpec.describe Terminalwire::Client::Entitlement::RootPolicy do
 
   describe "#initialize" do
     it "permits paths to authorities directory" do
-      permitted_path = Pathname.new("~/.terminalwire/authorities/example.com/storage/junk.txt")
+      permitted_path = Terminalwire::Client.root_path.join("authorities/example.com/storage/junk.txt")
       expect(entitlement.paths.permitted?(permitted_path)).to be_truthy
     end
 
     it "permits paths to bin directory" do
-      permitted_path = Pathname.new("~/.terminalwire/bin/example")
+      permitted_path = Terminalwire::Client.root_path.join("bin/example")
       expect(entitlement.paths.permitted?(permitted_path)).to be_truthy
     end
 
