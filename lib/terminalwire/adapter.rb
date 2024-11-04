@@ -1,7 +1,7 @@
 require 'msgpack'
 
 module Terminalwire::Adapter
-  # Works with TCP, Unix, WebSocket, and other socket-like abstractions.
+  # Works with Test, TCP, Unix, WebSocket, and other socket-like abstractions.
   class Socket
     include Terminalwire::Logging
 

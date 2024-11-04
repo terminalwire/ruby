@@ -4,6 +4,7 @@ require "base64"
 require "time"
 require "fileutils"
 
+# Caches used on the client side for licesens, HTTP requests, etc.
 module Terminalwire::Cache
   module File
     # Hoist the File class to avoid conflicts with the standard library.

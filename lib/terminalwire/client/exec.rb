@@ -3,6 +3,15 @@ require "yaml"
 require "uri"
 
 module Terminalwire::Client
+  # Called by the `terminalwire-exec` shebang in scripts. This makes it easy for people
+  # to create their own scripts that use Terminalwire that look like this:
+  #
+  # ```sh
+  # #!/usr/bin/env terminalwire-exec
+  # url: "https://terminalwire.com/terminal"
+  # ```
+  #
+  # These files are saved, then `chmod + x` is run on them and they become executable.
   class Exec
     attr_reader :arguments, :path, :configuration, :url
 

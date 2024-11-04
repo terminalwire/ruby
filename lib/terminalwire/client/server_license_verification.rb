@@ -4,6 +4,8 @@ require "uri"
 require "fileutils"
 
 module Terminalwire::Client
+  # Checkes the server for a license verification at `https://terminalwire.com/licenses/verifications/`
+  # and displays the message to the user, if necessary.
   class ServerLicenseVerification
     include Terminalwire::Logging
 

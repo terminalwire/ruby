@@ -1,4 +1,6 @@
 module Terminalwire::Server
+  # Representation of the resources avilable to the server on the client-side. These
+  # classes encapsulate the API alls to the client and provide a more Ruby-like interface.
   module Resource
     class Base < Terminalwire::Resource::Base
       private

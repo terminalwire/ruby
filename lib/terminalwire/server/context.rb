@@ -1,6 +1,9 @@
 require "fileutils"
 
 module Terminalwire::Server
+  # Contains all of the resources that are accessible to the server on the client-side.
+  # It's the primary interface for the server to interact with the client and is integrated
+  # into other libraries like Thor, etc.
   class Context
     extend Forwardable
 

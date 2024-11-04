@@ -1,7 +1,11 @@
 require "pathname"
 
 module Terminalwire::Client
+  # Entitlements are the security boundary between the server and the client that lives on the client.
+  # The server might request a file or directory from the client, and the client will check the entitlements
+  # to see if the server is authorized to access the requested resource.
   module Entitlement
+    # A list of paths and permissions that server has to write on the client workstation.
     class Paths
       class Permit
         attr_reader :path, :mode
@@ -97,6 +101,7 @@ module Terminalwire::Client
       end
     end
 
+    # URLs the server can open on the client.
     class Schemes
       include Enumerable
 
@@ -121,6 +126,7 @@ module Terminalwire::Client
       end
     end
 
+    # A policy has the authority, paths, and schemes that the server is allowed to access.
     class Policy
       attr_reader :paths, :authority, :schemes
 

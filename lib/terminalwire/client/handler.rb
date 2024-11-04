@@ -1,4 +1,6 @@
 module Terminalwire::Client
+  # The handler is the main class that connects to the Terminalwire server and
+  # dispatches messages to the appropriate resources.
   class Handler
     VERSION = "0.1.0".freeze
 
