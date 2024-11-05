@@ -5,7 +5,6 @@ require 'io/console'
 module Terminalwire
   module Client
     ROOT_PATH = "~/.terminalwire".freeze
-
     def self.root_path = Pathname.new(ROOT_PATH)
 
     def self.websocket(url:, arguments: ARGV, &configuration)
