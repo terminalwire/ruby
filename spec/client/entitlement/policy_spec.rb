@@ -49,6 +49,24 @@ RSpec.describe Terminalwire::Client::Entitlement::Policy::Base do
         environment_variables: [ "TERMINALWIRE_HOME", "HOME" ]
       )
     end
+    pending "does not have hard coded paths" do
+      # This will start passing when
+      expect(entitlement.serialize).to eq(
+        authority: "localhost:3000",
+        schemes: [ "http", "https" ],
+        paths: [
+          {
+            location: "~/.terminalwire/authorities/localhost:3000/storage",
+            mode: 384
+          },
+          {
+            location: "~/.terminalwire/authorities/localhost:3000/storage/**/*",
+            mode: 384
+          }
+        ],
+        environment_variables: [ "TERMINALWIRE_HOME", "HOME" ]
+      )
+    end
   end
 
   describe ".resolve" do
