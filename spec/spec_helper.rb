@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "terminalwire"
+require "pathname"
+require "uri"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
