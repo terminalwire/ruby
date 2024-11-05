@@ -2,7 +2,7 @@
 
 RSpec.describe Terminalwire::Client::Resource::File do
   let(:adapter) { Terminalwire::Adapter::Test.new }
-  let(:entitlement) { Terminalwire::Client::Entitlement::Policy.new(authority: "test") }
+  let(:entitlement) { Terminalwire::Client::Entitlement::Policy::Base.new(authority: "test") }
   let(:file) { Terminalwire::Client::Resource::File.new("file", adapter, entitlement:) }
   let(:response) { adapter.response }
   subject { response }
@@ -94,7 +94,7 @@ end
 
 RSpec.describe Terminalwire::Client::Resource::Directory do
   let(:adapter) { Terminalwire::Adapter::Test.new }
-  let(:entitlement) { Terminalwire::Client::Entitlement::Policy.new(authority: "test") }
+  let(:entitlement) { Terminalwire::Client::Entitlement::Policy::Base.new(authority: "test") }
   let(:directory) { Terminalwire::Client::Resource::Directory.new("directory", adapter, entitlement:) }
   let(:response) { adapter.response }
   before { FileUtils.mkdir_p(entitlement.storage_path.expand_path) }
@@ -129,7 +129,7 @@ end
 
 RSpec.describe Terminalwire::Client::Resource::Browser do
   let(:adapter) { Terminalwire::Adapter::Test.new }
-  let(:entitlement) { Terminalwire::Client::Entitlement::Policy.new(authority: "test") }
+  let(:entitlement) { Terminalwire::Client::Entitlement::Policy::Base.new(authority: "test") }
   let(:browser) { Terminalwire::Client::Resource::Browser.new("browser", adapter, entitlement:) }
   let(:response) { adapter.response }
   subject { response }

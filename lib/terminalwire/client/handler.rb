@@ -14,7 +14,7 @@ module Terminalwire::Client
       @adapter = adapter
       @program_arguments = arguments
       @program_name = program_name
-      @entitlement = Entitlement.resolve(authority: @endpoint.authority)
+      @entitlement = Entitlement::Policy.resolve(authority: @endpoint.authority)
 
       yield self if block_given?
 

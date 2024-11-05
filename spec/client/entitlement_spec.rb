@@ -151,7 +151,7 @@ RSpec.describe Terminalwire::Client::Entitlement::Schemes do
   end
 end
 
-RSpec.describe Terminalwire::Client::Entitlement::Policy do
+RSpec.describe Terminalwire::Client::Entitlement::Policy::Base do
   let(:authority) { "localhost:3000" }
   let(:entitlement) { described_class.new(authority: authority) }
 
@@ -185,15 +185,15 @@ RSpec.describe Terminalwire::Client::Entitlement::Policy do
     let(:authority) { "example.com:8080" }
 
     it "creates a new Entitlement object from a URL" do
-      entitlement_resolve = Terminalwire::Client::Entitlement.resolve(authority:)
+      entitlement_resolve = Terminalwire::Client::Entitlement::Policy.resolve(authority:)
       expect(entitlement_resolve.authority).to eq("example.com:8080")
     end
 
     context "terminalwire.com" do
       let(:authority) { "terminalwire.com" }
-      let(:entitlement) { Terminalwire::Client::Entitlement.resolve(authority:) }
-      it "returns RootPolicy" do
-        expect(entitlement).to be_a Terminalwire::Client::Entitlement::RootPolicy
+      let(:entitlement) { Terminalwire::Client::Entitlement::Policy.resolve(authority:) }
+      it "returns Policy::Root" do
+        expect(entitlement).to be_a Terminalwire::Client::Entitlement::Policy::Root
       end
       describe "~/.terminalwire/bin" do
         it "has access to directory" do
@@ -207,7 +207,7 @@ RSpec.describe Terminalwire::Client::Entitlement::Policy do
   end
 end
 
-RSpec.describe Terminalwire::Client::Entitlement::RootPolicy do
+RSpec.describe Terminalwire::Client::Entitlement::Policy::Root do
   let(:authority) { "terminalwire.com" }
   let(:entitlement) { described_class.new }
 
@@ -229,9 +229,9 @@ RSpec.describe Terminalwire::Client::Entitlement::RootPolicy do
   end
 
   describe ".resolve" do
-    it "returns RootPolicy" do
+    it "returns Policy::Root" do
       url = URI("https://terminalwire.com")
-      expect(Terminalwire::Client::Entitlement.resolve(authority:)).to be_a Terminalwire::Client::Entitlement::RootPolicy
+      expect(Terminalwire::Client::Entitlement::Policy.resolve(authority:)).to be_a Terminalwire::Client::Entitlement::Policy::Root
     end
   end
 end
