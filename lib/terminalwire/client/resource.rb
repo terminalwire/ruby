@@ -62,6 +62,23 @@ module Terminalwire::Client::Resource
     end
   end
 
+  class EnvironmentVariable < Base
+    # Accepts a list of environment variables to permit.
+    def read(key:)
+      ENV[key]
+    end
+
+    def set(key:, value:)
+      ENV[key] = value
+    end
+
+    protected
+
+    def permit(command, key:, **)
+      @entitlement.environment_variables.permitted? key
+    end
+  end
+
   class STDOUT < Base
     def connect
       @io = $stdout
