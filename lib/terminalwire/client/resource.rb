@@ -55,6 +55,8 @@ module Terminalwire::Client::Resource
       end
     end
 
+    protected
+
     def permit(...)
       false
     end
@@ -72,6 +74,8 @@ module Terminalwire::Client::Resource
     def print_line(data:)
       @io.puts(data)
     end
+
+    protected
 
     def permit(...)
       true
@@ -96,6 +100,8 @@ module Terminalwire::Client::Resource
     def read_password
       @io.getpass
     end
+
+    protected
 
     def permit(...)
       true
@@ -130,6 +136,7 @@ module Terminalwire::Client::Resource
     end
 
     protected
+
     def permit(command, path:, mode: nil, **)
       @entitlement.paths.permitted? path, mode:
     end
@@ -156,21 +163,25 @@ module Terminalwire::Client::Resource
       Dir.delete(File.expand_path(path))
     end
 
+    protected
+
     def permit(command, path:, **)
       @entitlement.paths.permitted? path
     end
   end
 
   class Browser < Base
-    def permit(command, url:, **)
-      @entitlement.schemes.permitted? url
-    end
-
     def launch(url:)
       Launchy.open(URI(url))
       # TODO: This is a hack to get the `respond` method to work.
       # Maybe explicitly call a `suceed` and `fail` method?
       nil
+    end
+
+    protected
+
+    def permit(command, url:, **)
+      @entitlement.schemes.permitted? url
     end
   end
 end
