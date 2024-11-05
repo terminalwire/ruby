@@ -20,14 +20,14 @@ module Terminalwire::Client::Entitlement
       MODE_RANGE = 0o000..0o777
 
       def initialize(path:, mode: MODE)
-        @path = Pathname.new(path).expand_path
+        @path = Pathname.new(path)
         @mode = convert(mode)
       end
 
       def permitted_path?(path)
         # This MUST be done via File.fnmatch because Pathname#fnmatch does not work. If you
         # try changing this 🚨 YOU MAY CIRCUMVENT THE SECURITY MEASURES IN PLACE. 🚨
-        File.fnmatch @path.to_s, File.expand_path(path), File::FNM_PATHNAME
+        File.fnmatch @path.to_s, path.to_s, File::FNM_PATHNAME
       end
 
       def permitted_mode?(value)

@@ -25,6 +25,7 @@ module Terminalwire::Client
         it << Resource::Browser.new("browser", @adapter, entitlement:)
         it << Resource::File.new("file", @adapter, entitlement:)
         it << Resource::Directory.new("directory", @adapter, entitlement:)
+        it << Resource::EnvironmentVariable.new("environment_variable", @adapter, entitlement:)
       end
     end
 

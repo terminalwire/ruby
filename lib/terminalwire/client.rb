@@ -5,9 +5,11 @@ require 'io/console'
 module Terminalwire
   module Client
     ROOT_PATH = "~/.terminalwire".freeze
-    def self.root_path = Pathname.new(ROOT_PATH)
+    def self.root_path = Pathname.new(ENV.fetch("TERMINALWIRE_HOME", ROOT_PATH))
 
     def self.websocket(url:, arguments: ARGV, &configuration)
+      ENV["TERMINALWIRE_HOME"] ||= root_path.to_s
+
       url = URI(url)
 
       Async do |task|

@@ -40,18 +40,17 @@ RSpec.describe Terminalwire::Client::Entitlement::Policy::Base do
         ],
         paths: [
           {
-            location: Terminalwire::Client.root_path.join("authorities/localhost:3000/storage").expand_path.to_s,
+            location: Terminalwire::Client.root_path.join("authorities/localhost:3000/storage").to_s,
             mode: 384
           },
           {
-            location: Terminalwire::Client.root_path.join("authorities/localhost:3000/storage/**/*").expand_path.to_s,
+            location: Terminalwire::Client.root_path.join("authorities/localhost:3000/storage/**/*").to_s,
             mode: 384
           }
         ],
         storage_path: "~/.terminalwire/authorities/localhost:3000/storage",
         environment_variables: [
-          { name: "TERMINALWIRE_HOME" },
-          { name: "HOME" }
+          { name: "TERMINALWIRE_HOME" }
         ]
       )
     end

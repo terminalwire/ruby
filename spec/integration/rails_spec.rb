@@ -16,6 +16,7 @@ RSpec.describe "Terminalwire Install", type: :system do
     @test_app_path = Dir.mktmpdir
     @gem_path = File.expand_path('../../../', __FILE__)
     @exe_path = File.join(@gem_path, "exe")
+    @terminalwire_path = File.join(@test_app_path, ".terminalwire")
 
     # Remove any existing test app
     # TODO: We need to have a TERMINALWIRE_HOME env var to set this root.
@@ -29,7 +30,11 @@ RSpec.describe "Terminalwire Install", type: :system do
     Dir.chdir(@test_app_path)
 
     Bundler.with_unbundled_env do
+      @oringal_path = ENV["PATH"]
       ENV["PATH"] = "#{@exe_path}:#{ENV["PATH"]}"
+
+      @original_terminalwire_home = ENV["TERMINALWIRE_HOME"]
+      ENV["TERMINALWIRE_HOME"] = @terminalwire_path
 
       # Create a bare Rails app
       system("rails new . --minimal --skip-bundle")
@@ -83,6 +88,10 @@ RSpec.describe "Terminalwire Install", type: :system do
       Process.kill("TERM", @pid)
       Process.wait(@pid)
     end
+
+    # Restore env vars
+    ENV["PATH"] = @oringal_path
+    ENV["TERMINALWIRE_HOME"] = @original_terminalwire_home
 
     FileUtils.remove_entry(@test_app_path)
   end

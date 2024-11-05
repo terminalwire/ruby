@@ -7,23 +7,34 @@ module Terminalwire::Server
   class Context
     extend Forwardable
 
-    attr_reader :stdout, :stdin, :stderr, :browser, :file, :directory, :storage_path
+    attr_reader \
+      :stdout, :stdin, :stderr,
+      :browser,
+      :file, :directory,
+      :environment_variable,
+      :storage_path, :terminalwire_home_path
 
     def_delegators :@stdout, :puts, :print
     def_delegators :@stdin, :gets, :getpass
 
     def initialize(adapter:, entitlement:)
       @adapter = adapter
-
       @entitlement = entitlement
-      @storage_path = Pathname.new(entitlement.fetch(:storage_path))
 
+      # Initialize resources
       @stdout = Resource::STDOUT.new("stdout", @adapter)
       @stdin = Resource::STDIN.new("stdin", @adapter)
       @stderr = Resource::STDERR.new("stderr", @adapter)
       @browser = Resource::Browser.new("browser", @adapter)
       @file = Resource::File.new("file", @adapter)
       @directory = Resource::Directory.new("directory", @adapter)
+      @environment_variable = Resource::EnvironmentVariable.new("environment_variable", @adapter)
+
+      # Initialize the Terminalwire path and storage path
+      @terminalwire_home_path = Pathname.new(
+        @environment_variable.read("TERMINALWIRE_HOME")
+      )
+      @storage_path = terminalwire_home_path.join("storage")
 
       if block_given?
         begin

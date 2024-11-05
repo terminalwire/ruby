@@ -20,10 +20,10 @@ module Terminalwire::Client::Entitlement
         @environment_variables = EnvironmentVariables.new
         # Permit the HOME and TERMINALWIRE_HOME environment variables.
         @environment_variables.permit "TERMINALWIRE_HOME"
-        @environment_variables.permit "HOME"
       end
 
       def root_path
+        # TODO: This needs to be passed into the Policy so that it can be set by the client.
         Terminalwire::Client.root_path
       end
 
@@ -67,22 +67,25 @@ module Terminalwire::Client::Entitlement
 
         # Permit terminalwire to grant execute permissions to the binary stubs.
         @paths.permit binary_pattern, mode: BINARY_PATH_FILE_MODE
+
+        # Used to check if terminalwire is setup in the user's PATH environment variable.
+        @environment_variables.permit "PATH"
       end
 
       # Grant access to the `~/.terminalwire/**/*` path so users can install
       # terminalwire apps via `terminalwire install svbtle`, etc.
       def root_pattern
-        root_path.join("**/*")
+        root_path.join("**/*").freeze
       end
 
       # Path where the terminalwire binary stubs are stored.
       def binary_path
-        root_path.join("bin")
+        root_path.join("bin").freeze
       end
 
       # Pattern for the binary path.
       def binary_pattern
-        binary_path.join("*")
+        binary_path.join("*").freeze
       end
     end
 

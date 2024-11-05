@@ -24,15 +24,15 @@ module Terminalwire::Server
       end
     end
 
-    class EnvironmentVariable
+    class EnvironmentVariable < Base
       # Accepts a list of environment variables to permit.
-      def read(key:)
-        command("read", key:)
+      def read(name)
+        command("read", name:)
       end
 
-      def set(key:, value:)
-        command("set", key:, value:)
-      end
+      # def write(name:, value:)
+      #   command("write", name:, value:)
+      # end
     end
 
     class STDOUT < Base

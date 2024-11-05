@@ -6,8 +6,8 @@ RSpec.describe Terminalwire::Client::Resource::File do
   let(:file) { Terminalwire::Client::Resource::File.new("file", adapter, entitlement:) }
   let(:response) { adapter.response }
   subject { response }
-  before { FileUtils.mkdir_p(entitlement.storage_path.expand_path) }
-  after { FileUtils.rm_rf(entitlement.storage_path.expand_path) }
+  before { FileUtils.mkdir_p(entitlement.storage_path) }
+  after { FileUtils.rm_rf(entitlement.storage_path) }
 
   describe "#write" do
     context "unpermitted path" do
@@ -97,8 +97,8 @@ RSpec.describe Terminalwire::Client::Resource::Directory do
   let(:entitlement) { Terminalwire::Client::Entitlement::Policy::Base.new(authority: "test") }
   let(:directory) { Terminalwire::Client::Resource::Directory.new("directory", adapter, entitlement:) }
   let(:response) { adapter.response }
-  before { FileUtils.mkdir_p(entitlement.storage_path.expand_path) }
-  after { FileUtils.rm_rf(entitlement.storage_path.expand_path) }
+  before { FileUtils.mkdir_p(entitlement.storage_path) }
+  after { FileUtils.rm_rf(entitlement.storage_path) }
   subject { response }
 
   describe "#create" do

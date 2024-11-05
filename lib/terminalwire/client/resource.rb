@@ -64,18 +64,18 @@ module Terminalwire::Client::Resource
 
   class EnvironmentVariable < Base
     # Accepts a list of environment variables to permit.
-    def read(key:)
-      ENV[key]
+    def read(name:)
+      ENV[name]
     end
 
-    def set(key:, value:)
-      ENV[key] = value
-    end
+    # def write(name:, value:)
+    #   ENV[name] = value
+    # end
 
     protected
 
-    def permit(command, key:, **)
-      @entitlement.environment_variables.permitted? key
+    def permit(command, name:, **)
+      @entitlement.environment_variables.permitted? name
     end
   end
 
@@ -129,27 +129,27 @@ module Terminalwire::Client::Resource
     File = ::File
 
     def read(path:)
-      File.read File.expand_path(path)
+      File.read path
     end
 
     def write(path:, content:, mode: nil)
-      File.open(File.expand_path(path), "w", mode) { |f| f.write(content) }
+      File.open(path, "w", mode) { |f| f.write(content) }
     end
 
     def append(path:, content:, mode: nil)
-      File.open(File.expand_path(path), "a", mode) { |f| f.write(content) }
+      File.open(path, "a", mode) { |f| f.write(content) }
     end
 
     def delete(path:)
-      File.delete(File.expand_path(path))
+      File.delete path
     end
 
     def exist(path:)
-      File.exist? File.expand_path(path)
+      File.exist? path
     end
 
     def change_mode(path:, mode:)
-      File.chmod(mode, File.expand_path(path))
+      File.chmod mode, path
     end
 
     protected
@@ -163,21 +163,21 @@ module Terminalwire::Client::Resource
     File = ::File
 
     def list(path:)
-      Dir.glob File.expand_path(path)
+      Dir.glob path
     end
 
     def create(path:)
-      FileUtils.mkdir_p File.expand_path(path)
+      FileUtils.mkdir_p path
     rescue Errno::EEXIST
       # Do nothing
     end
 
     def exist(path:)
-      Dir.exist? File.expand_path(path)
+      Dir.exist? path
     end
 
     def delete(path:)
-      Dir.delete(File.expand_path(path))
+      Dir.delete path
     end
 
     protected
