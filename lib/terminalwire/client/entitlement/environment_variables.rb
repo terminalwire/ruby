@@ -20,7 +20,7 @@ module Terminalwire::Client::Entitlement
     end
 
     def serialize
-      @permitted.to_a.map(&:to_s)
+      map { |name| { name: } }
     end
   end
 end

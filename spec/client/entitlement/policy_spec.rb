@@ -34,7 +34,10 @@ RSpec.describe Terminalwire::Client::Entitlement::Policy::Base do
     it "returns a hash with the authority" do
       expect(entitlement.serialize).to eq(
         authority: "localhost:3000",
-        schemes: [ "http", "https" ],
+        schemes: [
+          { scheme: "http" },
+          { scheme: "https"}
+        ],
         paths: [
           {
             location: Terminalwire::Client.root_path.join("authorities/localhost:3000/storage").expand_path.to_s,
@@ -46,14 +49,21 @@ RSpec.describe Terminalwire::Client::Entitlement::Policy::Base do
           }
         ],
         storage_path: "~/.terminalwire/authorities/localhost:3000/storage",
-        environment_variables: [ "TERMINALWIRE_HOME", "HOME" ]
+        environment_variables: [
+          { name: "TERMINALWIRE_HOME" },
+          { name: "HOME" }
+        ]
       )
     end
+
     pending "does not have hard coded paths" do
       # This will start passing when
       expect(entitlement.serialize).to eq(
         authority: "localhost:3000",
-        schemes: [ "http", "https" ],
+        schemes: [
+          { scheme: "http" },
+          { scheme: "https"}
+        ],
         paths: [
           {
             location: "~/.terminalwire/authorities/localhost:3000/storage",
@@ -64,7 +74,10 @@ RSpec.describe Terminalwire::Client::Entitlement::Policy::Base do
             mode: 384
           }
         ],
-        environment_variables: [ "TERMINALWIRE_HOME", "HOME" ]
+        environment_variables: [
+          { name: "TERMINALWIRE_HOME" },
+          { name: "HOME" }
+        ]
       )
     end
   end
