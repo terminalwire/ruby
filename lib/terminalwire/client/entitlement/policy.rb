@@ -44,7 +44,6 @@ module Terminalwire::Client::Entitlement
           authority: @authority,
           schemes: @schemes.serialize,
           paths: @paths.serialize,
-          storage_path: storage_path.to_s,
           environment_variables: @environment_variables.serialize
         }
       end
