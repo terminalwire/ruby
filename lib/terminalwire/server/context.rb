@@ -12,7 +12,10 @@ module Terminalwire::Server
       :browser,
       :file, :directory,
       :environment_variable,
-      :storage_path, :terminalwire_home_path
+      :authority,
+      :terminalwire_home_path,
+      :authority_path,
+      :storage_path
 
     def_delegators :@stdout, :puts, :print
     def_delegators :@stdin, :gets, :getpass
@@ -30,11 +33,16 @@ module Terminalwire::Server
       @directory = Resource::Directory.new("directory", @adapter)
       @environment_variable = Resource::EnvironmentVariable.new("environment_variable", @adapter)
 
-      # Initialize the Terminalwire path and storage path
+      # Authority is provided by the client.
+      @authority = @entitlement.fetch(:authority)
+      # The Terminalwire home path is provided by the client and set
+      # as an environment variable.
       @terminalwire_home_path = Pathname.new(
         @environment_variable.read("TERMINALWIRE_HOME")
       )
-      @storage_path = terminalwire_home_path.join("storage")
+      # Now derive the rest of the paths from the Terminalwire home path.
+      @authority_path = @terminalwire_home_path.join("authorities", @authority)
+      @storage_path = @authority_path.join("storage")
 
       if block_given?
         begin
