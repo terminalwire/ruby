@@ -1,6 +1,7 @@
 require 'fileutils'
 require 'launchy'
 require 'io/console'
+require 'pathname'
 
 module Terminalwire
   module Client
