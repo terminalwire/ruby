@@ -13,7 +13,7 @@ module Terminalwire::Server
       :file, :directory,
       :environment_variable,
       :authority,
-      :terminalwire_home_path,
+      :root_path,
       :authority_path,
       :storage_path
 
@@ -37,11 +37,11 @@ module Terminalwire::Server
       @authority = @entitlement.fetch(:authority)
       # The Terminalwire home path is provided by the client and set
       # as an environment variable.
-      @terminalwire_home_path = Pathname.new(
+      @root_path = Pathname.new(
         @environment_variable.read("TERMINALWIRE_HOME")
       )
       # Now derive the rest of the paths from the Terminalwire home path.
-      @authority_path = @terminalwire_home_path.join("authorities", @authority)
+      @authority_path = @root_path.join("authorities", @authority)
       @storage_path = @authority_path.join("storage")
 
       if block_given?
