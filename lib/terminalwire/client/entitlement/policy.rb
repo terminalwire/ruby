@@ -52,6 +52,19 @@ module Terminalwire::Client::Entitlement
     class Root < Base
       AUTHORITY = "terminalwire.com".freeze
 
+      # Terminalwire checks these to install the binary stubs path.
+      SHELL_INITIALIZATION_FILE_PATHS = %w[
+        ~/.bash_profile
+        ~/.bashrc
+        ~/.zprofile
+        ~/.zshrc
+        ~/.profile
+        ~/.config/fish/config.fish
+        ~/.bash_login
+        ~/.cshrc
+        ~/.tcshrc
+      ].freeze
+
       # Ensure the binary stubs are executable. This increases the
       # file mode entitlement so that stubs created in ./bin are executable.
       BINARY_PATH_FILE_MODE = 0o755
@@ -63,6 +76,10 @@ module Terminalwire::Client::Entitlement
         # Now setup special permitted paths.
         @paths.permit root_path
         @paths.permit root_pattern
+        # Permit the dotfiles so terminalwire can install the binary stubs.
+        SHELL_INITIALIZATION_FILE_PATHS.each do |path|
+          @paths.permit path
+        end
 
         # Permit terminalwire to grant execute permissions to the binary stubs.
         @paths.permit binary_pattern, mode: BINARY_PATH_FILE_MODE
