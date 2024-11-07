@@ -53,6 +53,22 @@ module Terminalwire::Server
       end
     end
 
+    # Wraps the environment variables in a hash-like object that can be accessed
+    # from client#ENV. This makes it look and feel just like the ENV object in Ruby.
+    class Env
+      def initialize(context:)
+        @context = context
+      end
+
+      def [](name)
+        @context.environment_variable.read(name)
+      end
+    end
+
+    def ENV
+      @ENV ||= Env.new(context: self)
+    end
+
     def exit(status = 0)
       @adapter.write(event: "exit", status: status)
     end
