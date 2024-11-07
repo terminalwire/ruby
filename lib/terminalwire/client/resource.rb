@@ -129,27 +129,27 @@ module Terminalwire::Client::Resource
     File = ::File
 
     def read(path:)
-      File.read path
+      File.read File.expand_path(path)
     end
 
     def write(path:, content:, mode: nil)
-      File.open(path, "w", mode) { |f| f.write(content) }
+      File.open(File.expand_path(path), "w", mode) { |f| f.write(content) }
     end
 
     def append(path:, content:, mode: nil)
-      File.open(path, "a", mode) { |f| f.write(content) }
+      File.open(File.expand_path(path), "a", mode) { |f| f.write(content) }
     end
 
     def delete(path:)
-      File.delete path
+      File.delete File.expand_path(path)
     end
 
     def exist(path:)
-      File.exist? path
+      File.exist? File.expand_path(path)
     end
 
     def change_mode(path:, mode:)
-      File.chmod mode, path
+      File.chmod mode, File.expand_path(path)
     end
 
     protected
@@ -167,7 +167,7 @@ module Terminalwire::Client::Resource
     end
 
     def create(path:)
-      FileUtils.mkdir_p path
+      FileUtils.mkdir_p File.expand_path(path)
     rescue Errno::EEXIST
       # Do nothing
     end

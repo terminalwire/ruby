@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "tmpdir"
+
 RSpec.describe Terminalwire::Client::Resource::File do
   let(:adapter) { Terminalwire::Adapter::Test.new }
   let(:entitlement) { Terminalwire::Client::Entitlement::Policy::Base.new(authority: "test") }
@@ -8,6 +10,15 @@ RSpec.describe Terminalwire::Client::Resource::File do
   subject { response }
   before { FileUtils.mkdir_p(entitlement.storage_path) }
   after { FileUtils.rm_rf(entitlement.storage_path) }
+
+  around do |example|
+    original = ENV["TERMINALWIRE_HOME"]
+    ENV["TERMINALWIRE_HOME"] = Dir.mktmpdir
+
+    example.run
+
+    ENV["TERMINALWIRE_HOME"] = original
+  end
 
   describe "#write" do
     context "unpermitted path" do
@@ -26,8 +37,15 @@ RSpec.describe Terminalwire::Client::Resource::File do
 
     context "permitted path" do
       describe "permitted implicit mode" do
-        before{ file.command("write", path: "~/.terminalwire/authorities/test/storage/howdy.txt", content: "") }
-        it { is_expected.to include(
+        before {
+          file.command(
+            "write",
+            path: Terminalwire::Client.root_path.join("authorities/test/storage/howdy.txt").to_s,
+            content: ""
+          )
+        }
+        it {
+          is_expected.to include(
           event: "resource",
           status: "success",
           name: "file")
@@ -35,7 +53,14 @@ RSpec.describe Terminalwire::Client::Resource::File do
       end
 
       describe "permitted explicit mode" do
-        before{ file.command("write", path: "~/.terminalwire/authorities/test/storage/howdy.txt", content: "", mode: 0o500) }
+        before {
+          file.command(
+            "write",
+            path: Terminalwire::Client.root_path.join("authorities/test/storage/howdy.txt").to_s,
+            content: "",
+            mode: 0o500
+          )
+        }
         it { is_expected.to include(
           event: "resource",
           status: "success",
@@ -44,7 +69,15 @@ RSpec.describe Terminalwire::Client::Resource::File do
       end
 
       describe "unpermitted explicit mode" do
-        before{ file.command("write", path: "~/.terminalwire/authorities/test/storage/howdy.txt", content: "", mode: 0o700) }
+        before {
+          file.command(
+            "write",
+            path: Terminalwire::Client.root_path.join("authorities/test/storage/howdy.txt").to_s,
+            content: "",
+            mode: 0o700
+          )
+        }
+
         it { is_expected.to include(
           event: "resource",
           response: "Client denied write",
@@ -52,7 +85,7 @@ RSpec.describe Terminalwire::Client::Resource::File do
           name: "file",
           command: "write",
           parameters: {
-            path: "~/.terminalwire/authorities/test/storage/howdy.txt",
+            path: Terminalwire::Client.root_path.join("authorities/test/storage/howdy.txt").to_s,
             mode: 0o700,
             content: ""
           })
@@ -62,7 +95,7 @@ RSpec.describe Terminalwire::Client::Resource::File do
   end
 
   describe "#change_mode" do
-    let(:path) { "~/.terminalwire/authorities/test/storage/howdy.txt" }
+    let(:path) { Terminalwire::Client.root_path.join("authorities/test/storage/howdy.txt").to_s }
     before { file.command("write", path:, content: "") }
     before { file.command("change_mode", path:, mode:) }
 
@@ -83,7 +116,7 @@ RSpec.describe Terminalwire::Client::Resource::File do
         status: "success",
         parameters: {
           mode: 448,
-          path:"~/.terminalwire/authorities/test/storage/howdy.txt"
+          path: Terminalwire::Client.root_path.join("authorities/test/storage/howdy.txt").to_s
         },
         response: "Client denied change_mode",
         status: "failure")
