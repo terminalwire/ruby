@@ -108,4 +108,14 @@ RSpec.describe Terminalwire::Client::Entitlement::Policy::Root do
       expect(Terminalwire::Client::Entitlement::Policy.resolve(authority:)).to be_a Terminalwire::Client::Entitlement::Policy::Root
     end
   end
+
+  describe "SHELL_INITIALIZATION_FILE_PATHS" do
+    it "returns an array of shell initialization file paths" do
+      expect(Terminalwire::Client::Entitlement::Policy::Root::SHELL_INITIALIZATION_FILE_PATHS).to include("~/.zshrc")
+    end
+
+    it "permits the shell initialization file paths" do
+      expect(entitlement.paths.permitted?("~/.zshrc")).to be_truthy
+    end
+  end
 end
