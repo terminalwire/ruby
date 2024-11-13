@@ -19,7 +19,7 @@ class MainTerminal < ApplicationTerminal
       self.current_user = user
       puts "Successfully logged in as #{current_user.email}."
     else
-      puts "Could not find a user with that email and password."
+      fail "Could not find a user with that email and password."
     end
   end
 
@@ -28,7 +28,7 @@ class MainTerminal < ApplicationTerminal
     if self.current_user
       puts "Logged in as #{current_user.email}."
     else
-      puts "Not logged in. Run `#{self.class.basename} login` to login."
+      fail "Not logged in. Run `#{self.class.basename} login` to login."
     end
   end
 
