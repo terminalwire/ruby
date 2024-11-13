@@ -37,6 +37,18 @@ module Terminalwire
           def_delegators :stdin,
             :gets, :getpass
 
+          # Prints text to the standard error stream.
+          def warn(...)
+            stderr.puts(...)
+          end
+
+          # Prints text to the standard error stream and exits the program.
+          def fail(...)
+            stderr.puts(...)
+            context.exit 1
+          ensure
+            super
+          end
           # Feels more naturual to call `client.files` etc. from
           # the serve since it's more apparent that it's a client.
           alias :client :context
