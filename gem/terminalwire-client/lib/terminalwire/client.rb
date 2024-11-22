@@ -1,10 +1,25 @@
-require 'fileutils'
+require 'terminalwire'
+
 require 'launchy'
 require 'io/console'
 require 'pathname'
 
+require 'forwardable'
+require 'uri'
+
+require 'async'
+require 'async/http/endpoint'
+require 'async/websocket/client'
+require 'async/websocket/adapters/rack'
+require 'uri-builder'
+
 module Terminalwire
   module Client
+    Loader = Zeitwerk::Loader.new.tap do |it|
+      it.push_dir File.join(__dir__, "client"), namespace: self
+      it.setup
+    end
+
     ROOT_PATH = "~/.terminalwire".freeze
     def self.root_path = Pathname.new(ENV.fetch("TERMINALWIRE_HOME", ROOT_PATH))
 

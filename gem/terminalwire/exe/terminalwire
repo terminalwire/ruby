@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 require_relative "../lib/terminalwire.rb"
+require "terminalwire/client"
 
 begin
   Terminalwire::Client.websocket(url: "wss://terminalwire.com/terminal")

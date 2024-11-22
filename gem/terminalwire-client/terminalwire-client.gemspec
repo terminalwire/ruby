@@ -1,0 +1,34 @@
+# frozen_string_literal: true
+
+core = Gem::Specification.load File.expand_path("../terminalwire/terminalwire.gemspec", __dir__)
+
+Gem::Specification.new do |spec|
+  spec.name = "terminalwire-client"
+  spec.version = core.version
+  spec.authors = core.authors
+  spec.email = core.email
+
+  spec.summary = core.summary
+  spec.description = core.description
+  spec.homepage = "https://terminalwire.com/ruby"
+  spec.license = "Proprietary (https://terminalwire.com/license)"
+  spec.required_ruby_version = core.required_ruby_version
+
+  spec.metadata = core.metadata
+  spec.metadata["source_code_uri"] = "https://github.com/terminalwire/ruby/tree/main/terminalwire-client"
+
+  # Specify which files should be added to the gem when it is released.
+  # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
+  gemspec = File.basename(__FILE__)
+  spec.files = IO.popen(%w[git ls-files -z], chdir: __dir__, err: IO::NULL) do |ls|
+    ls.readlines("\x0", chomp: true).reject do |f|
+      (f == gemspec) ||
+        f.start_with?(*%w[bin/ test/ spec/ features/ .git .github appveyor Gemfile])
+    end
+  end
+  spec.require_paths = core.require_paths
+
+  # Uncomment to register a new dependency of your gem
+  spec.add_dependency "launchy", "~> 3.0"
+  spec.add_dependency "terminalwire", core.version
+end

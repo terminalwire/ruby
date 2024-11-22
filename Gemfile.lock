@@ -1,4 +1,11 @@
 PATH
+  remote: gem/terminalwire-client
+  specs:
+    terminalwire-client (0.2.5)
+      launchy (~> 3.0)
+      terminalwire (= 0.2.5)
+
+PATH
   remote: gem/terminalwire
   specs:
     terminalwire (0.2.5)
@@ -269,6 +276,7 @@ DEPENDENCIES
   rake (~> 13.0)
   rspec (~> 3.0)
   terminalwire!
+  terminalwire-client!
 
 BUNDLED WITH
    2.5.9

@@ -4,3 +4,4 @@ source "https://rubygems.org"
 
 # Specify your gem's dependencies in terminalwire.gemspec
 gemspec path: "gem/terminalwire"
+gemspec path: "gem/terminalwire-client"
