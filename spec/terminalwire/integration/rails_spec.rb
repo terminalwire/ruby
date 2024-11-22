@@ -8,13 +8,13 @@ require "io/wait"
 
 RSpec.describe "Terminalwire Install", type: :system do
   let(:binary_name) { "hello" }
-  let(:gem_path) { File.expand_path('../../../', __FILE__) }
+  let(:gem_path) { File.expand_path('../../../../gem/terminalwire', __FILE__) }
   let(:exe_path)  { File.join(gem_path, "exe") }
 
   before(:all) do
     # Set up the Rails app once for this test suite
     @test_app_path = Dir.mktmpdir
-    @gem_path = File.expand_path('../../../', __FILE__)
+    @gem_path = File.expand_path('../../../../gem/terminalwire', __FILE__)
     @exe_path = File.join(@gem_path, "exe")
     @terminalwire_path = File.join(@test_app_path, ".terminalwire")
 
@@ -29,13 +29,15 @@ RSpec.describe "Terminalwire Install", type: :system do
     @original_path = Dir.pwd
     Dir.chdir(@test_app_path)
 
+    @oringal_path = ENV["PATH"]
+    ENV["PATH"] = "#{@exe_path}:#{ENV["PATH"]}"
+
+    @original_terminalwire_home = ENV["TERMINALWIRE_HOME"]
+    ENV["TERMINALWIRE_HOME"] = @terminalwire_path
+
+    ENV["SHIT"] = "BALLS"
+
     Bundler.with_unbundled_env do
-      @oringal_path = ENV["PATH"]
-      ENV["PATH"] = "#{@exe_path}:#{ENV["PATH"]}"
-
-      @original_terminalwire_home = ENV["TERMINALWIRE_HOME"]
-      ENV["TERMINALWIRE_HOME"] = @terminalwire_path
-
       # Create a bare Rails app
       system("rails new . --minimal --skip-bundle")
 
