@@ -1,20 +1,16 @@
 # frozen_string_literal: true
-require "rspec/core/rake_task"
-
-require "rake/clean"
-CLOBBER.include "pkg"
 
 require "bundler/gem_helper"
 require_relative "support/terminalwire"
 
 Terminalwire::Project.all.each do |project|
   namespace project.task_namespace do
-    # Install gem tasks (build, install, release, etc.)
-    Bundler::GemHelper.install_tasks(dir: project.gem_dir, name: project.gem_name)
+    # Installs gem tasks (build, install, release, etc.)
+    project.gem_tasks
 
-    desc "Uninstall #{project.gem_name}"
+    desc "Uninstall #{project.name}"
     task :uninstall do
-      sh "gem uninstall #{project.gem_name} --force --executables"
+      sh "gem uninstall #{project.name} --force --executables"
     end
   end
 end
