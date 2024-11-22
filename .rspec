@@ -1,3 +1,4 @@
 --format documentation
 --color
 --require spec_helper
+--pattern spec/**/*_spec.rb,gem/*/spec/**/*_spec.rb
