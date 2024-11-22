@@ -18,7 +18,7 @@ module Terminalwire
     end
 
     def self.all
-      Dir.glob("gem/*").select { |path| File.directory?(path) }.map { |gem_dir| new(gem_dir) }
+      Dir.glob("gem/*").select { |it| Dir.exist?(it) }.map { |it| new(it) }
     end
   end
 end
