@@ -3,7 +3,7 @@
 /_yardoc/
 /coverage/
 /doc/
-/pkg/
+/gem/**/pkg/
 /spec/reports/
 /tmp/
 
