@@ -10,12 +10,12 @@ Gem::Specification.new do |spec|
 
   spec.summary = core.summary
   spec.description = core.description
-  spec.homepage = "https://terminalwire.com/ruby"
-  spec.license = "Proprietary (https://terminalwire.com/license)"
+  spec.homepage = core.homepage
+  spec.license = core.license
   spec.required_ruby_version = core.required_ruby_version
 
   spec.metadata = core.metadata
-  spec.metadata["source_code_uri"] = "https://github.com/terminalwire/ruby/tree/main/terminalwire-server"
+  spec.metadata["source_code_uri"] = "https://github.com/terminalwire/ruby/tree/main/#{spec.name}"
 
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
