@@ -20,25 +20,11 @@ RSpec.describe "Terminalwire Install", type: :system do
 
     @server_gem_path = File.expand_path('../../../gem/terminalwire-server', __FILE__)
 
-    @client_authority_path = File.expand_path("~/.terminalwire/authorities/localhost:3000")
-
-    # Remove any existing test app
-    begin
-      FileUtils.remove_entry(@client_authority_path)
-    rescue
-      puts "No existing test app to remove."
-    end
-
     @original_path = Dir.pwd
     Dir.chdir(@test_app_path)
 
     @oringal_path = ENV["PATH"]
     ENV["PATH"] = "#{@exe_path}:#{ENV["PATH"]}"
-
-    @original_terminalwire_home = ENV["TERMINALWIRE_HOME"]
-    ENV["TERMINALWIRE_HOME"] = @terminalwire_path
-
-    ENV["SHIT"] = "BALLS"
 
     Bundler.with_unbundled_env do
       # Create a bare Rails app
@@ -97,18 +83,8 @@ RSpec.describe "Terminalwire Install", type: :system do
 
     # Restore env vars
     ENV["PATH"] = @oringal_path
-    ENV["TERMINALWIRE_HOME"] = @original_terminalwire_home
 
     FileUtils.remove_entry(@test_app_path)
-
-    @client_authority_path = File.expand_path("~/.terminalwire/authorities/localhost:3000")
-
-    # Remove any existing test app
-    begin
-      FileUtils.remove_entry(@client_authority_path)
-    rescue
-      puts "No existing test app to remove."
-    end
   end
 
   it "runs Terminalwire client against server" do

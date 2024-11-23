@@ -150,7 +150,11 @@ RSpec.describe Terminalwire::Client::Resource::Directory do
     end
 
     context "permitted access" do
-      before{ directory.command("create", path: "~/.terminalwire/authorities/test/storage/howdy") }
+      before{
+        directory.command("create",
+          path: Terminalwire::Client.root_path.join("authorities/test/storage/howdy").to_s
+        )
+      }
       it { is_expected.to include(
         event: "resource",
         status: "success",

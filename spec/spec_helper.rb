@@ -17,3 +17,17 @@ RSpec.configure do |config|
     c.syntax = :expect
   end
 end
+
+RSpec.configure do |config|
+  config.around(:each) do |example|
+    Dir.mktmpdir do |tmp_dir|
+      original_terminalwire_home = ENV['TERMINALWIRE_HOME']
+      begin
+        ENV['TERMINALWIRE_HOME'] = tmp_dir
+        example.run
+      ensure
+        ENV['TERMINALWIRE_HOME'] = original_terminalwire_home
+      end
+    end
+  end
+end
