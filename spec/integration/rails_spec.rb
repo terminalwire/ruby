@@ -18,6 +18,8 @@ RSpec.describe "Terminalwire Install", type: :system do
     @exe_path = File.join(@gem_path, "exe")
     @terminalwire_path = File.join(@test_app_path, ".terminalwire")
 
+    @server_gem_path = File.expand_path('../../../gem/terminalwire-server', __FILE__)
+
     # Remove any existing test app
     # TODO: We need to have a TERMINALWIRE_HOME env var to set this root.
     begin
@@ -43,6 +45,7 @@ RSpec.describe "Terminalwire Install", type: :system do
 
       # Add the terminalwire gem to the Gemfile
       system("bundle add terminalwire --path #{@gem_path}")
+      system("bundle add terminalwire-server --path #{@server_gem_path}")
 
       # Run the terminalwire install generator
       system("bin/rails generate terminalwire:install hello")

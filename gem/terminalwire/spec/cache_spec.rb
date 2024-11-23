@@ -96,6 +96,10 @@ RSpec.describe Terminalwire::Cache::File::Entry do
       expect(File.exist?(entry.instance_variable_get(:@path))).to be true
     end
 
+    it "writes data to the file with correct encoding" do
+      expect(File.open(entry.instance_variable_get(:@path), "rb", &:read).encoding).to eq(Encoding::ASCII_8BIT)
+    end
+
     it "serializes data and expiration correctly" do
       serialized_data = MessagePack.unpack(File.read(entry.instance_variable_get(:@path)), symbolize_keys: true)
       expect(serialized_data[:value]).to eq(value)

@@ -6,6 +6,12 @@ PATH
       terminalwire (= 0.2.5)
 
 PATH
+  remote: gem/terminalwire-server
+  specs:
+    terminalwire-server (0.2.5)
+      terminalwire (= 0.2.5)
+
+PATH
   remote: gem/terminalwire
   specs:
     terminalwire (0.2.5)
@@ -277,6 +283,7 @@ DEPENDENCIES
   rspec (~> 3.0)
   terminalwire!
   terminalwire-client!
+  terminalwire-server!
 
 BUNDLED WITH
    2.5.9

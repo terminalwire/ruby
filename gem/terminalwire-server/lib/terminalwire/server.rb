@@ -1,7 +1,14 @@
+require "terminalwire"
 require "thor"
+require "rails"
 
 module Terminalwire
   module Server
+    Loader = Zeitwerk::Loader.new.tap do |it|
+      it.push_dir File.join(__dir__, "server"), namespace: self
+      it.setup
+    end
+
     class WebSocket
       include Logging
 

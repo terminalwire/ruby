@@ -2,6 +2,7 @@
 
 require "terminalwire"
 require "terminalwire-client"
+require "terminalwire-server"
 require "pathname"
 require "uri"
 

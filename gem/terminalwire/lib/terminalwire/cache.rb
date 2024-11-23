@@ -81,7 +81,9 @@ module Terminalwire::Cache
       end
 
       def save
-        File.write @path, serialize
+        File.open(@path, "wb") do |file| # Write in binary mode
+          file.write(serialize)
+        end
       end
 
       def evict
@@ -89,7 +91,7 @@ module Terminalwire::Cache
       end
 
       def deserialize
-        case MessagePack.unpack(File.read(@path), symbolize_keys: true)
+        case MessagePack.unpack(File.open(@path, "rb", &:read), symbolize_keys: true)
         in { value:, expires:, version: VERSION }
           @value = value
           @expires = Time.parse(expires).utc if expires
