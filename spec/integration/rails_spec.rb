@@ -20,10 +20,11 @@ RSpec.describe "Terminalwire Install", type: :system do
 
     @server_gem_path = File.expand_path('../../../gem/terminalwire-server', __FILE__)
 
+    @client_authority_path = File.expand_path("~/.terminalwire/authorities/localhost:3000")
+
     # Remove any existing test app
-    # TODO: We need to have a TERMINALWIRE_HOME env var to set this root.
     begin
-      FileUtils.remove_entry(File.expand_path("~/.terminalwire/authorities/localhost:3000"))
+      FileUtils.remove_entry(@client_authority_path)
     rescue
       puts "No existing test app to remove."
     end
@@ -99,6 +100,15 @@ RSpec.describe "Terminalwire Install", type: :system do
     ENV["TERMINALWIRE_HOME"] = @original_terminalwire_home
 
     FileUtils.remove_entry(@test_app_path)
+
+    @client_authority_path = File.expand_path("~/.terminalwire/authorities/localhost:3000")
+
+    # Remove any existing test app
+    begin
+      FileUtils.remove_entry(@client_authority_path)
+    rescue
+      puts "No existing test app to remove."
+    end
   end
 
   it "runs Terminalwire client against server" do
