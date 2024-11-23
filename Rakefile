@@ -30,5 +30,5 @@ task :spec do
   sh "bundle exec rspec spec"
 end
 
-desc "Run CI tasks"
-task ci: %i[spec build]
+# Run specs and build gem.
+task default: %i[spec build]
