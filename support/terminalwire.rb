@@ -2,6 +2,17 @@
 
 module Terminalwire
   class Project
+    # We need to worry about the order of paths here because when commands like
+    # `rake install` are run, it needs to do it in the order of dependencies since
+    # RubyGems hasn't yet built a dependency graph for us.
+    GEM_PATHS = %w[
+      gem/terminalwire-core
+      gem/terminalwire-client
+      gem/terminalwire
+      gem/terminalwire-server
+      gem/terminalwire-rails
+    ]
+
     attr_reader :dir, :name
 
     def initialize(dir)
@@ -33,8 +44,8 @@ module Terminalwire
       segments.prepend(task_namespace).join(":")
     end
 
-    def self.all(glob: "gem/*")
-      Dir.glob(glob).select { |it| Dir.exist?(it) }.map { |it| new(it) }
+    def self.all
+      GEM_PATHS.map { |it| new(it) }
     end
   end
 end
