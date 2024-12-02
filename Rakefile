@@ -12,6 +12,13 @@ Terminalwire::Project.all.each do |project|
     task :uninstall do
       sh "gem uninstall #{project.name} --force --executables"
     end
+
+    desc "Test #{project.name}"
+    task :spec do
+      project.chdir do
+        sh "bundle exec rspec spec"
+      end
+    end
   end
 end
 
@@ -20,15 +27,27 @@ end
   desc "#{task.capitalize} all gems"
   task task do
     Terminalwire::Project.all.each do |project|
-      Rake::Task["#{project.task_namespace}:#{task}"].invoke
+      project.rake_task(task).invoke
     end
   end
 end
 
-desc "Run all specs"
-task :spec do
-  sh "bundle exec rspec spec"
+namespace :spec do
+  desc "Run isolated specs"
+  task :isolate do
+    Terminalwire::Project.all.each do |project|
+      project.rake_task("spec").invoke
+    end
+  end
+
+  desc "Run integration specs"
+  task :integration do
+    sh "bundle exec rspec spec"
+  end
 end
+
+desc "Run specs"
+task spec: %i[spec:isolate spec:integration]
 
 # Run specs and build gem.
 task default: %i[spec build]
