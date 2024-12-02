@@ -13,6 +13,8 @@ require 'async/websocket/client'
 require 'async/websocket/adapters/rack'
 require 'uri-builder'
 
+require 'zeitwerk'
+
 module Terminalwire
   module Client
     Loader = Zeitwerk::Loader.new.tap do |it|

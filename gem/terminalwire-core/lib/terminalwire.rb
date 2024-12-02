@@ -16,9 +16,9 @@ module Terminalwire
   class Error < StandardError; end
 
   # Zeitwerk loader for the Terminalwire gem.
-  Loader = Zeitwerk::Loader.for_gem.tap do |loader|
-    loader.ignore("#{__dir__}/generators")
-    loader.setup
+  Loader = Zeitwerk::Loader.new.tap do |it|
+    it.push_dir File.join(__dir__, "terminalwire"), namespace: self
+    it.setup
   end
 
   # Used by Terminalwire client to connect to Terminalire.com for license

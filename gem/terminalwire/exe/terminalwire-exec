@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-require_relative "../lib/terminalwire.rb"
 require "terminalwire/client"
 
 begin

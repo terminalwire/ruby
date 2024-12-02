@@ -1,4 +1,5 @@
 require "terminalwire"
+require "terminalwire/logging"
 
 module Terminalwire
   module Server

@@ -1,5 +1,4 @@
-# frozen_string_literal: true
-
+require "spec_helper"
 require "tmpdir"
 
 RSpec.describe Terminalwire::Client::Resource::File do

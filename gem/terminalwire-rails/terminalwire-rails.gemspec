@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-core = Gem::Specification.load File.expand_path("../terminalwire/terminalwire.gemspec", __dir__)
+core = Gem::Specification.load File.expand_path("../terminalwire-core/terminalwire-core.gemspec", __dir__)
 
 Gem::Specification.new do |spec|
   spec.name = "terminalwire-rails"

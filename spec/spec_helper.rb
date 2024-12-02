@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
-require "terminalwire"
-require "terminalwire-client"
+require "terminalwire-core"
 require "terminalwire-server"
+require "terminalwire-client"
+require "terminalwire"
 require "pathname"
 require "uri"
 
