@@ -3,7 +3,7 @@
 core = Gem::Specification.load File.expand_path("../terminalwire/terminalwire.gemspec", __dir__)
 
 Gem::Specification.new do |spec|
-  spec.name = "terminalwire-server"
+  spec.name = "terminalwire-rails"
   spec.version = core.version
   spec.authors = core.authors
   spec.email = core.email
@@ -29,5 +29,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = core.require_paths
 
   # Uncomment to register a new dependency of your gem
-  spec.add_dependency "terminalwire", core.version
+  spec.add_dependency "terminalwire-server", core.version
+  spec.add_development_dependency "rails", "~> 7.2"
 end

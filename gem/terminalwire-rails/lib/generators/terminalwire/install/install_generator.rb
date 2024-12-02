@@ -18,7 +18,7 @@ class Terminalwire::InstallGenerator < Rails::Generators::Base
   def add_route
     route <<~ROUTE
       match "/terminal",
-        to: Terminalwire::Server::Thor.new(MainTerminal),
+        to: Terminalwire::Rails::Thor.new(MainTerminal),
         via: [:get, :connect]
     ROUTE
   end

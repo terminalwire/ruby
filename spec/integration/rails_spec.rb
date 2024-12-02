@@ -19,6 +19,7 @@ RSpec.describe "Terminalwire Install", type: :system do
     @terminalwire_path = File.join(@test_app_path, ".terminalwire")
 
     @server_gem_path = File.expand_path('../../../gem/terminalwire-server', __FILE__)
+    @rails_gem_path = File.expand_path('../../../gem/terminalwire-rails', __FILE__)
 
     @original_path = Dir.pwd
     Dir.chdir(@test_app_path)
@@ -33,6 +34,7 @@ RSpec.describe "Terminalwire Install", type: :system do
       # Add the terminalwire gem to the Gemfile
       system("bundle add terminalwire --path #{@gem_path}")
       system("bundle add terminalwire-server --path #{@server_gem_path}")
+      system("bundle add terminalwire-rails --path #{@rails_gem_path}")
 
       # Run the terminalwire install generator
       system("bin/rails generate terminalwire:install hello")
