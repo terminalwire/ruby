@@ -23,6 +23,11 @@ class Terminalwire::InstallGenerator < Rails::Generators::Base
     ROUTE
   end
 
+  def bundle_development_dependencies
+    # Add the terminalwire gem to the development group in the Gemfile.
+    gem "terminalwire", group: :development
+  end
+
   def print_post_install_message
     say ""
     say "Terminalwire has been successfully installed!", :green
