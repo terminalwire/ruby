@@ -31,4 +31,5 @@ Gem::Specification.new do |spec|
   # Uncomment to register a new dependency of your gem
   spec.add_dependency "terminalwire-server", core.version
   spec.add_development_dependency "rails", "~> 7.2"
+  spec.add_dependency "jwt", "~> 2.0"
 end

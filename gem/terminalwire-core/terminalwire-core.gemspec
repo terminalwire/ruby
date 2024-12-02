@@ -35,11 +35,9 @@ Gem::Specification.new do |spec|
   # Uncomment to register a new dependency of your gem
   spec.add_dependency "async-websocket", "~> 0.30"
   spec.add_dependency "zeitwerk", "~> 2.0"
-  spec.add_dependency "thor", "~> 1.3"
   spec.add_dependency "msgpack", "~> 1.7"
-  spec.add_dependency "launchy", "~> 3.0"
-  spec.add_dependency "jwt", "~> 2.0"
   spec.add_dependency "uri-builder", "~> 0.1.9"
+  spec.add_dependency "base64", "~> 0.2.0"
 
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "rspec", "~> 3.0"

@@ -29,5 +29,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = core.require_paths
 
   # Uncomment to register a new dependency of your gem
+  spec.add_dependency "thor", "~> 1.3"
   spec.add_dependency "terminalwire-core", core.version
 end
