@@ -1,13 +1,15 @@
 require "terminalwire"
 require "terminalwire/logging"
 
+require 'zeitwerk'
+Zeitwerk::Registry.loader_for_gem(
+  __FILE__,
+  namespace: Terminalwire,
+  warn_on_extra_files: true
+).setup
+
 module Terminalwire
   module Server
-    Loader = Zeitwerk::Loader.new.tap do |it|
-      it.push_dir File.join(__dir__, "server"), namespace: self
-      it.setup
-    end
-
     class WebSocket
       include Logging
 

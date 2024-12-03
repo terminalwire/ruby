@@ -14,14 +14,14 @@ require 'async/websocket/adapters/rack'
 require 'uri-builder'
 
 require 'zeitwerk'
+Zeitwerk::Registry.loader_for_gem(
+  __FILE__,
+  namespace: Terminalwire,
+  warn_on_extra_files: true
+).setup
 
 module Terminalwire
   module Client
-    Loader = Zeitwerk::Loader.new.tap do |it|
-      it.push_dir File.join(__dir__, "client"), namespace: self
-      it.setup
-    end
-
     ROOT_PATH = "~/.terminalwire".freeze
     def self.root_path = Pathname.new(ENV.fetch("TERMINALWIRE_HOME", ROOT_PATH))
 
