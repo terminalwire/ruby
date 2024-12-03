@@ -1,7 +1,10 @@
 require "terminalwire"
 require "terminalwire/logging"
 
-Terminalwire::Loader.setup_gem
+require "zeitwerk"
+Zeitwerk::Loader.for_gem_extension(Terminalwire).tap do |loader|
+  loader.setup
+end
 
 module Terminalwire
   module Server

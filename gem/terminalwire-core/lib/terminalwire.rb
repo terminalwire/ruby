@@ -11,12 +11,10 @@ require 'async/websocket/client'
 require 'async/websocket/adapters/rack'
 require 'uri-builder'
 
-require_relative "terminalwire/loader"
-Terminalwire::Loader.setup do |loader|
-  loader.ignore File.join(__dir__, "terminalwire/version.rb")
-  loader.ignore File.join(__dir__, "terminalwire/loader.rb")
+require "zeitwerk"
+Zeitwerk::Loader.for_gem.tap do |loader|
   loader.ignore File.join(__dir__, "terminalwire-core.rb")
-  loader.push_dir File.join(__dir__, "terminalwire"), namespace: Terminalwire
+  loader.setup
 end
 
 module Terminalwire
