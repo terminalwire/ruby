@@ -7,6 +7,11 @@ require "terminalwire"
 require "pathname"
 require "uri"
 
+# This will smoke out more bugs that could come up in environments like
+# Rails.
+require "zeitwerk"
+Zeitwerk::Loader.eager_load_all
+
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
   config.example_status_persistence_file_path = ".rspec_status"

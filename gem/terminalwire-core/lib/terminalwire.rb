@@ -17,6 +17,7 @@ module Terminalwire
 
   # Zeitwerk loader for the Terminalwire gem.
   Loader = Zeitwerk::Loader.new.tap do |it|
+    it.ignore File.join(__dir__, "terminalwire/version.rb")
     it.push_dir File.join(__dir__, "terminalwire"), namespace: self
     it.setup
   end
