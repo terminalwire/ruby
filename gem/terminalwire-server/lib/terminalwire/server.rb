@@ -1,12 +1,7 @@
 require "terminalwire"
 require "terminalwire/logging"
 
-require 'zeitwerk'
-Zeitwerk::Registry.loader_for_gem(
-  __FILE__,
-  namespace: Terminalwire,
-  warn_on_extra_files: true
-).setup
+Terminalwire::Loader.setup_gem
 
 module Terminalwire
   module Server

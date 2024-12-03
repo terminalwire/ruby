@@ -4,7 +4,6 @@ require_relative "terminalwire/version"
 
 require 'forwardable'
 require 'uri'
-require 'zeitwerk'
 
 require 'async'
 require 'async/http/endpoint'
@@ -12,15 +11,16 @@ require 'async/websocket/client'
 require 'async/websocket/adapters/rack'
 require 'uri-builder'
 
+require_relative "terminalwire/loader"
+Terminalwire::Loader.setup do |loader|
+  loader.ignore File.join(__dir__, "terminalwire/version.rb")
+  loader.ignore File.join(__dir__, "terminalwire/loader.rb")
+  loader.ignore File.join(__dir__, "terminalwire-core.rb")
+  loader.push_dir File.join(__dir__, "terminalwire"), namespace: Terminalwire
+end
+
 module Terminalwire
   class Error < StandardError; end
-
-  # Zeitwerk loader for the Terminalwire gem.
-  Loader = Zeitwerk::Loader.new.tap do |it|
-    it.ignore File.join(__dir__, "terminalwire/version.rb")
-    it.push_dir File.join(__dir__, "terminalwire"), namespace: self
-    it.setup
-  end
 
   # Used by Terminalwire client to connect to Terminalire.com for license
   # validations, etc.
