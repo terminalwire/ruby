@@ -51,3 +51,10 @@ task spec: %i[spec:isolate spec:integration]
 
 # Run specs and build gem.
 task default: %i[spec build]
+
+namespace :tebako do
+  desc "Build binary"
+  task :build do
+    sh "tebako press -r ./gem/terminalwire -e terminalwire-exec -R 3.3.5"
+  end
+end
