@@ -1,0 +1,70 @@
+require 'pathname'
+
+task :default do
+  ruby_version = "3.3.6"
+  os = "osx"
+  platform = "arm64"
+  url = "https://github.com/YOU54F/traveling-ruby/releases/download/rel-20241122/traveling-ruby-20241122-#{ruby_version}-#{os}-#{platform}-full.tar.gz"
+  path = Pathname.new("package/#{os}-#{platform}")
+  gem = Gem::Specification.load("terminalwire.gemspec")
+
+  sh "mkdir -p #{path}"
+
+  # Don't bother downloading if we already have the file
+  unless File.exist? path.join("lib/ruby/info/RUBY_COMPAT_VERSION")
+    sh "mkdir -p #{path.join("lib/ruby")}"
+    sh "curl -L #{url} | tar -xzf - -C #{path.join("lib/ruby")}"
+  end
+
+  # Install the base gem and all of its dependencies in the vendor directory.
+  sh "gem install #{gem.name} --version '#{gem.version}' --install-dir #{path.join("lib/vendor")} --no-document --verbose"
+
+  # Remove caches to make package smaller
+  sh "rm -rf #{path.join("lib/vendor/cache")}"
+  sh "rm -rf #{path.join("lib/vendor/bin")}"
+  sh "rm -rf #{path.join("lib/vendor/doc")}"
+  sh "rm -rf #{path.join("lib/vendor/plugins")}"
+
+  File.write path.join("lib/boot.rb"), <<~RUBY
+    # Resolve the base directory
+    base_dir = File.expand_path("../..", __FILE__)
+
+    # Add all gem paths under lib/vendor to the load path
+    Dir.glob(File.join(base_dir, "lib/vendor/gems/*/lib")).each do |gem_path|
+      $LOAD_PATH.unshift gem_path
+    end
+  RUBY
+
+  gems = path.glob("lib/vendor/specifications/*.gemspec").each_with_object({}) do |spec_path, hash|
+    spec = Gem::Specification.load(spec_path.to_s)
+    hash[spec.name] = spec
+  end
+
+  terminalwire_gem = gems.fetch("terminalwire")
+
+  gem_path = Pathname.new(terminalwire_gem.full_gem_path).relative_path_from path.expand_path
+  exe_path = gem_path.join(terminalwire_gem.bindir, "terminalwire-exec")
+
+  # Let's write the executable path into the thing...'
+  File.write path.join("terminalwire-exec"), <<~RUBY
+    #!/bin/bash
+    # Resolve the directory of the current script
+    SELFDIR="$(cd "$(dirname "$0")" && pwd)"
+
+    # Path to the embedded Ruby executable
+    RUBY_EXEC="$SELFDIR/lib/ruby/bin/ruby"
+    BOOT_SCRIPT="$SELFDIR/lib/boot.rb"
+    PROGRAM="$SELFDIR/#{exe_path}"
+
+    # Pass the boot script and the main Ruby script to Ruby
+    exec "$RUBY_EXEC" -r"$BOOT_SCRIPT" "$PROGRAM" "$@"
+  RUBY
+
+  File.chmod 0755, path.join("terminalwire-exec")
+
+  # TODO: download and install each gem extension for its platform.
+  native_gems = gems.values.select{ _1.extensions.any? }
+  native_gems.each do |native_gem|
+    p native_gem
+  end
+end
