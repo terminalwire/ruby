@@ -24,18 +24,11 @@ RUBY_VERSION="3.3.6"
 ### Build Ruby
 
 # Install Ruby in the vendor directory.
-if [ -d "$VENDOR_PATH" ]; then
-  echo "Ruby already installed at $VENDOR_PATH. Skipping build process."
-else
-  echo "Ruby not found. Starting build process..."
-  # Make the directories if they don't exist
-  mkdir -p "$VENDOR_PATH"
-  ruby-install ruby "$RUBY_VERSION" --install-dir "$(realpath "$VENDOR_PATH")"
-fi
+ruby-install ruby "$RUBY_VERSION" --install-dir "$(realpath "$VENDOR_PATH")"
 
 ### Install dependencies
 
-cp -r "$SOURCE_PATH" "$APP_PATH"
+cp -r "$SOURCE_PATH/" "$APP_PATH"
 
 # Now setup gem paths to point to the $VENDOR_PATH gems directory.
 export GEM_HOME="$VENDOR_PATH/gems"

@@ -1,3 +1,3 @@
 source "https://rubygems.org"
 
-gem "terminalwire"
+gem "terminalwire", "~> 0.3.0.alpha"
