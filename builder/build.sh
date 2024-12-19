@@ -66,4 +66,4 @@ EOF
 }
 
 # Example usage of shim function
-shim "exe/terminalwire"
+shim "exe/terminalwire-exec"
