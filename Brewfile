@@ -1,25 +1,2 @@
-# Packages from https://github.com/tamatebako/tebako?tab=readme-ov-file#homebrew-packages
-brew "gnu-sed"
-brew "bash"
-brew "pkg-config"
-brew "flex"
-brew "binutils"
-brew "libffi"
-brew "gdbm"
-brew "zlib"
-brew "ncurses"
-brew "double-conversion"
-brew "boost"
-brew "jemalloc"
-brew "fmt"
-brew "glog"
-brew "libevent"
-brew "libsodium"
-brew "lz4"
-brew "xz"
-brew "libyaml"
-brew "openssl@3"
-
-# Don't forget to set the PATH for bison since it doesn't put the binary
-# in the conventional location. Run `brew info bison` to see the path.
-brew "bison"
+# Used on macOS to install Ruby via Homebrew
+brew "ruby-install"
