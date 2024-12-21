@@ -3,17 +3,22 @@ ROOT_PATH="$(dirname "$0")"
 # Setup paths
 BUILD_PATH="$PWD/build"
 
+# We'll copy the package template into the build directory.
+PACKAGE_PATH="$BUILD_PATH/package"
+
+mkdir -p "$PACKAGE_PATH"
+
 ### Copy the package template into the build directory
-cp -rv "$ROOT_PATH/template/" "$BUILD_PATH"
+cp -rv "$ROOT_PATH/template/" "$PACKAGE_PATH"
 
 # Remove all the .gitkeep files
-rm "$BUILD_PATH"/**/.gitkeep
+rm "$PACKAGE_PATH"/**/.gitkeep
 
 # Where Ruby and gems are installed.
-VENDOR_PATH="$BUILD_PATH/vendor"
+VENDOR_PATH="$PACKAGE_PATH/vendor"
 
 # Add the Ruby binary to the path.
-APP_PATH="$BUILD_PATH/app"
+APP_PATH="$PACKAGE_PATH/app"
 
 # Source code that we're packing up.
 SOURCE_PATH="$PWD/gem/terminalwire"
@@ -22,6 +27,12 @@ SOURCE_PATH="$PWD/gem/terminalwire"
 RUBY_VERSION="3.3.6"
 
 ### Build Ruby
+
+# Check if ruby-install is present.
+if ! command -v ruby-install &> /dev/null; then
+  echo "Error: ruby-install is not installed." >&2
+  exit 1
+fi
 
 # Install Ruby in the vendor directory.
 ruby-install ruby "$RUBY_VERSION" --install-dir "$(realpath "$VENDOR_PATH")"
@@ -48,8 +59,8 @@ popd
 
 shim() {
   local entrypoint="$1"
-  local shim_path="$BUILD_PATH/bin/$(basename "$entrypoint")"
-  local boot_path="$BUILD_PATH/lib/boot.sh"
+  local shim_path="$PACKAGE_PATH/bin/$(basename "$entrypoint")"
+  local boot_path="$PACKAGE_PATH/lib/boot.sh"
 
   mkdir -p "$(dirname "$shim_path")"
 
@@ -67,3 +78,16 @@ EOF
 
 # Example usage of shim function
 shim "exe/terminalwire-exec"
+
+# Define the tarball name
+ARCHIVE_PATH="$BUILD_PATH/build.tar.gz"
+
+# Create the tarball
+echo "Packaging build directory into $ARCHIVE_PATH..."
+tar -czf "$ARCHIVE_PATH" -C "$PACKAGE_PATH" .
+
+# Calculate and display the file size in MB
+FILE_SIZE_MB=$(du -m "$ARCHIVE_PATH" | cut -f1)
+
+echo "Build packaged successfully at $ARCHIVE_PATH"
+echo "Tarball size: ${FILE_SIZE_MB} MB"
