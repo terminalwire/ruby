@@ -1,0 +1,49 @@
+name: Build on Multiple OS/Architectures
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    # We'll run the same steps on all matrix combinations
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        arch: [x86_64, arm64]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      # Install dependencies for Linux
+      - name: Install ruby-install (Linux)
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ruby-install
+
+      # Install dependencies for macOS
+      - name: Install ruby-install (macOS)
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          brew install ruby-install
+
+      - name: Make build script executable
+        run: |
+          chmod +x build.sh
+
+      - name: Run build script
+        run: |
+          ./build.sh
+
+      # Upload the final tar.gz artifact for each OS/arch combo
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-${{ matrix.os }}-${{ matrix.arch }}
+          path: build/build.tar.gz
