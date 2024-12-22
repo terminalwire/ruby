@@ -1,4 +1,4 @@
-name: Build on Multiple OS/Architectures
+name: Package Terminalwire for Multiple Operating System's & Architectures
 
 on:
   push:
@@ -8,6 +8,10 @@ on:
 
 jobs:
   build:
+    env:
+      # Set the version of ruby-install to use
+      RUBY_INSTALL_VERSION: 0.9.4
+
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -37,9 +41,9 @@ jobs:
       # Install ruby-install from source on both OS's
       - name: Install ruby-install from source
         run: |
-          curl -LO https://github.com/postmodern/ruby-install/archive/refs/tags/v0.9.4.tar.gz
-          tar -xzf v0.9.4.tar.gz
-          cd ruby-install-0.9.4
+          curl -LO https://github.com/postmodern/ruby-install/archive/refs/tags/v$RUBY_INSTALL_VERSION.tar.gz
+          tar -xzf v$RUBY_INSTALL_VERSION.tar.gz
+          cd ruby-install-$RUBY_INSTALL_VERSION
 
           make
           sudo make install
