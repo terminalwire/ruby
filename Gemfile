@@ -7,3 +7,5 @@ gemspec path: "gem/terminalwire-core"
 gemspec path: "gem/terminalwire-server"
 gemspec path: "gem/terminalwire-client"
 gemspec path: "gem/terminalwire"
+
+gem "tebako", "~> 0.12.1"

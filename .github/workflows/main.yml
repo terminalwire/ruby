@@ -8,7 +8,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     name: Ruby ${{ matrix.ruby }}
     strategy:
@@ -30,5 +30,31 @@ jobs:
     - name: Run RSpec
       run: bundle exec rspec --format documentation
 
-    - name: Run RSpec
-      run: bundle exec rspec
+  package:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        ruby:
+          - '3.3.0'
+
+    runs-on: ${{ matrix.os }}
+    name: Package ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: false
+
+      - name: Install dependencies
+        run: bundle install --jobs 4 --retry 3 --verbose
+
+      - name: Run Tebako
+        run: bundle exec rake package:build
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: build/*

@@ -46,6 +46,15 @@ namespace :spec do
   end
 end
 
+namespace :package do
+  PACKAGE_PATH = ENV.fetch("PACKAGE_PATH", "./build")
+
+  desc "Build terminal-exec binary"
+  task :build do
+    sh "tebako press -r gem/terminalwire -e terminalwire-exec -o #{PACKAGE_PATH}/bin/terminalwire-exec"
+  end
+end
+
 desc "Run specs"
 task spec: %i[spec:isolate spec:integration]
 
