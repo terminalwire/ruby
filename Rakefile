@@ -5,7 +5,6 @@ require_relative "support/terminalwire"
 
 Terminalwire::Project.all.each do |project|
   namespace project.task_namespace do
-    # Installs gem tasks (build, install, release, etc.)
     project.gem_tasks
 
     desc "Uninstall #{project.name}"
@@ -19,6 +18,12 @@ Terminalwire::Project.all.each do |project|
         sh "bundle exec rspec spec"
       end
     end
+  end
+end
+
+module Tebako
+  def self.press(path, exe:, to:, ruby_version: "3.3.6")
+    "tebako press -r #{path} -e #{exe} -R #{ruby_version} -o #{to}"
   end
 end
 
@@ -47,64 +52,63 @@ namespace :spec do
 end
 
 namespace :tebako do
+  arch = RbConfig::CONFIG.fetch("COROUTINE_TYPE")
+
   namespace :macos do
-    %w[amd64 arm64].each do |arch|
-      path = Pathname.new("build/macos/#{arch}")
-      bin_path = path.join("bin/terminalwire-exec")
+    path = Pathname.new("build/macos/#{arch}")
+    bin_path = path.join("bin/terminalwire-exec")
 
-      namespace arch do
-        task :prepare do
-          mkdir_p bin_path.dirname
-        end
-
-        task :press do
-          sh Tebako.press "gem/terminalwire",
-            exe: "terminalwire-exec",
-            to: bin_path
-        end
-
-        task build: %i[prepare press]
-      end
-
-      desc "Build terminal-exec binary for macOS(#{arch})"
-      task arch => "#{arch}:build"
+    task :prepare do
+      mkdir_p bin_path.dirname
     end
+
+    task :press do
+      sh Tebako.press "gem/terminalwire",
+        exe: "terminalwire-exec",
+        to: bin_path
+    end
+
+    task build: %i[prepare press]
   end
+
+  desc "Build terminal-exec binary for macOS(#{arch})"
+  task macos: "macos:build"
 
   namespace :ubuntu do
-    namespace :amd64 do
-      path = Pathname.new("build/ubuntu/amd64")
-      bin_path = path.join("bin/terminalwire-exec")
-      container_path = Pathname.new("/host")
-      docker_image = "terminalwire_ubuntu_amd64"
+    path = Pathname.new("build/ubuntu/#{arch}")
+    bin_path = path.join("bin/terminalwire-exec")
+    container_path = Pathname.new("/host")
+    docker_image = "terminalwire_ubuntu_#{arch}"
 
-      task :prepare do
-        mkdir_p bin_path.dirname
-        sh <<~BASH
-          docker build https://github.com/bradgessler/tebako-ci-containers.git#macos-qemu \
-            -f ubuntu-20.04.Dockerfile \
-            -t #{docker_image}
-        BASH
-      end
-
-      task :press do
-        sh <<~BASH
-          docker run -v #{File.expand_path(Dir.pwd)}:#{container_path} \
-            #{docker_image} \
-            bash -c "#{
-              Tebako.press "/host/gem/terminalwire",
-                exe: "terminalwire-exec",
-                to: container_path.join(bin_path)
-            }"
-        BASH
-      end
-
-      task build: %i[prepare press]
+    task :prepare do
+      mkdir_p bin_path.dirname
+      sh <<~BASH
+        docker build https://github.com/bradgessler/tebako-ci-containers.git#macos-qemu \
+          -f ubuntu-20.04.Dockerfile \
+          -t #{docker_image}
+      BASH
     end
 
-    desc "Build terminal-exec binary for Ubuntu(amd64)"
-    task amd64: "amd64:build"
+    task :press do
+      sh <<~BASH
+        docker run -v #{File.expand_path(Dir.pwd)}:#{container_path} \
+          #{docker_image} \
+          bash -c "#{
+            Tebako.press "/host/gem/terminalwire",
+              exe: "terminalwire-exec",
+              to: container_path.join(bin_path)
+          }"
+      BASH
+    end
+
+    task build: %i[prepare press]
   end
+
+  desc "Build terminal-exec binary for Ubuntu(amd64)"
+  task ubuntu: "ubuntu:build"
+
+  desc "Builds binaries for #{arch} for macOS and Ubuntu"
+  task build: %i[macos ubuntu]
 end
 
 desc "Run specs"
