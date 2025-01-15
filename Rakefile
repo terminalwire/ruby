@@ -46,53 +46,6 @@ namespace :spec do
   end
 end
 
-module Tebako
-  class Docker
-    def initialize(image:, platform:)
-      @image = image
-      @platform = platform
-    end
-
-    def press(path, to:, **)
-      host_to, host_file = File.split(to)
-
-      <<~BASH
-        docker run --platform #{@platform} \
-          -v #{File.expand_path(path)}:/build/in \
-          -v #{File.expand_path(host_to)}:/build/out \
-          -t ghcr.io/tamatebako/tebako-#{@image}:latest \
-          bash -c "#{Tebako.press("/build/in", to: File.join("/build/out", host_file), **)}"
-      BASH
-    end
-  end
-
-  def self.press(path, exe:, to:, ruby_version: "3.3.6")
-    "tebako press -r #{path} -e #{exe} -R #{ruby_version} -o #{to}"
-  end
-
-  def self.press_alpine_amd64(...)
-    Docker.new(
-      image: "alpine-3.17",
-      platform: "linux/amd64"
-    ).press(...)
-  end
-
-  def self.press_ubuntu_amd64(...)
-    Docker.new(
-      image: "ubuntu-20.04",
-      platform: "linux/amd64"
-    ).press(...)
-  end
-end
-
-def with_env(**env)
-  original = ENV.to_hash # Save the original ENV
-  ENV.merge! env.transform_keys(&:to_s) # Set the temporary ENV vars
-  yield # Execute the block
-ensure
-  ENV.replace original # Restore the original ENV
-end
-
 namespace :tebako do
   namespace :macos do
     %w[amd64 arm64].each do |arch|
@@ -122,17 +75,28 @@ namespace :tebako do
     namespace :amd64 do
       path = Pathname.new("build/ubuntu/amd64")
       bin_path = path.join("bin/terminalwire-exec")
+      container_path = Pathname.new("/host")
+      docker_image = "terminalwire_ubuntu_amd64"
 
       task :prepare do
         mkdir_p bin_path.dirname
+        sh <<~BASH
+          docker build https://github.com/bradgessler/tebako-ci-containers.git#macos-qemu \
+            -f ubuntu-20.04.Dockerfile \
+            -t #{docker_image}
+        BASH
       end
 
       task :press do
-        with_env "DOCKER_HOST": "ssh://brad@home-server.local" do
-          sh Tebako.press_ubuntu_amd64 "gem/terminalwire",
-            exe: "terminalwire-exec",
-            to: bin_path
-        end
+        sh <<~BASH
+          docker run -v #{File.expand_path(Dir.pwd)}:#{container_path} \
+            #{docker_image} \
+            bash -c "#{
+              Tebako.press "/host/gem/terminalwire",
+                exe: "terminalwire-exec",
+                to: container_path.join(bin_path)
+            }"
+        BASH
       end
 
       task build: %i[prepare press]
@@ -148,111 +112,3 @@ task spec: %i[spec:isolate spec:integration]
 
 # Run specs and build gem.
 task default: %i[spec build]
-
-
-__END__
-
-# def env
-#   Hash.new.tap do |env|
-#     env["LG_VADDR"] = lg_vaddr if lg_vaddr
-#   end
-# end
-
-# def env_flags
-#   env.map { |k,v| "-e #{k}=#{v}" }.join(" ")
-# end
-
-# private
-
-# def lg_vaddr
-#   operating_system = `uname -s`.chomp
-#   architecture = `uname -m`.chomp
-
-#   emulated = `sysctl -n sysctl.proc_translated`.chomp == "1"
-#   macos = operating_system == "Darwin"
-
-#   if macos
-#     if (architecture == "x86_64" and emulated) or architecture == "arm64"
-#       "39"
-#     elsif architecture == "x86_64"
-#       "48"
-#     end
-#   end
-# end
-
----
-
-
-# class BuildTargets
-#   attr_reader :architectures
-#   alias :archs :architectures
-
-#   class Architecture
-#     attr_reader :name, :operating_systems
-
-#     def initialize(name:)
-#       @name = name
-#       @operating_systems = []
-#     end
-
-#     def operating_system(name,**, &)
-#       @operating_systems << OperatingSystem.new(name:, architecture: self, **).tap do |os|
-#         yield os if block_given?
-#       end
-#     end
-#     alias :os :operating_system
-#   end
-
-#   class OperatingSystem < Data.define(:name, :architecture)
-#     def build_path
-#       Pathname.new("#{architecture.name}-#{name}")
-#     end
-#   end
-
-#   def initialize
-#     @architectures = []
-#   end
-
-#   def architecture (name, **, &)
-#     @architectures << Architecture.new(name:,**).tap(&)
-#   end
-#   alias :arch :architecture
-
-#   def operating_systems
-#     @architectures.flat_map(&:operating_systems)
-#   end
-
-#   def self.configure(*,**, &)
-#     new(*,**).tap(&)
-#   end
-# end
-
-# namespace :package do
-#   ARCHICTECTURES = %w[amd64 arm64]
-#   OPERATING_SYSTEMS = %w[ubuntu macos]
-
-#   target = BuildTargets.configure do |targets|
-#     targets.arch "amd64" do |it|
-#       it.os "ubuntu"
-#       it.os "macos"
-#     end
-#     targets.arch "arm64" do |it|
-#       it.os "ubuntu"
-#       it.os "macos"
-#     end
-#   end
-
-#   target.archs.each do |arch|
-#     namespace arch.name do
-#       arch.operating_systems.each do |os|
-#         namespace os.name do
-#           desc "Build terminal-exec binary for #{arch.name} #{os.name}"
-#           task :build do
-#             sh "tebako press -r gem/terminalwire -e terminalwire-exec -o build/bin/terminalwire-exec"
-#           end
-#         end
-#       end
-#     end
-#   end
-# end
-#
