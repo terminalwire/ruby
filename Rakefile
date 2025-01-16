@@ -111,6 +111,35 @@ namespace :tebako do
   task build: %i[macos ubuntu]
 end
 
+def write(path, *, **, &)
+  puts "Writing file to #{path}"
+  File.write(path, *, **, &)
+end
+
+task :package do
+  package_path = Pathname.new("packages")
+  sh "mkdir -p #{package_path}"
+
+  Dir.glob("./build/*/*").map{ Pathname.new(_1) }.each do |path|
+    path.each_filename.to_a => *_, os, arch
+
+    write path.join("VERSION"),
+      Terminalwire::VERSION
+
+    path.join("bin/terminalwire").tap do |bin|
+      write bin, <<~BASH
+        #!/usr/bin/env terminalwire-exec
+        url: "wss://terminalwire.com/terminal"
+      BASH
+
+      sh "chmod +x #{bin}"
+    end
+
+    archive_name = package_path.join("#{os}-#{arch}.tar.gz")
+    sh "tar -czf #{archive_name} -C #{path} ."
+  end
+end
+
 desc "Run specs"
 task spec: %i[spec:isolate spec:integration]
 
