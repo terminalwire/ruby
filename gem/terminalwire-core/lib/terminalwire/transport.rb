@@ -48,6 +48,7 @@ module Terminalwire
 
       def write(data)
         @websocket.write(data)
+        @websocket.flush
       end
 
       def close
