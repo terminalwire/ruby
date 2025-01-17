@@ -43,7 +43,11 @@ module Tebako
       "arm64"
     end
   end
+end
 
+def write(path, *, **, &)
+  puts "Writing file to #{path}"
+  File.write(path, *, **, &)
 end
 
 # Define global tasks for all gems
@@ -71,10 +75,11 @@ namespace :spec do
 end
 
 namespace :tebako do
-  arch = RbConfig::CONFIG.fetch("COROUTINE_TYPE")
+  build_path = Pathname.new("build")
+  stage_path = build_path.join("stage")
 
   namespace :macos do
-    path = Pathname.new("build/macos/#{arch}")
+    path = stage_path.join("macos/#{Tebako.host_arch}")
     bin_path = path.join("bin/terminalwire-exec")
 
     task :prepare do
@@ -90,14 +95,14 @@ namespace :tebako do
     task build: %i[prepare press]
   end
 
-  desc "Build terminal-exec binary for macOS(#{arch})"
+  desc "Build terminal-exec binary for macOS(#{Tebako.host_arch})"
   task macos: "macos:build"
 
   namespace :ubuntu do
-    path = Pathname.new("build/ubuntu/#{arch}")
+    path = stage_path.join("ubuntu/#{Tebako.host_arch}")
     bin_path = path.join("bin/terminalwire-exec")
     container_path = Pathname.new("/host")
-    docker_image = "terminalwire_ubuntu_#{arch}"
+    docker_image = "terminalwire_ubuntu_#{Tebako.host_arch}"
 
     task :prepare do
       mkdir_p bin_path.dirname
@@ -125,39 +130,35 @@ namespace :tebako do
 
   desc "Build terminal-exec binary for Ubuntu"
   task ubuntu: "ubuntu:build"
+
+
+  task :package do
+    packages_path = build_path.join("packages")
+    sh "mkdir -p #{packages_path}"
+
+    Dir.glob(stage_path.join("*/*")).map{ Pathname.new(_1) }.each do |path|
+      path.each_filename.to_a => *_, os, arch
+
+      write path.join("VERSION"),
+        Terminalwire::VERSION
+
+      path.join("bin/terminalwire").tap do |bin|
+        write bin, <<~BASH
+          #!/usr/bin/env terminalwire-exec
+          url: "wss://terminalwire.com/terminal"
+        BASH
+
+        sh "chmod +x #{bin}"
+      end
+
+      archive_name = packages_path.join("#{os}-#{arch}.tar.gz")
+      sh "tar -czf #{archive_name} -C #{path} ."
+    end
+  end
 end
 
 desc "Build #{Tebako.host_os}(#{Tebako.host_arch}) binary"
-task tebako: "tebako:build:#{Tebako.host_os}"
-
-def write(path, *, **, &)
-  puts "Writing file to #{path}"
-  File.write(path, *, **, &)
-end
-
-task :package do
-  package_path = Pathname.new("packages")
-  sh "mkdir -p #{package_path}"
-
-  Dir.glob("./build/*/*").map{ Pathname.new(_1) }.each do |path|
-    path.each_filename.to_a => *_, os, arch
-
-    write path.join("VERSION"),
-      Terminalwire::VERSION
-
-    path.join("bin/terminalwire").tap do |bin|
-      write bin, <<~BASH
-        #!/usr/bin/env terminalwire-exec
-        url: "wss://terminalwire.com/terminal"
-      BASH
-
-      sh "chmod +x #{bin}"
-    end
-
-    archive_name = package_path.join("#{os}-#{arch}.tar.gz")
-    sh "tar -czf #{archive_name} -C #{path} ."
-  end
-end
+task tebako: ["tebako:#{Tebako.host_os}:build", "tebako:package"]
 
 desc "Run specs"
 task spec: %i[spec:isolate spec:integration]
