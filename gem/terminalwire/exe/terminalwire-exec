@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 require "terminalwire/client"
 
+Zeitwerk::Loader.eager_load_all
+
 begin
   Terminalwire::Client::Exec.start
 rescue Terminalwire::Error => e
