@@ -164,4 +164,4 @@ desc "Run specs"
 task spec: %i[spec:isolate spec:integration]
 
 # Run specs and build gem.
-task default: %i[spec build]
+task default: %i[spec build tebako]
