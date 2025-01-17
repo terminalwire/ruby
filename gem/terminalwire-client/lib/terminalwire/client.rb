@@ -34,8 +34,8 @@ module Terminalwire
           alpn_protocols: Async::HTTP::Protocol::HTTP11.names
         )
 
-        Async::WebSocket::Client.connect(endpoint) do |adapter|
-          transport = Terminalwire::Transport::WebSocket.new(adapter)
+        Async::WebSocket::Client.connect(endpoint) do |connection|
+          transport = Terminalwire::Transport::WebSocket.new(connection)
           adapter = Terminalwire::Adapter::Socket.new(transport)
           Terminalwire::Client::Handler.new(adapter, arguments:, endpoint:, &configuration).connect
         end
