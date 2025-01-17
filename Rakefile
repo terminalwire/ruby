@@ -25,6 +25,25 @@ module Tebako
   def self.press(path, exe:, to:, ruby_version: "3.3.6")
     "tebako press -r #{path} -e #{exe} -R #{ruby_version} -o #{to}"
   end
+
+  def self.host_os
+    case RbConfig::CONFIG["host_os"]
+    in /darwin/
+      "macos"
+    in /linux/
+      "ubuntu"
+    end
+  end
+
+  def self.host_arch
+    case RbConfig::CONFIG["host_cpu"]
+    in /x86_64/
+      "amd64"
+    in /arm64/
+      "arm64"
+    end
+  end
+
 end
 
 # Define global tasks for all gems
@@ -104,12 +123,12 @@ namespace :tebako do
     task build: %i[prepare press]
   end
 
-  desc "Build terminal-exec binary for Ubuntu(amd64)"
+  desc "Build terminal-exec binary for Ubuntu"
   task ubuntu: "ubuntu:build"
-
-  desc "Builds binaries for #{arch} for macOS and Ubuntu"
-  task build: %i[macos ubuntu]
 end
+
+desc "Build #{Tebako.host_os}(#{Tebako.host_arch}) binary"
+task tebako: "tebako:build:#{Tebako.host_os}"
 
 def write(path, *, **, &)
   puts "Writing file to #{path}"
