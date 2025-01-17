@@ -22,7 +22,9 @@ Terminalwire::Project.all.each do |project|
 end
 
 module Tebako
-  def self.press(path, exe:, to:, ruby_version: "3.3.6")
+  RUBY_VERSION = "3.3.6"
+
+  def self.press(path, exe:, to:, ruby_version: RUBY_VERSION)
     "tebako press -r #{path} -e #{exe} -R #{ruby_version} -o #{to}"
   end
 
@@ -37,10 +39,12 @@ module Tebako
 
   def self.host_arch
     case RbConfig::CONFIG["host_cpu"]
-    in /x86_64/
+    when /x86_64/
       "amd64"
-    in /arm64/
+    when /arm64/, /aarch64/
       "arm64"
+    else
+      raise "Unsupported architecture: #{RbConfig::CONFIG["host_cpu"]}"
     end
   end
 end
@@ -78,8 +82,8 @@ namespace :tebako do
   build_path = Pathname.new("build")
   stage_path = build_path.join("stage")
 
-  namespace :macos do
-    path = stage_path.join("macos/#{Tebako.host_arch}")
+  namespace :build do
+    path = stage_path.join("#{Tebako.host_os}/#{Tebako.host_arch}")
     bin_path = path.join("bin/terminalwire-exec")
 
     task :prepare do
@@ -91,21 +95,14 @@ namespace :tebako do
         exe: "terminalwire-exec",
         to: bin_path
     end
-
-    task build: %i[prepare press]
   end
-
-  desc "Build terminal-exec binary for macOS(#{Tebako.host_arch})"
-  task macos: "macos:build"
+  desc "Build terminal-exec binary for #{Tebako.host_os}(#{Tebako.host_arch})"
+  task build: %w[build:prepare build:press]
 
   namespace :ubuntu do
-    path = stage_path.join("ubuntu/#{Tebako.host_arch}")
-    bin_path = path.join("bin/terminalwire-exec")
-    container_path = Pathname.new("/host")
     docker_image = "terminalwire_ubuntu_#{Tebako.host_arch}"
 
     task :prepare do
-      mkdir_p bin_path.dirname
       sh <<~BASH
         docker build https://github.com/bradgessler/tebako-ci-containers.git#macos-qemu \
           -f ubuntu-20.04.Dockerfile \
@@ -115,13 +112,9 @@ namespace :tebako do
 
     task :press do
       sh <<~BASH
-        docker run -v #{File.expand_path(Dir.pwd)}:#{container_path} \
+        docker run -v #{File.expand_path(Dir.pwd)}:/host \
           #{docker_image} \
-          bash -c "#{
-            Tebako.press "/host/gem/terminalwire",
-              exe: "terminalwire-exec",
-              to: container_path.join(bin_path)
-          }"
+          bash -c "cd /host && /root/.tebako/o/s/bin/rake tebako"
       BASH
     end
 
@@ -130,7 +123,6 @@ namespace :tebako do
 
   desc "Build terminal-exec binary for Ubuntu"
   task ubuntu: "ubuntu:build"
-
 
   task :package do
     packages_path = build_path.join("packages")
@@ -158,7 +150,7 @@ namespace :tebako do
 end
 
 desc "Build #{Tebako.host_os}(#{Tebako.host_arch}) binary"
-task tebako: ["tebako:#{Tebako.host_os}:build", "tebako:package"]
+task tebako: ["tebako:build", "tebako:package"]
 
 desc "Run specs"
 task spec: %i[spec:isolate spec:integration]
