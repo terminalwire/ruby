@@ -11,94 +11,46 @@ RSpec.describe "Terminalwire Install", type: :system do
   let(:gem_path) { File.expand_path('../../../gem/terminalwire', __FILE__) }
   let(:exe_path)  { File.join(gem_path, "exe") }
 
+  PORT = 3000
+
   before(:all) do
-    # Set up the Rails app once for this test suite
-    @test_app_path = Dir.mktmpdir
-    @gem_path = File.expand_path('../../../gem/terminalwire', __FILE__)
-    @exe_path = File.join(@gem_path, "exe")
-    @terminalwire_path = File.join(@test_app_path, ".terminalwire")
+    `docker build -t terminalwire-rails-server -f containers/rails/Dockerfile .`
+    @docker_id = `docker run -d terminalwire-rails-server`.chomp
+    wait_for_server("0.0.0.0", PORT)
 
-    @core_gem_path = File.expand_path('../../../gem/terminalwire-core', __FILE__)
-    @server_gem_path = File.expand_path('../../../gem/terminalwire-server', __FILE__)
-    @rails_gem_path = File.expand_path('../../../gem/terminalwire-rails', __FILE__)
+    @path = Pathname.new(Dir.mktmpdir)
+    @bin_path = @path.join("bin").tap(&:mkdir)
 
-    @original_path = Dir.pwd
-    Dir.chdir(@test_app_path)
+    @bin_path.join("hello").tap do |file|
+      file.write <<~BASH
+        #!/usr/bin/env terminalwire-exec
+        url: "http://localhost:#{PORT}/terminal"
+      BASH
+      file.chmod(0o755)
+    end
 
-    @oringal_path = ENV["PATH"]
-    ENV["PATH"] = "#{@exe_path}:#{ENV["PATH"]}"
+    ENV["PATH"] = "#{@bin_path.to_s}:#{ENV["PATH"]}"
 
-    Bundler.with_unbundled_env do
-      # Create a bare Rails app
-      system("rails new . --minimal --skip-bundle")
-
-      # Add the terminalwire gem to the Gemfile
-      system("bundle add terminalwire-core --path #{@core_gem_path}")
-      system("bundle add terminalwire-server --path #{@server_gem_path}")
-      system("bundle add terminalwire-rails --path #{@rails_gem_path}")
-
-      # Run the terminalwire install generator
-      system("bin/rails generate terminalwire:install hello")
-
-      # Boot the Puma server in the background
-      @pid = spawn("bin/rails server -b 0.0.0.0 -p 3000")
-
-      # Create a User class with an authenticate method.
-      File.write(
-        "app/models/user.rb",
-        <<~RUBY
-          class User
-            attr_reader :email
-
-            def initialize(email:)
-              @email = email
-            end
-            alias :id :email
-
-            def valid_password?(password)
-              true
-            end
-
-            def self.find_for_authentication(email:)
-              find email
-            end
-
-            def self.find(email)
-              new email: email
-            end
-          end
-        RUBY
-      )
-
-      # Poll until the server is ready
-      wait_for_server("0.0.0.0", 3000)
+    Dir.chdir(@path) do
+      Bundler.with_unbundled_env do
+        `bundle install --path #{@path} --binstubs=#{@bin_path} --quiet`
+      end
     end
   end
 
   after(:all) do
-    Dir.chdir(@original_path)
-
-    # Clean up after the tests are finished
-    if @pid
-      Process.kill("TERM", @pid)
-      Process.wait(@pid)
-    end
-
-    # Restore env vars
-    ENV["PATH"] = @oringal_path
-
-    FileUtils.remove_entry(@test_app_path)
+    `docker stop #{@docker_id}` if @docker_id
   end
 
   it "runs Terminalwire client against server" do
     # Run the binary and capture output
-    output, status = Open3.capture2e("bin/#{binary_name} hello World")
+    output, status = Open3.capture2e("#{binary_name} hello World")
     expect(output.strip).to eql "Hello World"
     expect(status).to be_success
   end
 
   it "logs in successfully" do
-    PTY.spawn("bin/#{binary_name} login") do |stdout, stdin, pid|
+    PTY.spawn("#{binary_name} login") do |stdout, stdin, pid|
       # stdout.readpartial("Email: ".size)
       # Simulate entering email and password
       stdin.puts "brad@example.com"
@@ -117,7 +69,7 @@ RSpec.describe "Terminalwire Install", type: :system do
 
   private
 
-  def wait_for_server(host, port, timeout: 10)
+  def wait_for_server(host, port, timeout: 5)
     start_time = Time.now
     until Time.now - start_time > timeout
       begin
