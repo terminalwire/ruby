@@ -6,6 +6,7 @@ require "terminalwire-client"
 require "terminalwire"
 require "pathname"
 require "uri"
+require "tmpdir"
 
 # This will smoke out more bugs that could come up in environments like
 # Rails.
