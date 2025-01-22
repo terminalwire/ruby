@@ -8,4 +8,6 @@ gemspec path: "gem/terminalwire-server"
 gemspec path: "gem/terminalwire-client"
 gemspec path: "gem/terminalwire"
 
-gem "tebako", "~> 0.12.1"
+gem "tebako", "~> 0.12.4"
+gem "tebako-runtime"
+gem "rake"
