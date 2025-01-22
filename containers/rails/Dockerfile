@@ -1,10 +1,12 @@
 ARG RUBY_VERSION=3.3.6
-FROM ruby:${RUBY_VERSION}
+FROM ruby:${RUBY_VERSION} AS base
 
 WORKDIR /rails
 
 RUN gem install rails && \
-  rails new . --minimal --skip-bundle --name terminalwire-integration
+  rails new . --minimal --name terminalwire-integration
+
+FROM base AS local
 
 COPY ./containers/rails/app/models /rails/app/models
 COPY ./gem /gem
