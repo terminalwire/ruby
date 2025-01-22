@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "bundler/setup"
 require "bundler/gem_helper"
 require_relative "support/terminalwire"
 
@@ -54,15 +55,20 @@ def write(path, *, **, &)
   File.write(path, *, **, &)
 end
 
-# Define global tasks for all gems
-%i[build install install:local release uninstall].each do |task|
-  desc "#{task.capitalize} all gems"
-  task task do
-    Terminalwire::Project.all.each do |project|
-      project.rake_task(task).invoke
+namespace :gem do
+  # Define global tasks for all gems
+  %i[build install install:local release uninstall].each do |task|
+    desc "#{task.capitalize} all gems"
+    task task do
+      Terminalwire::Project.all.each do |project|
+        project.rake_task(task).invoke
+      end
     end
   end
 end
+
+desc "Build gem"
+task :gem, %i[gem:build gem:install]
 
 namespace :spec do
   desc "Run isolated specs"
@@ -91,21 +97,23 @@ namespace :tebako do
     end
 
     task :press do
-      sh Tebako.press "gem/terminalwire",
-        exe: "terminalwire-exec",
-        to: bin_path
+      Bundler.with_unbundled_env do
+        sh Tebako.press "gem/terminalwire",
+          exe: "terminalwire-exec",
+          to: bin_path
+      end
     end
   end
   desc "Build terminal-exec binary for #{Tebako.host_os}(#{Tebako.host_arch})"
   task build: %w[build:prepare build:press]
 
   namespace :ubuntu do
-    docker_image = "terminalwire_ubuntu_#{Tebako.host_arch}"
+    docker_image = "terminalwire-ubuntu-tebako-#{Tebako.host_arch}"
 
     task :prepare do
       sh <<~BASH
-        docker build https://github.com/bradgessler/tebako-ci-containers.git#macos-qemu \
-          -f ubuntu-20.04.Dockerfile \
+        docker build \
+          ./containers/ubuntu-tebako \
           -t #{docker_image}
       BASH
     end
@@ -113,8 +121,9 @@ namespace :tebako do
     task :press do
       sh <<~BASH
         docker run -v #{File.expand_path(Dir.pwd)}:/host \
+          -w /host \
           #{docker_image} \
-          bash -c "cd /host && /root/.tebako/o/s/bin/rake tebako"
+          bash -c "bundle && bin/rake tebako"
       BASH
     end
 
@@ -134,14 +143,9 @@ namespace :tebako do
       write path.join("VERSION"),
         Terminalwire::VERSION
 
-      path.join("bin/terminalwire").tap do |bin|
-        write bin, <<~BASH
-          #!/usr/bin/env terminalwire-exec
-          url: "wss://terminalwire.com/terminal"
-        BASH
-
-        sh "chmod +x #{bin}"
-      end
+      Terminalwire::Binary.new(
+        url: "wss://terminalwire.com/terminal"
+      ).write path.join("bin/terminalwire")
 
       archive_name = packages_path.join("#{os}-#{arch}.tar.gz")
       sh "tar -czf #{archive_name} -C #{path} ."
@@ -150,10 +154,10 @@ namespace :tebako do
 end
 
 desc "Build #{Tebako.host_os}(#{Tebako.host_arch}) binary"
-task tebako: ["tebako:build", "tebako:package"]
+task tebako: %i[tebako:build tebako:package]
 
 desc "Run specs"
 task spec: %i[spec:isolate spec:integration]
 
-# Run specs and build gem.
-task default: %i[spec build tebako]
+# Run tests and build everything.
+task default: %i[spec gem tebako]
