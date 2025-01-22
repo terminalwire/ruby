@@ -86,6 +86,10 @@ module Terminalwire::Client::Entitlement
 
         # Used to check if terminalwire is setup in the user's PATH environment variable.
         @environment_variables.permit "PATH"
+
+        # Permit the root path so we can check if the user has setup terminalwire. This
+        # is used only during the installation script.
+        @environment_variables.permit "TERMINALWIRE_ROOT"
       end
 
       # Grant access to the `~/.terminalwire/**/*` path so users can install

@@ -100,6 +100,16 @@ RSpec.describe Terminalwire::Client::Entitlement::Policy::Root do
       permitted_path = Pathname.new("/")
       expect(entitlement.paths.permitted?(permitted_path)).to be_falsey
     end
+
+    describe "environment variables" do
+      subject { entitlement.environment_variables }
+      it "permits TERMINALWIRE_HOME" do
+        expect(subject.permitted?("TERMINALWIRE_HOME")).to be_truthy
+      end
+      it "permits TERMINALWIRE_ROOT" do
+        expect(subject.permitted?("TERMINALWIRE_ROOT")).to be_truthy
+      end
+    end
   end
 
   describe ".resolve" do
