@@ -83,6 +83,10 @@ module Terminalwire
         find_by_shell(File.basename(path))
       end
 
+      def files
+        login_files + interactive_files + logout_files
+      end
+
       def self.configure(&block)
         Collection.new.tap do |collection|
           collection.instance_eval(&block) if block_given?
@@ -92,23 +96,23 @@ module Terminalwire
 
     All = Collection.configure do
       shell "bash" do
-        login_files %w[/etc/profile ~/.bash_profile ~/.bash_login ~/.profile]
+        login_files %w[~/.bash_profile ~/.bash_login ~/.profile]
         interactive_file "~/.bashrc"
         logout_file "~/.bash_logout"
       end
 
       shell "zsh" do
-        login_files %w[/etc/zshenv ~/.zshenv /etc/zprofile ~/.zprofile]
+        login_files %w[~/.zprofile ~/.zshenv]
         interactive_file "~/.zshrc"
         logout_file "~/.zlogout"
       end
 
       shell "sh" do
-        login_files %w[/etc/profile ~/.profile]
+        login_files %w[~/.profile]
       end
 
       shell "dash" do
-        login_files %w[/etc/profile ~/.profile]
+        login_files %w[~/.profile]
       end
 
       shell "fish" do
@@ -116,18 +120,18 @@ module Terminalwire
       end
 
       shell "ksh" do
-        login_files %w[/etc/profile ~/.profile]
+        login_files %w[~/.profile]
         interactive_file "~/.kshrc"
       end
 
       shell "csh" do
-        login_files %w[/etc/csh.cshrc /etc/csh.login ~/.cshrc ~/.login]
+        login_files %w[~/.cshrc ~/.login]
         interactive_file "~/.cshrc"
         logout_file "~/.logout"
       end
 
       shell "tcsh" do
-        login_files %w[/etc/csh.cshrc /etc/csh.login ~/.cshrc ~/.login]
+        login_files %w[~/.cshrc ~/.login]
         interactive_file "~/.cshrc"
         logout_file "~/.logout"
       end

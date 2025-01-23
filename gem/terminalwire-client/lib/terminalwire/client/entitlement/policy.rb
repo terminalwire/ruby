@@ -52,19 +52,6 @@ module Terminalwire::Client::Entitlement
     class Root < Base
       AUTHORITY = "terminalwire.com".freeze
 
-      # Terminalwire checks these to install the binary stubs path.
-      SHELL_INITIALIZATION_FILE_PATHS = %w[
-        ~/.bash_profile
-        ~/.bashrc
-        ~/.zprofile
-        ~/.zshrc
-        ~/.profile
-        ~/.config/fish/config.fish
-        ~/.bash_login
-        ~/.cshrc
-        ~/.tcshrc
-      ].freeze
-
       # Ensure the binary stubs are executable. This increases the
       # file mode entitlement so that stubs created in ./bin are executable.
       BINARY_PATH_FILE_MODE = 0o755
@@ -77,7 +64,7 @@ module Terminalwire::Client::Entitlement
         @paths.permit root_path
         @paths.permit root_pattern
         # Permit the dotfiles so terminalwire can install the binary stubs.
-        SHELL_INITIALIZATION_FILE_PATHS.each do |path|
+        Terminalwire::Shells::All.login_files.each do |path|
           @paths.permit path
         end
 
@@ -86,10 +73,6 @@ module Terminalwire::Client::Entitlement
 
         # Used to check if terminalwire is setup in the user's PATH environment variable.
         @environment_variables.permit "PATH"
-
-        # Permit the root path so we can check if the user has setup terminalwire. This
-        # is used only during the installation script.
-        @environment_variables.permit "TERMINALWIRE_ROOT"
 
         # Permit the shell environment variable so we can detect the user's shell.
         @environment_variables.permit "SHELL"

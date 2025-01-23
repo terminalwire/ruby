@@ -21,4 +21,7 @@ RSpec.describe Terminalwire::Shells::All do
   it "has logout_files" do
     expect(subject.logout_files).to include "~/.zlogout"
   end
+  it "only has user files" do
+    expect(subject.files).to all start_with "~/"
+  end
 end

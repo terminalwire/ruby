@@ -103,11 +103,11 @@ RSpec.describe Terminalwire::Client::Entitlement::Policy::Root do
 
     describe "environment variables" do
       subject { entitlement.environment_variables }
-      it "permits TERMINALWIRE_HOME" do
-        expect(subject.permitted?("TERMINALWIRE_HOME")).to be_truthy
+      it "permits SHELL" do
+        expect(subject.permitted?("SHELL")).to be_truthy
       end
-      it "permits TERMINALWIRE_ROOT" do
-        expect(subject.permitted?("TERMINALWIRE_ROOT")).to be_truthy
+      it "permits PATH" do
+        expect(subject.permitted?("PATH")).to be_truthy
       end
     end
   end
@@ -119,13 +119,9 @@ RSpec.describe Terminalwire::Client::Entitlement::Policy::Root do
     end
   end
 
-  describe "SHELL_INITIALIZATION_FILE_PATHS" do
-    it "returns an array of shell initialization file paths" do
-      expect(Terminalwire::Client::Entitlement::Policy::Root::SHELL_INITIALIZATION_FILE_PATHS).to include("~/.zshrc")
-    end
-
-    it "permits the shell initialization file paths" do
-      expect(entitlement.paths.permitted?("~/.zshrc")).to be_truthy
+  describe "permitted paths" do
+    it "shell initialization file paths" do
+      expect(entitlement.paths.permitted?("~/.zprofile")).to be_truthy
     end
   end
 end
