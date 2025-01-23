@@ -80,6 +80,7 @@ module Terminalwire
       end
 
       def find_by_shell_path(path)
+        return if path.nil?
         find_by_shell(File.basename(path))
       end
 
