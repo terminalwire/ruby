@@ -67,8 +67,8 @@ namespace :gem do
   end
 end
 
-desc "Build gem"
-task :gem, %i[gem:build gem:install]
+desc "Build gems"
+task :gem, %i[gem:build]
 
 namespace :spec do
   desc "Run isolated specs"
