@@ -62,6 +62,7 @@ GEM
       fiber-annotation
       fiber-local (~> 1.1)
       json
+    date (3.4.1)
     diff-lcs (1.5.1)
     fiber-annotation (0.2.0)
     fiber-local (1.1.0)
@@ -89,9 +90,14 @@ GEM
       rack (>= 1.0)
     protocol-websocket (0.20.1)
       protocol-http (~> 0.2)
+    psych (5.2.3)
+      date
+      stringio
     public_suffix (6.0.1)
     rack (3.1.8)
     rake (13.2.1)
+    rdoc (6.11.0)
+      psych (>= 4.0.0)
     rspec (3.13.0)
       rspec-core (~> 3.13.0)
       rspec-expectations (~> 3.13.0)
@@ -105,6 +111,7 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
     rspec-support (3.13.1)
+    stringio (3.1.2)
     tebako (0.12.6)
       thor (~> 1.2)
       yaml (~> 0.2.1)
@@ -121,6 +128,7 @@ PLATFORMS
 
 DEPENDENCIES
   rake
+  rdoc
   rspec (~> 3.0)
   tebako (~> 0.12.4)
   tebako-runtime
