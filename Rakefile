@@ -123,7 +123,7 @@ namespace :tebako do
         docker run -v #{File.expand_path(Dir.pwd)}:/host \
           -w /host \
           #{docker_image} \
-          bash -c "bundle && bin/rake tebako"
+          bash -c "bundle && bin/rake tebako:build"
       BASH
     end
 
@@ -152,9 +152,8 @@ namespace :tebako do
     end
   end
 end
-
 desc "Build #{Tebako.host_os}(#{Tebako.host_arch}) binary"
-task tebako: %i[tebako:build tebako:package]
+task tebako: %i[tebako:build tebako:ubuntu:build tebako:package]
 
 desc "Run specs"
 task spec: %i[spec:isolate spec:integration]
