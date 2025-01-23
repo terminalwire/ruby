@@ -1,14 +1,14 @@
 PATH
   remote: gem/terminalwire-client
   specs:
-    terminalwire-client (0.3.0.alpha3)
+    terminalwire-client (0.3.0.alpha4)
       launchy (~> 3.0)
-      terminalwire-core (= 0.3.0.alpha3)
+      terminalwire-core (= 0.3.0.alpha4)
 
 PATH
   remote: gem/terminalwire-core
   specs:
-    terminalwire-core (0.3.0.alpha3)
+    terminalwire-core (0.3.0.alpha4)
       async-websocket (~> 0.30)
       base64 (~> 0.2.0)
       msgpack (~> 1.7)
@@ -18,15 +18,15 @@ PATH
 PATH
   remote: gem/terminalwire-server
   specs:
-    terminalwire-server (0.3.0.alpha3)
-      terminalwire-core (= 0.3.0.alpha3)
+    terminalwire-server (0.3.0.alpha4)
+      terminalwire-core (= 0.3.0.alpha4)
       thor (~> 1.3)
 
 PATH
   remote: gem/terminalwire
   specs:
-    terminalwire (0.3.0.alpha3)
-      terminalwire-client (= 0.3.0.alpha3)
+    terminalwire (0.3.0.alpha4)
+      terminalwire-client (= 0.3.0.alpha4)
 
 GEM
   remote: https://rubygems.org/
