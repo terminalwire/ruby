@@ -96,14 +96,15 @@ module Terminalwire
               context.exit
             rescue StandardError => e
               # Log the error
-              message = <<~_
+              error_message = <<~_
                 An error occured handling a message from #{self.class.name}: #{e.inspect}
-                  Handler: #{self.inspect}
-                  Message: #{message.inspect}
-                  Backtrace: #{e.backtrace.join("\n")}
+                Error: #{e.message}
+                Backtrace: #{e.backtrace.join("\n")}
+                Handler: #{self.inspect}
+                Message: #{message.inspect}
               _
 
-              ::Rails.logger.error(message)
+              ::Rails.logger.error(error_message)
               # Report the error to Rails' notification system
               ::Rails.error.report(e, handled: true)
 
