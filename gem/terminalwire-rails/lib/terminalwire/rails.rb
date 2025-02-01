@@ -84,7 +84,7 @@ module Terminalwire
         "An error occurred. Please try again."
       end
 
-      def handle(adapter)
+      def handle(adapter:, env:)
         logger.info "ThorServer: Running #{@cli_class.inspect}"
         while message = adapter.read
           case message
@@ -92,7 +92,9 @@ module Terminalwire
             context = Terminalwire::Server::Context.new(adapter:, entitlement:)
 
             begin
-              @cli_class.start(arguments, context:)
+              @cli_class.terminalwire arguments:, context: do |cli|
+                cli.default_url_options = { host: env["HTTP_HOST"] }
+              end
               context.exit
             rescue StandardError => e
               # Log the error
@@ -146,15 +148,17 @@ module Terminalwire
         no_commands do
           def_delegators :shell,
             :session
+
+          include ::Rails.application.routes.url_helpers
         end
       end
     end
 
     module ClassMethods
-      def start(given_args = ARGV, config = {})
-        context = config.delete(:context)
-        config[:shell] = Shell.new(context) if context
-        super(given_args, config)
+      def terminalwire(arguments:, context:)
+        dispatch(nil, arguments.dup, nil, shell: Shell.new(context)) do |instance|
+          yield instance if block_given?
+        end
       end
     end
   end
