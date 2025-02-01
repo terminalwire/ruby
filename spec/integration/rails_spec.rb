@@ -14,20 +14,17 @@ RSpec.describe "Terminalwire Install", type: :system do
   PORT = 3000
 
   before(:all) do
-    `docker build -t terminalwire-rails-server -f containers/rails/Dockerfile .`
-    @docker_id = `docker run -d terminalwire-rails-server`.chomp
+    `docker buildx -t terminalwire-rails-server -f containers/rails/Dockerfile .`
+    @docker_id = `docker run -p 3000:#{PORT} -d terminalwire-rails-server`.chomp
     wait_for_server("0.0.0.0", PORT)
 
     @path = Pathname.new(Dir.mktmpdir)
     @bin_path = @path.join("bin").tap(&:mkdir)
 
-    @bin_path.join("hello").tap do |file|
-      file.write <<~BASH
-        #!/usr/bin/env terminalwire-exec
-        url: "http://localhost:#{PORT}/terminal"
-      BASH
-      file.chmod(0o755)
-    end
+    Terminalwire::Binary.write(
+      url: "http://localhost:#{PORT}/terminal",
+      to: @bin_path.join("hello")
+    )
 
     ENV["PATH"] = "#{@bin_path.to_s}:#{ENV["PATH"]}"
 
