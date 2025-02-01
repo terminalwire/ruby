@@ -7,14 +7,13 @@ module Terminalwire
         extend Forwardable
 
         # Encapsulates all of the IO resources for a Terminalwire adapter.
-        attr_reader :context, :session
+        attr_reader :context
 
         def_delegators :context,
           :stdin, :stdout, :stderr
 
         def initialize(context, *, **, &)
           @context = context
-          @session = Terminalwire::Rails::Session.new(context:)
           super(*,**,&)
         end
       end
@@ -30,7 +29,7 @@ module Terminalwire
 
           no_commands do
             def_delegators :shell,
-              :context, :session
+              :context
             def_delegators :context,
               :stdout, :stdin, :stderr, :browser
             def_delegators :stdout,

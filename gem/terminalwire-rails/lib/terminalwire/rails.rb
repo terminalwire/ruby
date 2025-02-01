@@ -123,7 +123,39 @@ module Terminalwire
     end
   end
 
-  # Alias so we can put off breaking `include Terminalwire::Thor`
-  # in the ApplicationTerminal class.
-  Thor = Terminalwire::Server::Thor
+  # If I move this, then the current production integration breaks because
+  # it wants `include Terminalwire::Thor`.
+  module Thor
+    class Shell < Terminalwire::Server::Thor::Shell
+      attr_reader :session
+
+      def initialize(context, *, **, &)
+        @session = Terminalwire::Rails::Session.new(context:)
+        super(context, *,**,&)
+      end
+    end
+
+    def self.included(base)
+      base.include Terminalwire::Server::Thor
+      base.extend ClassMethods
+
+      # I have to do this in a block to deal with some of Thor's DSL
+      base.class_eval do
+        protected
+
+        no_commands do
+          def_delegators :shell,
+            :session
+        end
+      end
+    end
+
+    module ClassMethods
+      def start(given_args = ARGV, config = {})
+        context = config.delete(:context)
+        config[:shell] = Shell.new(context) if context
+        super(given_args, config)
+      end
+    end
+  end
 end
