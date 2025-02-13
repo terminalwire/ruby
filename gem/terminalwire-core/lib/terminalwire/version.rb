@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
 module Terminalwire
-  VERSION = "0.3.0.alpha5"
+  VERSION = "0.3.0"
 end
