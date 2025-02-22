@@ -13,6 +13,11 @@ Terminalwire::Project.all.each do |project|
       sh "gem uninstall #{project.name} --force --executables"
     end
 
+    desc "Clean #{project.name}"
+    task :clean do
+      sh "rm -rf #{File.join project.dir, "pkg/*.gem"}"
+    end
+
     desc "Test #{project.name}"
     task :spec do
       project.chdir do
@@ -57,7 +62,7 @@ end
 
 namespace :gem do
   # Define global tasks for all gems
-  %i[build install install:local release uninstall].each do |task|
+  %i[build clean install install:local release uninstall].each do |task|
     desc "#{task.capitalize} all gems"
     task task do
       Terminalwire::Project.all.each do |project|
@@ -68,7 +73,7 @@ namespace :gem do
 end
 
 desc "Build gems"
-task :gem, %i[gem:build]
+task gem: %i[gem:clean gem:build]
 
 namespace :spec do
   desc "Run isolated specs"
@@ -79,7 +84,7 @@ namespace :spec do
   end
 
   desc "Run integration specs"
-  task :integration do
+  task integration: :gem do
     sh "bundle exec rspec spec"
   end
 end
@@ -158,5 +163,5 @@ task tebako: %i[tebako:build tebako:ubuntu:build tebako:package]
 desc "Run specs"
 task spec: %i[spec:isolate spec:integration]
 
-# Run tests and build everything.
-task default: %i[spec gem tebako]
+# Run : Lgemntests and build everything.
+task default: %i[spec tebako]

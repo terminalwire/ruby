@@ -7,58 +7,41 @@ require "pty"
 require "io/wait"
 
 RSpec.describe "Terminalwire Install", type: :system do
-  let(:binary_name) { "hello" }
-  let(:gem_path) { File.expand_path('../../../gem/terminalwire', __FILE__) }
-  let(:exe_path)  { File.join(gem_path, "exe") }
-
-  PORT = 3000
+  DOCKER_IMAGE = "terminalwire-rails-server"
+  BINARY_NAME  = "bin/hello"
+  PORT         = 3000
 
   before(:all) do
-    `docker buildx -t terminalwire-rails-server -f containers/rails/Dockerfile .`
-    @docker_id = `docker run -p 3000:#{PORT} -d terminalwire-rails-server`.chomp
-    wait_for_server("0.0.0.0", PORT)
+    build_command = "docker build -t #{DOCKER_IMAGE} -f containers/rails/Dockerfile ."
+    system(build_command) or raise "Docker build failed: #{build_command}"
 
-    @path = Pathname.new(Dir.mktmpdir)
-    @bin_path = @path.join("bin").tap(&:mkdir)
+    # Run the container without external port binding and capture the container ID.
+    @docker_id = `docker run --rm -d #{DOCKER_IMAGE}`.chomp
+    raise "Docker run failed" if @docker_id.empty?
 
-    Terminalwire::Binary.write(
-      url: "http://localhost:#{PORT}/terminal",
-      to: @bin_path.join("hello")
-    )
-
-    ENV["PATH"] = "#{@bin_path.to_s}:#{ENV["PATH"]}"
-
-    Dir.chdir(@path) do
-      Bundler.with_unbundled_env do
-        `bundle install --path #{@path} --binstubs=#{@bin_path} --quiet`
-      end
-    end
+    wait_for_server_in_container(timeout: 15)
   end
 
   after(:all) do
-    `docker stop #{@docker_id}` if @docker_id
+    system("docker stop #{@docker_id}") if @docker_id
   end
 
   it "runs Terminalwire client against server" do
-    # Run the binary and capture output
-    output, status = Open3.capture2e("#{binary_name} hello World")
+    command = "docker exec #{@docker_id} #{BINARY_NAME} hello World"
+    output, status = Open3.capture2e(command)
     expect(output.strip).to eql "Hello World"
     expect(status).to be_success
   end
 
   it "logs in successfully" do
-    PTY.spawn("#{binary_name} login") do |stdout, stdin, pid|
-      # stdout.readpartial("Email: ".size)
-      # Simulate entering email and password
+    command = "docker exec -i #{@docker_id} #{BINARY_NAME} login"
+    PTY.spawn(command) do |stdout, stdin, pid|
+      sleep 0.5
       stdin.puts "brad@example.com"
-
-      # stdout.readpartial("Password: ".size)
+      sleep 0.5
       stdin.puts "password123"
-
       output = stdout.read
       expect(output).to include("Successfully logged in as brad@example.com.")
-
-      # Ensure the process was successful
       Process.wait(pid)
       expect($?.success?).to be_truthy
     end
@@ -66,15 +49,12 @@ RSpec.describe "Terminalwire Install", type: :system do
 
   private
 
-  def wait_for_server(host, port, timeout: 5)
+  def wait_for_server_in_container(timeout:)
     start_time = Time.now
     until Time.now - start_time > timeout
-      begin
-        TCPSocket.new(host, port).close
-        return true
-      rescue Errno::ECONNREFUSED, Errno::EHOSTUNREACH
-        sleep 0.1
-      end
+      response = `docker exec #{@docker_id} curl -s http://localhost:3000/health`
+      return if !response.strip.empty?
+      sleep 0.5
     end
     raise "Server did not start within #{timeout} seconds"
   end

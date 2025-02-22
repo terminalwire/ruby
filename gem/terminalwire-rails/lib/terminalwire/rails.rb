@@ -96,6 +96,9 @@ module Terminalwire
                 cli.default_url_options = { host: env["HTTP_HOST"] }
               end
               context.exit
+            # rescue Thor::InvocationError => e
+            #   context.stdin.puts e.message
+            #   context.exit(1)
             rescue StandardError => e
               # Log the error
               handler_error_message = <<~_
