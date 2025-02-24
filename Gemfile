@@ -12,3 +12,5 @@ gem "tebako", "~> 0.12.4"
 gem "tebako-runtime"
 gem "rake"
 gem "rdoc"
+
+gem "pity", "~> 0.1.0"

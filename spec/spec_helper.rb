@@ -7,6 +7,7 @@ require "terminalwire"
 require "pathname"
 require "uri"
 require "tmpdir"
+require "pity"
 
 # This will smoke out more bugs that could come up in environments like
 # Rails.

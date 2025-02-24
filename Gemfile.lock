@@ -78,6 +78,7 @@ GEM
     logger (1.6.1)
     metrics (0.12.1)
     msgpack (1.7.5)
+    pity (0.1.0)
     protocol-hpack (1.5.1)
     protocol-http (0.47.0)
     protocol-http1 (0.28.1)
@@ -127,6 +128,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  pity (~> 0.1.0)
   rake
   rdoc
   rspec (~> 3.0)

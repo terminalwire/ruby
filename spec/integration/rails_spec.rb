@@ -26,24 +26,26 @@ RSpec.describe "Terminalwire Install", type: :system do
     system("docker stop #{@docker_id}") if @docker_id
   end
 
+  def console(&)
+    Pity::REPL.new("docker exec -it #{@docker_id} bash", &)
+  end
+
   it "runs Terminalwire client against server" do
-    command = "docker exec #{@docker_id} #{BINARY_NAME} hello World"
-    output, status = Open3.capture2e(command)
-    expect(output.strip).to eql "Hello World"
-    expect(status).to be_success
+    console do
+      it.puts "#{BINARY_NAME} hello World"
+      expect(it.expect("Hello World")).to include("Hello World")
+    end
   end
 
   it "logs in successfully" do
-    command = "docker exec -i #{@docker_id} #{BINARY_NAME} login"
-    PTY.spawn(command) do |stdout, stdin, pid|
-      sleep 0.5
-      stdin.puts "brad@example.com"
-      sleep 0.5
-      stdin.puts "password123"
-      output = stdout.read
-      expect(output).to include("Successfully logged in as brad@example.com.")
-      Process.wait(pid)
-      expect($?.success?).to be_truthy
+    shell = "docker exec -it #{@docker_id} bash"
+    console do
+      it.puts "#{BINARY_NAME} login"
+      it.expect "Email: "
+      it.puts "brad@example.com"
+      it.expect "Password: "
+      it.puts "password123"
+      expect(it.expect("Successfully logged in as brad@example.com")).to include("Successfully logged in as brad@example.com.")
     end
   end
 
