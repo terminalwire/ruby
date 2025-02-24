@@ -17,4 +17,8 @@ class User
   def self.find(email)
     new email: email
   end
+
+  def self.find_by(id:)
+    find id
+  end
 end
