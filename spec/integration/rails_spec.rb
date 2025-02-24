@@ -49,6 +49,16 @@ RSpec.describe "Terminalwire Install", type: :system do
     end
   end
 
+  it "runs unknown commands" do
+    console do |repl|
+      repl.puts "#{BINARY_NAME} nothingburger"
+      repl.gets.tap do |buffer|
+        expect(buffer).to include("Could not find command \"nothingburger\".")
+        expect(buffer).to_not include("Thor::UndefinedCommandError")
+      end
+    end
+  end
+
   private
 
   def wait_for_server_in_container(timeout:)

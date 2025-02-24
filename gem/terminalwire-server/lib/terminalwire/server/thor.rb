@@ -57,10 +57,17 @@ module Terminalwire
       end
 
       module ClassMethods
-        def start(given_args = ARGV, config = {})
-          context = config.delete(:context)
-          config[:shell] = Shell.new(context) if context
-          super(given_args, config)
+        def terminalwire(arguments:, context:)
+          # I have to manually hack into the Thor dispatcher to get access to the instance
+          # of the CLI so I can slap the Rails helper methods in there, or other helpes
+          # raise [context.inspect, arguments.inspect, self.inspect].inspect
+          dispatch(nil, arguments.dup, nil, shell: terminalwire_shell(context)) do |instance|
+            yield instance
+          end
+        end
+
+        def terminalwire_shell(context)
+          Terminalwire::Server::Thor::Shell.new(context)
         end
       end
     end

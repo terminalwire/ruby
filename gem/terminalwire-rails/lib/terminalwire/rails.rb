@@ -90,16 +90,15 @@ module Terminalwire
           case message
           in { event: "initialization", protocol:, program: { arguments: }, entitlement: }
             context = Terminalwire::Server::Context.new(adapter:, entitlement:)
+            exit_code = 0
 
             begin
               @cli_class.terminalwire arguments:, context: do |cli|
                 cli.default_url_options = { host: env["HTTP_HOST"] }
               end
-              context.exit
-            # rescue Thor::InvocationError => e
-            #   context.stdin.puts e.message
-            #   context.exit(1)
-            rescue StandardError => e
+            rescue ::Thor::UndefinedCommandError => e
+              context.stdout.puts e.message
+            rescue ::StandardError => e
               # Log the error
               handler_error_message = <<~_
                 An error occured handling message in #{self.class.name}: #{e.inspect}
@@ -120,7 +119,9 @@ module Terminalwire
                 # Show a generic message in production
                 context.stderr.puts error_message
               end
-              context.exit 1
+              exit_code = 1
+            ensure
+              context.exit exit_code
             end
           end
         end
@@ -158,10 +159,9 @@ module Terminalwire
     end
 
     module ClassMethods
-      def terminalwire(arguments:, context:)
-        dispatch(nil, arguments.dup, nil, shell: Shell.new(context)) do |instance|
-          yield instance if block_given?
-        end
+      # Use the extend Rails shell with this shell
+      def terminalwire_shell(context)
+        Terminalwire::Thor::Shell.new(context)
       end
     end
   end
