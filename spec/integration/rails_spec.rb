@@ -33,7 +33,7 @@ RSpec.describe "Terminalwire Install", type: :system do
   it "runs Terminalwire client against server" do
     console do
       it.puts "#{BINARY_NAME} hello World"
-      expect(it.expect("Hello World")).to include("Hello World")
+      expect(it.gets).to include("Hello World")
     end
   end
 
@@ -44,27 +44,7 @@ RSpec.describe "Terminalwire Install", type: :system do
       it.puts "brad@example.com"
       it.expect "Password: "
       it.puts "password123"
-      expect(it.expect("Successfully logged in as brad@example.com")).to include("Successfully logged in as brad@example.com.")
-    end
-  end
-
-  it "handles Thor::UndefinedCommandError" do
-    console do |repl|
-      repl.puts "#{BINARY_NAME} nothingburger"
-      repl.gets.tap do |buffer|
-        expect(buffer).to include("Could not find command \"nothingburger\".")
-        expect(buffer).to_not include("Thor::UndefinedCommandError")
-      end
-    end
-  end
-
-  it "handles Thor::InvocationError" do
-    console do |repl|
-      repl.puts "#{BINARY_NAME} hello"
-      repl.gets.tap do |buffer|
-        expect(buffer).to include("\"hello hello\" was called with no arguments")
-        expect(buffer).to_not include("Thor::InvocationError")
-      end
+      expect(it.gets).to include("Successfully logged in as brad@example.com.")
     end
   end
 
@@ -72,6 +52,43 @@ RSpec.describe "Terminalwire Install", type: :system do
     console do
       it.puts "#{BINARY_NAME}"
       expect(it.expect("Commands:")).to include("Commands:")
+    end
+  end
+
+  it "prints stack trace" do
+    console do
+      it.puts "#{BINARY_NAME} integration exception"
+      # The `gsub` normalizes the line endings from the HEREDOC to
+      # match how PTY/stdio changes the line endings.
+      expect(it.gets).to include <<~ERROR.gsub(/\n/, "\r\n")
+        RuntimeError (An exception occurred)
+
+        /rails/app/terminal/integration_terminal.rb:4:in `exception'
+      ERROR
+    end
+  end
+
+  context "Thor::UndefinedCommandError" do
+    it "prints error message" do
+      console do |repl|
+        repl.puts "#{BINARY_NAME} nothingburger"
+        repl.gets.tap do |buffer|
+          expect(buffer).to include("Could not find command \"nothingburger\".")
+          expect(buffer).to_not include("Thor::UndefinedCommandError")
+        end
+      end
+    end
+  end
+
+  context "Thor::InvocationError" do
+    it "prints error message" do
+      console do |repl|
+        repl.puts "#{BINARY_NAME} hello"
+        repl.gets.tap do |buffer|
+          expect(buffer).to include("\"hello hello\" was called with no arguments")
+          expect(buffer).to_not include("Thor::InvocationError")
+        end
+      end
     end
   end
 

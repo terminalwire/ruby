@@ -9,7 +9,7 @@ RUN gem install rails && \
 FROM base AS local
 
 # Ensure our local gem executables are on the PATH.
-COPY ./containers/rails/app/models /rails/app/models
+COPY ./containers/rails/app /rails/app/
 COPY ./gem/*/pkg/*.gem /gem/
 RUN gem install /gem/terminalwire*.gem
 
@@ -20,5 +20,8 @@ RUN sed -i '/^source/d' Gemfile
 RUN bundle add terminalwire-rails
 
 RUN bin/rails generate terminalwire:install hello
+
+# Add IntegrationTerminal as a Thor subcommand to MainTerminal
+RUN sed -i '$i\  desc "integration", "Integration tests"\n  subcommand "integration", IntegrationTerminal'  app/terminal/main_terminal.rb
 
 CMD ["bin/rails", "server", "--port", "3000", "--binding", "0.0.0.0"]
