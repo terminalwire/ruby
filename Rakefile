@@ -62,12 +62,50 @@ end
 
 namespace :gem do
   # Define global tasks for all gems
-  %i[build clean install install:local release uninstall].each do |task|
+  %i[build clean install install:local uninstall].each do |task|
     desc "#{task.capitalize} all gems"
     task task do
       Terminalwire::Project.all.each do |project|
         project.rake_task(task).invoke
       end
+    end
+  end
+
+  namespace :releasable do
+    desc "Ensure git working directory is clean"
+    task :clean do
+      unless system("git diff-index --quiet HEAD --")
+        abort "Git working directory is not clean. Please commit or stash changes before release."
+      end
+      puts "Git working directory is clean."
+    end
+
+    desc "Ensure local branch is in sync with its upstream"
+    task :synced do
+      system("git fetch") || abort("Failed to fetch updates from origin.")
+
+      local = `git rev-parse @`.strip
+      remote = `git rev-parse @{u}`.strip rescue nil
+
+      if remote.nil?
+        abort "No upstream branch configured for the current branch."
+      end
+
+      if local != remote
+        abort "Local branch (#{local}) does not match remote (#{remote}). Please commit and push all changes."
+      end
+
+      puts "Local branch is in sync with the remote."
+    end
+  end
+
+  desc "Check if gem is releasable: clean working directory and synced branch"
+  task releasable: %i[releasable:clean releasable:synced]
+
+  desc "Release all gems"
+  task release: :releasable do
+    Terminalwire::Project.all.each do |project|
+      project.rake_task("release").invoke
     end
   end
 end
