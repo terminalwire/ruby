@@ -38,7 +38,6 @@ RSpec.describe "Terminalwire Install", type: :system do
   end
 
   it "logs in successfully" do
-    shell = "docker exec -it #{@docker_id} bash"
     console do
       it.puts "#{BINARY_NAME} login"
       it.expect "Email: "
@@ -56,6 +55,13 @@ RSpec.describe "Terminalwire Install", type: :system do
         expect(buffer).to include("Could not find command \"nothingburger\".")
         expect(buffer).to_not include("Thor::UndefinedCommandError")
       end
+    end
+  end
+
+  it "runs default task with no arguments" do
+    console do
+      it.puts "#{BINARY_NAME}"
+      expect(it.expect("Commands:")).to include("Commands:")
     end
   end
 
