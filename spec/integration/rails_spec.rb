@@ -48,12 +48,22 @@ RSpec.describe "Terminalwire Install", type: :system do
     end
   end
 
-  it "runs unknown commands" do
+  it "handles Thor::UndefinedCommandError" do
     console do |repl|
       repl.puts "#{BINARY_NAME} nothingburger"
       repl.gets.tap do |buffer|
         expect(buffer).to include("Could not find command \"nothingburger\".")
         expect(buffer).to_not include("Thor::UndefinedCommandError")
+      end
+    end
+  end
+
+  it "handles Thor::InvocationError" do
+    console do |repl|
+      repl.puts "#{BINARY_NAME} hello"
+      repl.gets.tap do |buffer|
+        expect(buffer).to include("\"hello hello\" was called with no arguments")
+        expect(buffer).to_not include("Thor::InvocationError")
       end
     end
   end
