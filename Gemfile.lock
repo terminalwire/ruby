@@ -1,14 +1,14 @@
 PATH
   remote: gem/terminalwire-client
   specs:
-    terminalwire-client (0.3.3)
+    terminalwire-client (0.3.4)
       launchy (~> 3.0)
-      terminalwire-core (= 0.3.3)
+      terminalwire-core (= 0.3.4)
 
 PATH
   remote: gem/terminalwire-core
   specs:
-    terminalwire-core (0.3.3)
+    terminalwire-core (0.3.4)
       async-websocket (~> 0.30)
       base64 (~> 0.2.0)
       msgpack (~> 1.7)
@@ -18,38 +18,39 @@ PATH
 PATH
   remote: gem/terminalwire-server
   specs:
-    terminalwire-server (0.3.3)
-      terminalwire-core (= 0.3.3)
+    terminalwire-server (0.3.4)
+      terminalwire-core (= 0.3.4)
       thor (~> 1.3)
 
 PATH
   remote: gem/terminalwire
   specs:
-    terminalwire (0.3.3)
-      terminalwire-client (= 0.3.3)
+    terminalwire (0.3.4)
+      terminalwire-client (= 0.3.4)
 
 GEM
   remote: https://rubygems.org/
   specs:
     addressable (2.8.7)
       public_suffix (>= 2.0.2, < 7.0)
-    async (2.21.1)
+    async (2.23.0)
       console (~> 1.29)
       fiber-annotation
-      io-event (~> 1.6, >= 1.6.5)
-    async-http (0.86.0)
+      io-event (~> 1.9)
+      metrics (~> 0.12)
+      traces (~> 0.15)
+    async-http (0.87.0)
       async (>= 2.10.2)
       async-pool (~> 0.9)
       io-endpoint (~> 0.14)
       io-stream (~> 0.6)
       metrics (~> 0.12)
-      protocol-http (~> 0.43)
-      protocol-http1 (>= 0.28.1)
+      protocol-http (~> 0.49)
+      protocol-http1 (~> 0.30)
       protocol-http2 (~> 0.22)
       traces (~> 0.10)
-    async-pool (0.10.2)
+    async-pool (0.10.3)
       async (>= 1.25)
-      traces
     async-websocket (0.30.0)
       async-http (~> 0.76)
       protocol-http (~> 0.34)
@@ -58,35 +59,36 @@ GEM
     base64 (0.2.0)
     childprocess (5.1.0)
       logger (~> 1.5)
-    console (1.29.0)
+    console (1.29.3)
       fiber-annotation
       fiber-local (~> 1.1)
       json
     date (3.4.1)
-    diff-lcs (1.5.1)
+    diff-lcs (1.6.0)
     fiber-annotation (0.2.0)
     fiber-local (1.1.0)
       fiber-storage
     fiber-storage (1.0.0)
-    io-endpoint (0.14.0)
-    io-event (1.7.4)
+    io-endpoint (0.15.2)
+    io-event (1.9.0)
     io-stream (0.6.1)
-    json (2.8.2)
-    launchy (3.0.1)
+    json (2.10.1)
+    launchy (3.1.1)
       addressable (~> 2.8)
       childprocess (~> 5.0)
-    logger (1.6.1)
+      logger (~> 1.6)
+    logger (1.6.6)
     metrics (0.12.1)
-    msgpack (1.7.5)
+    msgpack (1.8.0)
     pity (0.1.0)
     protocol-hpack (1.5.1)
-    protocol-http (0.47.0)
-    protocol-http1 (0.28.1)
+    protocol-http (0.49.0)
+    protocol-http1 (0.30.0)
       protocol-http (~> 0.22)
-    protocol-http2 (0.22.0)
+    protocol-http2 (0.22.1)
       protocol-hpack (~> 1.4)
-      protocol-http (~> 0.18)
-    protocol-rack (0.11.0)
+      protocol-http (~> 0.47)
+    protocol-rack (0.11.1)
       protocol-http (~> 0.43)
       rack (>= 1.0)
     protocol-websocket (0.20.1)
@@ -95,7 +97,7 @@ GEM
       date
       stringio
     public_suffix (6.0.1)
-    rack (3.1.8)
+    rack (3.1.10)
     rake (13.2.1)
     rdoc (6.12.0)
       psych (>= 4.0.0)
@@ -103,7 +105,7 @@ GEM
       rspec-core (~> 3.13.0)
       rspec-expectations (~> 3.13.0)
       rspec-mocks (~> 3.13.0)
-    rspec-core (3.13.2)
+    rspec-core (3.13.3)
       rspec-support (~> 3.13.0)
     rspec-expectations (3.13.3)
       diff-lcs (>= 1.2.0, < 2.0)
@@ -111,17 +113,18 @@ GEM
     rspec-mocks (3.13.2)
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
-    rspec-support (3.13.1)
+    rspec-support (3.13.2)
     stringio (3.1.5)
-    tebako (0.12.6)
+    tebako (0.12.15)
+      bundler
       thor (~> 1.2)
       yaml (~> 0.2.1)
     tebako-runtime (0.5.5)
     thor (1.3.2)
-    traces (0.14.1)
-    uri-builder (0.1.12)
+    traces (0.15.2)
+    uri-builder (0.1.13)
     yaml (0.2.1)
-    zeitwerk (2.6.18)
+    zeitwerk (2.7.2)
 
 PLATFORMS
   arm64-darwin-23
