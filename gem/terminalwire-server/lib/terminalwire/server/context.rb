@@ -71,6 +71,8 @@ module Terminalwire::Server
 
     def exit(status = 0)
       @adapter.write(event: "exit", status: status)
+    ensure
+      close
     end
 
     def close
