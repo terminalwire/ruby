@@ -26,6 +26,8 @@ module Terminalwire
     end
 
     class WebSocket < Base
+      include Logging
+
       def self.connect(url)
         uri = URI(url)
         endpoint = Async::HTTP::Endpoint.parse(uri)
@@ -39,18 +41,22 @@ module Terminalwire
       end
 
       def initialize(websocket)
+        logger.debug "Transport::WebSocket(#{object_id}): Initializing"
         @websocket = websocket
       end
 
       def read
+        logger.debug "Transport::WebSocket(#{object_id}): Reading"
         @websocket.read&.buffer
       end
 
       def write(data)
+        logger.debug "Transport::WebSocket(#{object_id}): Writing"
         @websocket.write(data)
       end
 
       def close
+        logger.debug "Transport::WebSocket(#{object_id}): Closing"
         @websocket.close
       end
     end
