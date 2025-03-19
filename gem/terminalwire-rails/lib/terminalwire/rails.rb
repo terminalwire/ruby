@@ -5,6 +5,81 @@ require "jwt"
 
 module Terminalwire
   module Rails
+    class Channel
+      # Prefix used to for channel name to avoid conflicts.
+      NAMESPACE = "terminalwire".freeze
+
+      # Length of random channel name.
+      RANDOM_NAME_LENGTH = 32
+
+      # 5 minutes, which is really way too much time.
+      TIMEOUT_SECONDS = 5 * 60
+
+      attr_reader :name, :server, :logger, :timeout
+
+      def initialize(name: self.class.random_name, server: self.class.server, logger: self.class.logger, timeout: TIMEOUT_SECONDS)
+        @server = server
+        @name = name
+        @queue = Queue.new
+        @logger = logger
+        @timeout = timeout
+
+        yield self if block_given?
+      end
+
+      def broadcast(message)
+        @logger.info "ActiveExchange: Publishing #{message.inspect} to #{@name.inspect}"
+        @server.broadcast(@name, message)
+      end
+      alias :publish :broadcast
+
+      def subscribe
+        return if @queue.closed?
+        @logger.info "ActiveExchange: Subscribed to #{@name.inspect}"
+        @server.subscribe(@name, -> (message) { @queue << message })
+      end
+
+      def read
+        Timeout::timeout @timeout do
+          subscribe
+          @logger.debug "Queue: waiting"
+          @queue.pop
+        end
+      ensure
+        @logger.debug "Queue: closed"
+        @queue.close
+      end
+      alias :pop :read
+
+      def to_param
+        self.class.verifier.generate(@name, expires_in: @timeout)
+      end
+
+      class << self
+        def server
+          ActionCable.server.pubsub
+        end
+
+        def logger
+          ::Rails.logger
+        end
+
+        def random_name
+          [NAMESPACE, SecureRandom.hex(RANDOM_NAME_LENGTH)].join(":")
+        end
+
+        # Use Rails' secret_key_base for signing
+        def verifier
+          @verifier ||= ActiveSupport::MessageVerifier.new(::Rails.application.secret_key_base)
+        end
+
+        def from_param(...)
+          new name: verifier.verify(...)
+        end
+        alias :find :from_param
+      end
+    end
+
     class Session
       # JWT file name for the session file.
       FILENAME = "session.jwt"
