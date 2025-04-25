@@ -2,15 +2,39 @@
 
 Unlike most command-line tools for web services that require an API, Terminalwire streams terminal I/O between a web server and client over WebSockets. This means you can use your preferred command-line parser within your favorite web server framework to deliver a delightful CLI experience to your users.
 
+## What's in this repo?
+
+This is a monolithic repository with several Terminalwire components, including the Terminalwire thin-client and Ruby & Rails servers.
+
+### Terminalwire Client
+
+The Terminalwire thin-client is pacakged using Tebako and is installed on end-user workstations. The thin-client connects to a Terminalwire server and streams stdio, browser, filesystem, and other commands between the server and client via WebSockets through an entitlement-based security layer.
+
+[Read the Terminalwire-client manual](https://terminalwire.com/docs/client)
+
+### Terminalwire Ruby & Rails servers
+
+Terminalwire servers can run on any platform or framework. This repo has source for the Ruby Terminalwire server, specifically targeting Ruby on Rails.
+
+[Read the Terminalwire Ruby on Rails manual](https://terminalwire.com/docs/rails)
+
 ## Installation
 
-Install the gem and add to the application's Gemfile by executing:
+### Client
 
-    $ bundle add terminalwire
+The Terminalwire thin-client may be installed by running:
 
-If bundler is not being used to manage dependencies, install the gem by executing:
+    $ curl -sSL https://terminalwire.sh/ | bash
+
+This installs the Tebako packaged version of the Terminalwire client, which is recommended for production use.
+
+#### RubyGem client
+
+The Terminalwire thin-client gem may be installed for development purposes by running:
 
     $ gem install terminalwire
+
+*This approach is not recommended for production use since developer workstations likely don't have the correct Ruby dependencies installed*
 
 ## Rails
 
@@ -38,7 +62,7 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/termin
 
 ## License
 
-The gem is available as a propietary license. Email brad@terminalwire.com to discuss licensing.
+The gem is available as a propietary license. The tl;dr is that it's free for personal use and for commercial use email brad@terminalwire.com to discuss licensing.
 
 ## Code of Conduct
 
