@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.summary = "Ship a CLI for your web app. No API required."
   spec.description = "Stream command-line apps from your server without a web API"
   spec.homepage = "https://terminalwire.com/ruby"
-  spec.license = "Proprietary (https://terminalwire.com/license)"
+  spec.license = "AGPL"
   spec.required_ruby_version = ">= 3.0.0"
 
   spec.metadata["allowed_push_host"] = "https://rubygems.org/"

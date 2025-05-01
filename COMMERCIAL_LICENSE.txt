@@ -1,0 +1,23 @@
+# Commercial License
+
+If you would like to use Terminalwire without complying with the AGPLv3 license (for example, if you do not want to release your modifications or if you're embedding it into a commercial product), you may purchase a commercial license.
+
+This allows you to:
+- Use Terminalwire in closed-source products
+- Modify it without open-sourcing your changes
+- Avoid AGPL disclosure requirements
+
+To obtain a commercial license, contact:
+
+**Brad Gessler**
+
+📧 brad@terminalwire.com
+💼 https://terminalwire.com
+💰 Pricing available upon request or at http://terminalwire.com/pricing
+
+Please include:
+- Your company name
+- Description of use
+- Expected user base or integration details
+
+Additional information available at https://terminalwire.com/license
