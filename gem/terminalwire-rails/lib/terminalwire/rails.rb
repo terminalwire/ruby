@@ -2,6 +2,7 @@ require "terminalwire-server"
 require "thor"
 require "rails"
 require "jwt"
+require "async"
 
 module Terminalwire
   module Rails
@@ -86,42 +87,65 @@ module Terminalwire
 
       def handle(adapter:, env:)
         logger.info "ThorServer: Running #{@cli_class.inspect}"
-        while message = adapter.read
-          case message
-          in { event: "initialization", protocol:, program: { arguments: }, entitlement: }
-            context = Terminalwire::Server::Context.new(adapter:, entitlement:)
-            exit_code = 0
+        session = Terminalwire::Server::Session.new(adapter)
 
-            begin
-              @cli_class.terminalwire arguments:, context: do |cli|
-                cli.default_url_options = { host: env["HTTP_HOST"] }
-              end
-            rescue ::Thor::UndefinedCommandError, ::Thor::InvocationError => e
-              context.stdout.puts e.message
-            rescue ::StandardError => e
-              # Log the error
-              handler_error_message = <<~ERROR
-                #{e.class.name} (#{e.message})
+        # Background reader task: routes resource responses and captures initialization.
+        init_condition = Async::Condition.new
+        init_message = nil
 
-                #{e.backtrace.join("\n")}
-              ERROR
+        reader_task = Async::Task.current?.async do
+          while (message = adapter.read)
+            # Route responses for in-flight requests first:
+            handled = session.ingest(message)
+            next if handled
 
-              ::Rails.logger.error(handler_error_message)
-              # Report the error to Rails' notification system
-              ::Rails.error.report(e, handled: true)
-
-              if ::Rails.application.config.consider_all_requests_local
-                # Show the full error message with stack trace in development
-                context.stderr.puts handler_error_message
-              else
-                # Show a generic message in production
-                context.stderr.puts error_message
-              end
-              exit_code = 1
-            ensure
-              context.exit exit_code
+            case message
+            in { event: "initialization", protocol:, program:, entitlement: }
+              init_message ||= message
+              init_condition.signal
+            else
+              # Ignore other messages at this level.
             end
           end
+        end
+
+        # Wait for client initialization before running the CLI.
+        init_condition.wait
+        arguments = init_message.dig(:program, :arguments)
+        entitlement = init_message[:entitlement]
+
+        context = Terminalwire::Server::Context.new(adapter:, entitlement:)
+        exit_code = 0
+
+        begin
+          @cli_class.terminalwire arguments:, context: do |cli|
+            cli.default_url_options = { host: env["HTTP_HOST"] }
+          end
+        rescue ::Thor::UndefinedCommandError, ::Thor::InvocationError => e
+          context.stdout.puts e.message
+        rescue ::StandardError => e
+          # Log the error
+          handler_error_message = <<~ERROR
+            #{e.class.name} (#{e.message})
+
+            #{e.backtrace.join("\n")}
+          ERROR
+
+          ::Rails.logger.error(handler_error_message)
+          # Report the error to Rails' notification system
+          ::Rails.error.report(e, handled: true)
+
+          if ::Rails.application.config.consider_all_requests_local
+            # Show the full error message with stack trace in development
+            context.stderr.puts handler_error_message
+          else
+            # Show a generic message in production
+            context.stderr.puts error_message
+          end
+          exit_code = 1
+        ensure
+          context.exit exit_code
+          # Reader task will naturally finish when adapter closes.
         end
       end
     end

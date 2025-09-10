@@ -1,4 +1,5 @@
 require 'msgpack'
+require 'async'
 
 module Terminalwire::Adapter
   # Works with Test, TCP, Unix, WebSocket, and other socket-like abstractions.
@@ -9,12 +10,15 @@ module Terminalwire::Adapter
 
     def initialize(transport)
       @transport = transport
+      @write_lock = Async::Semaphore.new(1)
     end
 
     def write(data)
       logger.debug "Adapter: Sending #{data.inspect}"
       packed_data = MessagePack.pack(data, symbolize_keys: true)
-      @transport.write(packed_data)
+      @write_lock.acquire do
+        @transport.write(packed_data)
+      end
     end
 
     def read

@@ -1,6 +1,7 @@
 require "fileutils"
 require "io/console"
 
+
 module Terminalwire::Client::Resource
   # Dispatches messages from the Client::Handler to the appropriate resource.
   class Handler
@@ -27,9 +28,12 @@ module Terminalwire::Client::Resource
 
     def dispatch(**message)
       case message
-      in { event:, action:, name:, command:, parameters: }
+      in { event:, action: "command", name:, command:, parameters: }
         resource = @resources.fetch(name)
         resource.command(command, **parameters)
+      in { event:, action: "notify", name:, command:, parameters: }
+        resource = @resources.fetch(name)
+        resource.notify(command, **parameters)
       end
     end
   end
@@ -52,6 +56,16 @@ module Terminalwire::Client::Resource
       rescue => e
         fail e.message, command:, parameters:
         raise
+      end
+    end
+
+    def notify(command, **parameters)
+      begin
+        if permit(command, **parameters)
+          self.public_send(command, **parameters)
+        end
+      rescue => e
+        # Ignore errors on notifications to avoid affecting the reactor
       end
     end
 

@@ -51,15 +51,31 @@ module Terminalwire::Client
         }
       )
 
+      task = Async::Task.current?
+      raise "Terminalwire::Client::Handler#connect must be called within an Async reactor" unless task
       loop do
-        handle @adapter.read
+        handle_async(task, @adapter.read)
       end
     end
 
-    def handle(message)
+    def handle_async(task, message)
       case message
-      in { event: "resource", action: "command", name:, parameters: }
-        @resources.dispatch(**message)
+      in { event: "resource", action: "command", id:, name: _, parameters: _, ** }
+        task.async do
+          Terminalwire::Request.with_id(id) do
+            @resources.dispatch(**message)
+          end
+        end
+      in { event: "resource", action: "command", name: _, parameters: _, ** }
+        task.async do
+          Terminalwire::Request.with_id(nil) do
+            @resources.dispatch(**message)
+          end
+        end
+      in { event: "resource", action: "notify", name: _, parameters: _, ** }
+        task.async do
+          @resources.dispatch(**message)
+        end
       in { event: "exit", status: }
         exit Integer(status)
       end

@@ -3,24 +3,41 @@ module Terminalwire::Server
   # classes encapsulate the API alls to the client and provide a more Ruby-like interface.
   module Resource
     class Base < Terminalwire::Resource::Base
+      def initialize(name, adapter)
+        super(name, adapter)
+        @session = self.class.session_for(adapter)
+      end
+
+      def self.session_for(adapter)
+        @sessions ||= {}
+        @sessions[adapter.object_id] ||= Terminalwire::Server::Session.new(adapter)
+      end
+
+      # Use shared async session implementation:
+      Session = ::Terminalwire::Server::Session
+
       private
 
       def command(command, **parameters)
-        @adapter.write(
+        waiter = @session.request(
           event: "resource",
           name: @name,
           action: "command",
           command: command,
           parameters: parameters
         )
+        waiter.wait
+      end
 
-        response = @adapter.read
-        case response.fetch(:status)
-        when "success"
-          response.fetch(:response)
-        when "failure"
-          raise Terminalwire::Error, response.inspect
-        end
+      def notify(command, **parameters)
+        @adapter.write(
+          event: "resource",
+          name: @name,
+          action: "notify",
+          command: command,
+          parameters: parameters
+        )
+        nil
       end
     end
 
@@ -37,11 +54,11 @@ module Terminalwire::Server
 
     class STDOUT < Base
       def puts(data)
-        command("print_line", data: data)
+        notify("print_line", data: data)
       end
 
       def print(data)
-        command("print", data: data)
+        notify("print", data: data)
       end
 
       def flush
