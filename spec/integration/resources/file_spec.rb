@@ -1,10 +1,6 @@
 # frozen_string_literal: true
 
-require 'bundler/setup'
-require 'terminalwire/server'
-require 'terminalwire/client'
-require_relative '../../support/sync_adapter'
-require 'tempfile'
+require 'spec_helper'
 
 RSpec.describe Terminalwire::Server::Resource::File do
   let(:sync_adapter) { SyncAdapter.new }
@@ -20,8 +16,8 @@ RSpec.describe Terminalwire::Server::Resource::File do
     end
 
     # Setup client resources
-    client_handler = Terminalwire::Client::Resource::Handler.new do |handler|
-      handler << Terminalwire::Client::Resource::File.new("file", sync_adapter.client_adapter, entitlement: entitlement)
+    client_handler = Terminalwire::Client::Resource::Handler.new(adapter: sync_adapter.client_adapter, entitlement: entitlement) do |handler|
+      handler << Terminalwire::Client::Resource::File
     end
     
     sync_adapter.connect_client(client_handler)

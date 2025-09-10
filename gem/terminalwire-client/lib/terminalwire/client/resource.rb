@@ -6,7 +6,9 @@ module Terminalwire::Client::Resource
   class Handler
     include Enumerable
 
-    def initialize
+    def initialize(adapter:, entitlement:)
+      @adapter = adapter
+      @entitlement = entitlement
       @resources = {}
       yield self if block_given?
     end
@@ -15,12 +17,18 @@ module Terminalwire::Client::Resource
       @resources.values.each(&block)
     end
 
-    def add(resource)
+    def add(resource_class)
+      # Get the resource name from its key
+      resource_name = resource_class.key
+      
+      # Instantiate the resource with proper parameters
+      resource = resource_class.new(resource_name, @adapter, entitlement: @entitlement)
+      
       # Detect if the resource is already registered and throw an error
-      if @resources.key?(resource.name)
-        raise "Resource #{resource.name} already registered"
+      if @resources.key?(resource_name)
+        raise "Resource #{resource_name} already registered"
       else
-        @resources[resource.name] = resource
+        @resources[resource_name] = resource
       end
     end
     alias :<< :add
@@ -36,10 +44,12 @@ module Terminalwire::Client::Resource
 
   # Dispatcher, security, and response macros for resources.
   class Base < Terminalwire::Resource::Base
-    def initialize(*, entitlement:, **)
-      super(*, **)
+    def initialize(name = nil, adapter = nil, entitlement: nil)
+      # Use class key as default name if not provided
+      name ||= self.class.key if self.class.respond_to?(:key)
+      super(name, adapter)
       @entitlement = entitlement
-      connect
+      connect if entitlement # Only connect if entitlement is provided
     end
 
     def command(command, **parameters)
@@ -63,6 +73,10 @@ module Terminalwire::Client::Resource
   end
 
   class EnvironmentVariable < Base
+    def self.key
+      "environment_variable"
+    end
+
     # Accepts a list of environment variables to permit.
     def read(name:)
       ENV[name]
@@ -80,6 +94,10 @@ module Terminalwire::Client::Resource
   end
 
   class STDOUT < Base
+    def self.key
+      "stdout"
+    end
+
     def connect
       @io = $stdout
     end
@@ -100,12 +118,20 @@ module Terminalwire::Client::Resource
   end
 
   class STDERR < STDOUT
+    def self.key
+      "stderr"
+    end
+
     def connect
       @io = $stderr
     end
   end
 
   class STDIN < Base
+    def self.key
+      "stdin"
+    end
+
     def connect
       @io = $stdin
     end
@@ -126,6 +152,10 @@ module Terminalwire::Client::Resource
   end
 
   class File < Base
+    def self.key
+      "file"
+    end
+
     File = ::File
 
     def read(path:)
@@ -160,6 +190,10 @@ module Terminalwire::Client::Resource
   end
 
   class Directory < Base
+    def self.key
+      "directory"
+    end
+
     File = ::File
 
     def list(path:)
@@ -188,6 +222,10 @@ module Terminalwire::Client::Resource
   end
 
   class Browser < Base
+    def self.key
+      "browser"
+    end
+
     def launch(url:)
       Launchy.open(URI(url))
       # TODO: This is a hack to get the `respond` method to work.

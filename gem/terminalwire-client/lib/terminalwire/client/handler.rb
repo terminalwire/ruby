@@ -19,14 +19,14 @@ module Terminalwire::Client
 
       yield self if block_given?
 
-      @resources = Resource::Handler.new do |it|
-        it << Resource::STDOUT.new("stdout", @adapter, entitlement:)
-        it << Resource::STDIN.new("stdin", @adapter, entitlement:)
-        it << Resource::STDERR.new("stderr", @adapter, entitlement:)
-        it << Resource::Browser.new("browser", @adapter, entitlement:)
-        it << Resource::File.new("file", @adapter, entitlement:)
-        it << Resource::Directory.new("directory", @adapter, entitlement:)
-        it << Resource::EnvironmentVariable.new("environment_variable", @adapter, entitlement:)
+      @resources = Resource::Handler.new(adapter: @adapter, entitlement: @entitlement) do |it|
+        it << Resource::STDOUT
+        it << Resource::STDIN
+        it << Resource::STDERR
+        it << Resource::Browser
+        it << Resource::File
+        it << Resource::Directory
+        it << Resource::EnvironmentVariable
       end
     end
 

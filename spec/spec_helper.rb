@@ -9,6 +9,9 @@ require "uri"
 require "tmpdir"
 require "pity"
 require "launchy"
+require "tempfile"
+require "fileutils"
+require_relative "support/sync_adapter"
 
 # This will smoke out more bugs that could come up in environments like
 # Rails.

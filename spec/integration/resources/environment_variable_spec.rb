@@ -1,9 +1,6 @@
 # frozen_string_literal: true
 
-require 'bundler/setup'
-require 'terminalwire/server'
-require 'terminalwire/client'
-require_relative '../../support/sync_adapter'
+require 'spec_helper'
 
 RSpec.describe Terminalwire::Server::Resource::EnvironmentVariable do
   let(:sync_adapter) { SyncAdapter.new }
@@ -20,8 +17,8 @@ RSpec.describe Terminalwire::Server::Resource::EnvironmentVariable do
     end
 
     # Setup client resources
-    client_handler = Terminalwire::Client::Resource::Handler.new do |handler|
-      handler << Terminalwire::Client::Resource::EnvironmentVariable.new("environment_variable", sync_adapter.client_adapter, entitlement: entitlement)
+    client_handler = Terminalwire::Client::Resource::Handler.new(adapter: sync_adapter.client_adapter, entitlement: entitlement) do |handler|
+      handler << Terminalwire::Client::Resource::EnvironmentVariable
     end
     
     sync_adapter.connect_client(client_handler)
