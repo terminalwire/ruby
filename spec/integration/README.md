@@ -40,7 +40,15 @@ expect(result).to eq("file contents")
 
 ### Files
 
-- `server_client_resources_spec.rb` - Tests each resource type (File, STDOUT, etc.)
+- `resources/` directory - Individual specs for each resource type
+- `resources/file_spec.rb` - File resource integration tests
+- `resources/stdout_spec.rb` - STDOUT resource integration tests  
+- `resources/stderr_spec.rb` - STDERR resource integration tests
+- `resources/stdin_spec.rb` - STDIN resource integration tests
+- `resources/directory_spec.rb` - Directory resource integration tests
+- `resources/environment_variable_spec.rb` - Environment variable resource tests
+- `resources/browser_spec.rb` - Browser resource integration tests
+- `resources/shared_setup.rb` - Shared test setup and configuration
 
 ## Fullstack Tests (`spec/fullstack/`)
 
@@ -63,7 +71,11 @@ bundle exec rspec spec/integration/
 bundle exec rspec spec/fullstack/
 
 # Run specific resource tests
-bundle exec rspec spec/integration/server_client_resources_spec.rb
+bundle exec rspec spec/integration/resources/file_spec.rb
+bundle exec rspec spec/integration/resources/stdout_spec.rb
+
+# Run all resource tests
+bundle exec rspec spec/integration/resources/
 ```
 
 ## SyncAdapter
