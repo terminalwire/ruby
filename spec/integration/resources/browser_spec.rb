@@ -8,19 +8,17 @@ RSpec.describe Terminalwire::Server::Resource::Browser do
 
   before do
     allow(Launchy).to receive(:open)
-    
+
     # Create policy that allows specific URL schemes
     entitlement = Terminalwire::Client::Entitlement::Policy.resolve(authority: 'browser-test.example.com').tap do |policy|
       policy.schemes.permit("https")
-      policy.schemes.permit("http") 
+      policy.schemes.permit("http")
       policy.schemes.permit("ftp")
     end
 
-    # Setup client resources
-    client_handler = Terminalwire::Client::Resource::Handler.new(adapter: sync_adapter.client_adapter, entitlement: entitlement) do |handler|
-      handler << Terminalwire::Client::Resource::Browser
-    end
-    
+    # Setup client resources - default resources are automatically registered
+    client_handler = Terminalwire::Client::Resource::Handler.new(adapter: sync_adapter.client_adapter, entitlement: entitlement)
+
     sync_adapter.connect_client(client_handler)
   end
 

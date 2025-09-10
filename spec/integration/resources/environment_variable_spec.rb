@@ -16,10 +16,8 @@ RSpec.describe Terminalwire::Server::Resource::EnvironmentVariable do
       policy.environment_variables.permit("DEFINITELY_NONEXISTENT_VAR_12345")
     end
 
-    # Setup client resources
-    client_handler = Terminalwire::Client::Resource::Handler.new(adapter: sync_adapter.client_adapter, entitlement: entitlement) do |handler|
-      handler << Terminalwire::Client::Resource::EnvironmentVariable
-    end
+    # Setup client resources - default resources are automatically registered
+    client_handler = Terminalwire::Client::Resource::Handler.new(adapter: sync_adapter.client_adapter, entitlement: entitlement)
     
     sync_adapter.connect_client(client_handler)
   end

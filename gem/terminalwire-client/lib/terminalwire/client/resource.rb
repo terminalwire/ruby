@@ -10,6 +10,16 @@ module Terminalwire::Client::Resource
       @adapter = adapter
       @entitlement = entitlement
       @resources = {}
+      
+      # Register default resources
+      self << STDOUT
+      self << STDIN
+      self << STDERR
+      self << Browser
+      self << File
+      self << Directory
+      self << EnvironmentVariable
+      
       yield self if block_given?
     end
 

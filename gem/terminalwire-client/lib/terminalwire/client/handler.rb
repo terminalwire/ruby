@@ -15,19 +15,14 @@ module Terminalwire::Client
       @adapter = adapter
       @program_arguments = arguments
       @program_name = program_name
-      @entitlement = Entitlement::Policy.resolve(authority: @endpoint.authority)
-
+      @entitlement = Entitlement::Policy.resolve(
+        authority: @endpoint.authority
+      )
+      @resources = Resource::Handler.new(
+        adapter: @adapter,
+        entitlement: @entitlement
+      )
       yield self if block_given?
-
-      @resources = Resource::Handler.new(adapter: @adapter, entitlement: @entitlement) do |it|
-        it << Resource::STDOUT
-        it << Resource::STDIN
-        it << Resource::STDERR
-        it << Resource::Browser
-        it << Resource::File
-        it << Resource::Directory
-        it << Resource::EnvironmentVariable
-      end
     end
 
     def verify_license

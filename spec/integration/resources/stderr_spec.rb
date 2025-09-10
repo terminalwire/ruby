@@ -10,10 +10,8 @@ RSpec.describe Terminalwire::Server::Resource::STDERR do
     # Create policy that allows stderr operations (no special permissions needed)
     entitlement = Terminalwire::Client::Entitlement::Policy.resolve(authority: 'stderr-test.example.com')
 
-    # Setup client resources
-    client_handler = Terminalwire::Client::Resource::Handler.new(adapter: sync_adapter.client_adapter, entitlement: entitlement) do |handler|
-      handler << Terminalwire::Client::Resource::STDERR
-    end
+    # Setup client resources - default resources are automatically registered
+    client_handler = Terminalwire::Client::Resource::Handler.new(adapter: sync_adapter.client_adapter, entitlement: entitlement)
     
     sync_adapter.connect_client(client_handler)
   end

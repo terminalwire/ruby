@@ -13,10 +13,8 @@ RSpec.describe Terminalwire::Server::Resource::Directory do
       policy.paths.permit("**/*", mode: 0o777)
     end
 
-    # Setup client resources
-    client_handler = Terminalwire::Client::Resource::Handler.new(adapter: sync_adapter.client_adapter, entitlement: entitlement) do |handler|
-      handler << Terminalwire::Client::Resource::Directory
-    end
+    # Setup client resources - default resources are automatically registered
+    client_handler = Terminalwire::Client::Resource::Handler.new(adapter: sync_adapter.client_adapter, entitlement: entitlement)
     
     sync_adapter.connect_client(client_handler)
   end
