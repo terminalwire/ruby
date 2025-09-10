@@ -8,6 +8,7 @@ require "pathname"
 require "uri"
 require "tmpdir"
 require "pity"
+require "launchy"
 
 # This will smoke out more bugs that could come up in environments like
 # Rails.
@@ -36,6 +37,11 @@ RSpec.configure do |config|
       ensure
         ENV['TERMINALWIRE_HOME'] = original_terminalwire_home
       end
+    end
+  
+    # Prevent browsers from opening during tests
+    config.before(:each) do
+      allow(Launchy).to receive(:open)
     end
   end
 end
