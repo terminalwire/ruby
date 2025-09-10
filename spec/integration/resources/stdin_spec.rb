@@ -3,18 +3,10 @@
 require 'spec_helper'
 
 RSpec.describe Terminalwire::Server::Resource::STDIN do
-  let(:sync_adapter) { SyncAdapter.new }
-  let(:server_stdin) { described_class.new("stdin", sync_adapter) }
-
-  before do
-    # Create policy that allows stdin operations (no special permissions needed)
-    entitlement = Terminalwire::Client::Entitlement::Policy.resolve(authority: 'stdin-test.example.com')
-
-    # Setup client resources - default resources are automatically registered
-    client_handler = Terminalwire::Client::Resource::Handler.new(adapter: sync_adapter.client_adapter, entitlement: entitlement)
-    
-    sync_adapter.connect_client(client_handler)
-  end
+  let(:integration) { 
+    Sync::Integration.new(authority: 'stdin-test.example.com') 
+  }
+  let(:server_stdin) { described_class.new("stdin", integration.server_adapter) }
 
   describe '#gets' do
     it 'reads line from stdin through client' do

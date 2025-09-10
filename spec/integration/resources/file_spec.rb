@@ -3,23 +3,15 @@
 require 'spec_helper'
 
 RSpec.describe Terminalwire::Server::Resource::File do
-  let(:sync_adapter) { SyncAdapter.new }
-  let(:server_file) { described_class.new("file", sync_adapter) }
+  let(:integration) { 
+    Sync::Integration.new(authority: 'file-test.example.com') do |sync|
+      # Allow all file paths for testing
+      sync.policy.paths.permit("**/*", mode: 0o777)
+    end
+  }
+  let(:server_file) { described_class.new("file", integration.server_adapter) }
   let(:test_file) { Tempfile.new('server_resource_test') }
   let(:test_path) { test_file.path }
-
-  before do
-    # Create policy that allows file operations
-    entitlement = Terminalwire::Client::Entitlement::Policy.resolve(authority: 'file-test.example.com').tap do |policy|
-      # Allow all file paths for testing
-      policy.paths.permit("**/*", mode: 0o777)
-    end
-
-    # Setup client resources - default resources are automatically registered
-    client_handler = Terminalwire::Client::Resource::Handler.new(adapter: sync_adapter.client_adapter, entitlement: entitlement)
-    
-    sync_adapter.connect_client(client_handler)
-  end
 
   after do
     test_file.close
@@ -38,7 +30,7 @@ RSpec.describe Terminalwire::Server::Resource::File do
     it 'raises error for non-existent file' do
       expect {
         server_file.read("/nonexistent/file.txt")
-      }.to raise_error
+      }.to raise_error(Errno::ENOENT)
     end
   end
 

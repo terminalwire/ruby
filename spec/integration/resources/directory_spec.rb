@@ -3,21 +3,14 @@
 require 'spec_helper'
 
 RSpec.describe Terminalwire::Server::Resource::Directory do
-  let(:sync_adapter) { SyncAdapter.new }
-  let(:server_directory) { described_class.new("directory", sync_adapter) }
-  let(:test_dir) { Dir.mktmpdir }
-
-  before do
-    # Create policy that allows directory operations
-    entitlement = Terminalwire::Client::Entitlement::Policy.resolve(authority: 'directory-test.example.com').tap do |policy|
-      policy.paths.permit("**/*", mode: 0o777)
+  let(:integration) { 
+    Sync::Integration.new(authority: 'directory-test.example.com') do |sync|
+      # Allow all directory paths for testing
+      sync.policy.paths.permit("**/*", mode: 0o777)
     end
-
-    # Setup client resources - default resources are automatically registered
-    client_handler = Terminalwire::Client::Resource::Handler.new(adapter: sync_adapter.client_adapter, entitlement: entitlement)
-    
-    sync_adapter.connect_client(client_handler)
-  end
+  }
+  let(:server_directory) { described_class.new("directory", integration.server_adapter) }
+  let(:test_dir) { Dir.mktmpdir('server_resource_test') }
 
   after do
     FileUtils.rm_rf(test_dir) if Dir.exist?(test_dir)

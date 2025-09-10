@@ -3,18 +3,10 @@
 require 'spec_helper'
 
 RSpec.describe Terminalwire::Server::Resource::STDERR do
-  let(:sync_adapter) { SyncAdapter.new }
-  let(:server_stderr) { described_class.new("stderr", sync_adapter) }
-
-  before do
-    # Create policy that allows stderr operations (no special permissions needed)
-    entitlement = Terminalwire::Client::Entitlement::Policy.resolve(authority: 'stderr-test.example.com')
-
-    # Setup client resources - default resources are automatically registered
-    client_handler = Terminalwire::Client::Resource::Handler.new(adapter: sync_adapter.client_adapter, entitlement: entitlement)
-    
-    sync_adapter.connect_client(client_handler)
-  end
+  let(:integration) { 
+    Sync::Integration.new(authority: 'stderr-test.example.com') 
+  }
+  let(:server_stderr) { described_class.new("stderr", integration.server_adapter) }
 
   describe '#print' do
     it 'prints to stderr through client' do

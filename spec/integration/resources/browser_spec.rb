@@ -3,23 +3,19 @@
 require 'spec_helper'
 
 RSpec.describe Terminalwire::Server::Resource::Browser do
-  let(:sync_adapter) { SyncAdapter.new }
-  let(:server_browser) { described_class.new("browser", sync_adapter) }
+  let(:integration) { 
+    Sync::Integration.new(authority: 'browser-test.example.com') do |sync|
+      # Allow HTTP and HTTPS schemes for testing
+      sync.policy.schemes.permit("http")
+      sync.policy.schemes.permit("https")
+      # Add FTP for testing purposes
+      sync.policy.schemes.permit("ftp")
+    end
+  }
+  let(:server_browser) { described_class.new("browser", integration.server_adapter) }
 
   before do
     allow(Launchy).to receive(:open)
-
-    # Create policy that allows specific URL schemes
-    entitlement = Terminalwire::Client::Entitlement::Policy.resolve(authority: 'browser-test.example.com').tap do |policy|
-      policy.schemes.permit("https")
-      policy.schemes.permit("http")
-      policy.schemes.permit("ftp")
-    end
-
-    # Setup client resources - default resources are automatically registered
-    client_handler = Terminalwire::Client::Resource::Handler.new(adapter: sync_adapter.client_adapter, entitlement: entitlement)
-
-    sync_adapter.connect_client(client_handler)
   end
 
   describe '#launch' do

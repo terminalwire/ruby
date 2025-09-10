@@ -3,24 +3,17 @@
 require 'spec_helper'
 
 RSpec.describe Terminalwire::Server::Resource::EnvironmentVariable do
-  let(:sync_adapter) { SyncAdapter.new }
-  let(:server_env) { described_class.new("environment_variable", sync_adapter) }
-
-  before do
-    # Create policy that allows specific environment variables
-    entitlement = Terminalwire::Client::Entitlement::Policy.resolve(authority: 'env-test.example.com').tap do |policy|
-      policy.environment_variables.permit("TEST_VAR")
-      policy.environment_variables.permit("HOME")
-      policy.environment_variables.permit("USER")
-      policy.environment_variables.permit("PATH")
-      policy.environment_variables.permit("DEFINITELY_NONEXISTENT_VAR_12345")
+  let(:integration) { 
+    Sync::Integration.new(authority: 'env-test.example.com') do |sync|
+      # Allow specific environment variables for testing
+      sync.policy.environment_variables.permit("TEST_VAR")
+      sync.policy.environment_variables.permit("HOME")
+      sync.policy.environment_variables.permit("USER")
+      sync.policy.environment_variables.permit("PATH")
+      sync.policy.environment_variables.permit("DEFINITELY_NONEXISTENT_VAR_12345")
     end
-
-    # Setup client resources - default resources are automatically registered
-    client_handler = Terminalwire::Client::Resource::Handler.new(adapter: sync_adapter.client_adapter, entitlement: entitlement)
-    
-    sync_adapter.connect_client(client_handler)
-  end
+  }
+  let(:server_env) { described_class.new("environment_variable", integration.server_adapter) }
 
   describe '#read' do
     it 'reads existing environment variable through client' do
