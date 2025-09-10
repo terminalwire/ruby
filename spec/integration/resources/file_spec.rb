@@ -5,7 +5,6 @@ require 'spec_helper'
 RSpec.describe Terminalwire::Server::Resource::File do
   let(:integration) { 
     Sync::Integration.new(authority: 'file-test.example.com') do |sync|
-      # Allow all file paths for testing
       sync.policy.paths.permit("**/*", mode: 0o777)
     end
   }
@@ -30,7 +29,16 @@ RSpec.describe Terminalwire::Server::Resource::File do
     it 'raises error for non-existent file' do
       expect {
         server_file.read("/nonexistent/file.txt")
-      }.to raise_error(Errno::ENOENT)
+      }.to raise_error(Errno::ENOENT, /No such file or directory/)
+    end
+
+    it 'raises error for unauthorized file access' do
+      integration_with_no_perms = Sync::Integration.new(authority: 'file-test-no-perms.example.com')
+      restricted_file = Terminalwire::Server::Resource::File.new("file", integration_with_no_perms.server_adapter)
+      
+      expect {
+        restricted_file.read(test_path)
+      }.to raise_error(/denied/)
     end
   end
 
@@ -39,6 +47,14 @@ RSpec.describe Terminalwire::Server::Resource::File do
       server_file.write(test_path, "new content")
       
       expect(File.read(test_path)).to eq("new content")
+    end
+
+    it 'overwrites existing file content' do
+      File.write(test_path, "original content")
+      
+      server_file.write(test_path, "replacement content")
+      
+      expect(File.read(test_path)).to eq("replacement content")
     end
   end
 
@@ -81,12 +97,44 @@ RSpec.describe Terminalwire::Server::Resource::File do
   describe '#change_mode' do
     it 'changes file permissions through client' do
       File.write(test_path, "test")
-      original_mode = File.stat(test_path).mode
       
-      server_file.change_mode(test_path, 0755)
+      server_file.change_mode(test_path, 0644)
       
-      new_mode = File.stat(test_path).mode
-      expect(new_mode).not_to eq(original_mode)
+      mode = File.stat(test_path).mode & 0777
+      expect(mode).to eq(0644)
+    end
+  end
+
+  describe 'unauthorized access' do
+    let(:restricted_integration) { 
+      Sync::Integration.new(authority: 'restricted-file.example.com') do |sync|
+        sync.policy.paths.permit("/tmp/allowed/**", mode: 0o644)
+      end
+    }
+    let(:restricted_file) { described_class.new("file", restricted_integration.server_adapter) }
+
+    it 'denies reading unauthorized paths' do
+      expect {
+        restricted_file.read("/etc/passwd")
+      }.to raise_error(Terminalwire::Error, /denied/)
+    end
+
+    it 'denies writing to unauthorized paths' do
+      expect {
+        restricted_file.write("/etc/malicious", "bad content")
+      }.to raise_error(Terminalwire::Error, /denied/)
+    end
+
+    it 'denies deleting unauthorized files' do
+      expect {
+        restricted_file.delete("/etc/passwd")
+      }.to raise_error(Terminalwire::Error, /denied/)
+    end
+
+    it 'denies changing permissions on unauthorized files' do
+      expect {
+        restricted_file.change_mode("/etc/passwd", 0777)
+      }.to raise_error(Terminalwire::Error, /denied/)
     end
   end
 end

@@ -62,4 +62,37 @@ RSpec.describe Terminalwire::Server::Resource::Directory do
       expect(Dir.exist?(test_subdir)).to be false
     end
   end
+
+  describe 'unauthorized access' do
+    let(:restricted_integration) { 
+      Sync::Integration.new(authority: 'restricted-directory.example.com') do |sync|
+        sync.policy.paths.permit("/tmp/allowed/**", mode: 0o755)
+      end
+    }
+    let(:restricted_directory) { described_class.new("directory", restricted_integration.server_adapter) }
+
+    it 'denies listing unauthorized directories' do
+      expect {
+        restricted_directory.list("/etc/*")
+      }.to raise_error(Terminalwire::Error, /denied/)
+    end
+
+    it 'denies creating directories in unauthorized paths' do
+      expect {
+        restricted_directory.create("/etc/malicious_dir")
+      }.to raise_error(Terminalwire::Error, /denied/)
+    end
+
+    it 'denies checking existence of unauthorized directories' do
+      expect {
+        restricted_directory.exist?("/etc")
+      }.to raise_error(Terminalwire::Error, /denied/)
+    end
+
+    it 'denies deleting unauthorized directories' do
+      expect {
+        restricted_directory.delete("/etc")
+      }.to raise_error(Terminalwire::Error, /denied/)
+    end
+  end
 end
