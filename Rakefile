@@ -121,8 +121,18 @@ namespace :spec do
     end
   end
 
-  desc "Run integration specs"
+  desc "Run integration specs (lightweight)"
   task integration: :gem do
+    sh "bundle exec rspec spec/integration"
+  end
+
+  desc "Run fullstack specs (heavy)"
+  task fullstack: :gem do
+    sh "bundle exec rspec spec/fullstack"
+  end
+
+  desc "Run all specs"
+  task all: :gem do
     sh "bundle exec rspec spec"
   end
 end
@@ -199,7 +209,7 @@ desc "Build #{Tebako.host_os}(#{Tebako.host_arch}) binary"
 task tebako: %i[tebako:build tebako:ubuntu:build tebako:package]
 
 desc "Run specs"
-task spec: %i[spec:isolate spec:integration]
+task spec: %i[spec:isolate spec:integration spec:fullstack]
 
 # Run : Lgemntests and build everything.
 task default: %i[spec tebako]
