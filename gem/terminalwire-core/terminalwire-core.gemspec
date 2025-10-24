@@ -36,6 +36,10 @@ Gem::Specification.new do |spec|
   spec.add_dependency "uri-builder", "~> 0.1.9"
   spec.add_dependency "base64", "~> 0.2.0"
 
+  # There's a bug in OpenSSL 3.3.0 where it can't validate certificates,
+  # so we have to use a newer version.
+  spec.add_dependency "openssl", ">= 3.3.1"
+
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "rspec", "~> 3.0"
 
