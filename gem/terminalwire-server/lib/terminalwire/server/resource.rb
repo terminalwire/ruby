@@ -116,5 +116,36 @@ module Terminalwire::Server
         command("launch", url: url)
       end
     end
+
+    class Shell < Base
+      # Result object for shell command execution
+      Result = Struct.new(:stdout, :stderr, :exitstatus, :success, keyword_init: true) do
+        alias_method :success?, :success
+      end
+
+      # Run a command with arguments on the client.
+      # Uses array-based execution for security (no shell interpretation).
+      #
+      # @param cmd [String] The command to execute
+      # @param args [Array<String>] Arguments to pass to the command
+      # @param timeout [Integer, nil] Timeout in seconds (default: 30, max: 300)
+      # @param chdir [String, nil] Working directory for the command
+      # @return [Result] Result object with stdout, stderr, exitstatus, success?
+      def run(cmd, *args, timeout: nil, chdir: nil)
+        response = command("run",
+          command: cmd.to_s,
+          args: args.map(&:to_s),
+          timeout: timeout,
+          chdir: chdir&.to_s
+        )
+
+        Result.new(
+          stdout: response[:stdout],
+          stderr: response[:stderr],
+          exitstatus: response[:exitstatus],
+          success: response[:success]
+        )
+      end
+    end
   end
 end

@@ -2,7 +2,7 @@ module Terminalwire::Client::Entitlement
   module Policy
     # A policy has the authority, paths, and schemes that the server is allowed to access.
     class Base
-      attr_reader :paths, :authority, :schemes, :environment_variables
+      attr_reader :paths, :authority, :schemes, :environment_variables, :shell
 
       def initialize(authority:)
         @authority = authority
@@ -20,6 +20,9 @@ module Terminalwire::Client::Entitlement
         @environment_variables = EnvironmentVariables.new
         # Permit the HOME and TERMINALWIRE_HOME environment variables.
         @environment_variables.permit "TERMINALWIRE_HOME"
+
+        @shell = Shell.new
+        # No shell commands permitted by default (deny-all)
       end
 
       def root_path
@@ -44,7 +47,8 @@ module Terminalwire::Client::Entitlement
           authority: @authority,
           schemes: @schemes.serialize,
           paths: @paths.serialize,
-          environment_variables: @environment_variables.serialize
+          environment_variables: @environment_variables.serialize,
+          shell: @shell.serialize
         }
       end
     end
