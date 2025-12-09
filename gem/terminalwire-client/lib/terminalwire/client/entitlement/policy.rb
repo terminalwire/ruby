@@ -23,6 +23,32 @@ module Terminalwire::Client::Entitlement
 
         @shell = Shell.new
         # No shell commands permitted by default (deny-all)
+        # Load user-configured permissions from config file
+        load_user_config!
+      end
+
+      def load_user_config!
+        config_path = File.expand_path(authority_path.join("config.yml"))
+        return unless File.exist?(config_path)
+
+        config = YAML.safe_load_file(config_path, permitted_classes: [], symbolize_names: true)
+
+        # Load shell permissions
+        if config[:shell]&.[](:allow)
+          Array(config[:shell][:allow]).each { |cmd| @shell.permit(cmd) }
+        end
+
+        # Load path permissions
+        if config[:paths]&.[](:allow)
+          Array(config[:paths][:allow]).each { |path| @paths.permit(File.expand_path(path)) }
+        end
+
+        # Load environment variable permissions
+        if config[:environment_variables]&.[](:allow)
+          Array(config[:environment_variables][:allow]).each { |var| @environment_variables.permit(var) }
+        end
+      rescue => e
+        # Silently ignore config errors to avoid breaking CLI
       end
 
       def root_path
