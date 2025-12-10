@@ -27,6 +27,7 @@ module Terminalwire
       ENV["TERMINALWIRE_HOME"] ||= root_path.to_s
 
       url = URI(url)
+      exit_status = 0
 
       Async do |task|
         endpoint = Async::HTTP::Endpoint.parse(
@@ -37,9 +38,14 @@ module Terminalwire
         Async::WebSocket::Client.connect(endpoint) do |connection|
           transport = Terminalwire::Transport::WebSocket.new(connection)
           adapter = Terminalwire::Adapter::Socket.new(transport)
-          Terminalwire::Client::Handler.new(adapter, arguments:, endpoint:, &configuration).connect
+          exit_status = Terminalwire::Client::Handler.new(adapter, arguments:, endpoint:, &configuration).connect
         end
+      rescue => e
+        # Suppress async cleanup errors during shutdown
+        raise unless e.is_a?(Async::Stop) || e.message.include?("mutex")
       end
+
+      exit(exit_status)
     end
   end
 end
