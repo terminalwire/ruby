@@ -16,6 +16,35 @@ module Terminalwire
           @context = context
           super(*,**,&)
         end
+
+        protected
+
+        # Override ask_simply to use the Terminalwire context's stdin/stdout
+        # instead of Thor::LineEditor, which hardcodes $stdin/$stdout globals.
+        # This fixes ask, yes?, no?, and file_collision.
+        def ask_simply(statement, color, options)
+          default = options[:default]
+          message = [statement, ("(#{default})" if default), nil].uniq.join(" ")
+          message = prepare_message(message, *color)
+
+          stdout.print(message)
+
+          result = if options.fetch(:echo, true)
+            stdin.gets
+          else
+            stdin.getpass
+          end
+
+          return unless result
+
+          result = result.strip
+
+          if default && result == ""
+            default
+          else
+            result
+          end
+        end
       end
 
       def self.included(base)

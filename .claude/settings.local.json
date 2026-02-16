@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gem which:*)",
+      "Bash(gem list:*)"
+    ]
+  }
+}
