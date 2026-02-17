@@ -114,6 +114,7 @@ module Terminalwire::Client::Resource
 
     def print(data:)
       @io.print(data)
+      @io.flush
     end
 
     def print_line(data:)
