@@ -12,6 +12,7 @@ module Terminalwire::Server
       :browser,
       :file, :directory,
       :environment_variable,
+      :shell,
       :authority,
       :root_path,
       :authority_path,
@@ -32,6 +33,7 @@ module Terminalwire::Server
       @file = Resource::File.new("file", @adapter)
       @directory = Resource::Directory.new("directory", @adapter)
       @environment_variable = Resource::EnvironmentVariable.new("environment_variable", @adapter)
+      @shell = Resource::Shell.new("shell", @adapter)
 
       # Authority is provided by the client.
       @authority = @entitlement.fetch(:authority)

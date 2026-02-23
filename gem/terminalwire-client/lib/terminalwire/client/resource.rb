@@ -1,5 +1,6 @@
 require "fileutils"
 require "io/console"
+require "open3"
 
 module Terminalwire::Client::Resource
   # Dispatches messages from the Client::Handler to the appropriate resource.
@@ -19,6 +20,7 @@ module Terminalwire::Client::Resource
       self << File
       self << Directory
       self << EnvironmentVariable
+      self << Shell
       
       yield self if block_given?
     end
@@ -248,6 +250,81 @@ module Terminalwire::Client::Resource
 
     def permit(command, url:, **)
       @entitlement.schemes.permitted? url
+    end
+  end
+
+  class Shell < Base
+    def self.key
+      "shell"
+    end
+
+    # Execute a command with arguments using array-based execution (no shell interpretation).
+    # Returns a hash with stdout, stderr, exitstatus, and success.
+    def run(command:, args: [], timeout: nil, chdir: nil)
+      # Apply timeout limits
+      timeout = resolve_timeout(timeout)
+
+      # Build execution options
+      options = {}
+      options[:chdir] = ::File.expand_path(chdir) if chdir
+
+      # Execute command with array form (safe - no shell interpretation)
+      stdout, stderr, status = execute_with_timeout(command, args, timeout, options)
+
+      # Truncate output if too large
+      stdout = truncate_output(stdout)
+      stderr = truncate_output(stderr)
+
+      {
+        stdout: stdout,
+        stderr: stderr,
+        exitstatus: status.exitstatus,
+        success: status.success?
+      }
+    end
+
+    protected
+
+    def permit(command_name, command:, args: [], chdir: nil, **)
+      # Check if command + args prefix is permitted
+      return false unless @entitlement.shell.permitted?(command, args)
+
+      # If chdir specified, it must be a permitted path
+      if chdir
+        return false unless @entitlement.paths.permitted?(chdir)
+      end
+
+      true
+    end
+
+    private
+
+    def resolve_timeout(timeout)
+      max_timeout = Terminalwire::Client::Entitlement::Shell::MAX_TIMEOUT
+      default_timeout = Terminalwire::Client::Entitlement::Shell::DEFAULT_TIMEOUT
+
+      if timeout.nil?
+        default_timeout
+      else
+        [timeout.to_i, max_timeout].min
+      end
+    end
+
+    def execute_with_timeout(command, args, timeout, options)
+      Timeout.timeout(timeout) do
+        Open3.capture3(command, *args, **options)
+      end
+    rescue Timeout::Error
+      ["", "Command timed out after #{timeout} seconds", OpenStruct.new(exitstatus: 124, success?: false)]
+    end
+
+    def truncate_output(output)
+      max_size = Terminalwire::Client::Entitlement::Shell::MAX_OUTPUT_SIZE
+      if output.bytesize > max_size
+        output.byteslice(0, max_size) + "\n... (output truncated)"
+      else
+        output
+      end
     end
   end
 end

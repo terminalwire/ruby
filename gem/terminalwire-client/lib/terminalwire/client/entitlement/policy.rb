@@ -2,7 +2,7 @@ module Terminalwire::Client::Entitlement
   module Policy
     # A policy has the authority, paths, and schemes that the server is allowed to access.
     class Base
-      attr_reader :paths, :authority, :schemes, :environment_variables
+      attr_reader :paths, :authority, :schemes, :environment_variables, :shell
 
       def initialize(authority:)
         @authority = authority
@@ -20,6 +20,35 @@ module Terminalwire::Client::Entitlement
         @environment_variables = EnvironmentVariables.new
         # Permit the HOME and TERMINALWIRE_HOME environment variables.
         @environment_variables.permit "TERMINALWIRE_HOME"
+
+        @shell = Shell.new
+        # No shell commands permitted by default (deny-all)
+        # Load user-configured permissions from config file
+        load_user_config!
+      end
+
+      def load_user_config!
+        config_path = File.expand_path(authority_path.join("config.yml"))
+        return unless File.exist?(config_path)
+
+        config = YAML.safe_load_file(config_path, permitted_classes: [], symbolize_names: true)
+
+        # Load shell permissions
+        if config[:shell]&.[](:allow)
+          Array(config[:shell][:allow]).each { |cmd| @shell.permit(cmd) }
+        end
+
+        # Load path permissions
+        if config[:paths]&.[](:allow)
+          Array(config[:paths][:allow]).each { |path| @paths.permit(File.expand_path(path)) }
+        end
+
+        # Load environment variable permissions
+        if config[:environment_variables]&.[](:allow)
+          Array(config[:environment_variables][:allow]).each { |var| @environment_variables.permit(var) }
+        end
+      rescue => e
+        # Silently ignore config errors to avoid breaking CLI
       end
 
       def root_path
@@ -44,7 +73,8 @@ module Terminalwire::Client::Entitlement
           authority: @authority,
           schemes: @schemes.serialize,
           paths: @paths.serialize,
-          environment_variables: @environment_variables.serialize
+          environment_variables: @environment_variables.serialize,
+          shell: @shell.serialize
         }
       end
     end

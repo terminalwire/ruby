@@ -46,9 +46,15 @@ module Terminalwire::Client
         }
       )
 
-      loop do
-        handle @adapter.read
+      catch(:exit) do
+        loop do
+          handle @adapter.read
+        end
       end
+
+      # Return exit status instead of calling exit directly
+      # This allows Async to clean up properly
+      @exit_status || 0
     end
 
     def handle(message)
@@ -56,7 +62,9 @@ module Terminalwire::Client
       in { event: "resource", action: "command", name:, parameters: }
         @resources.dispatch(**message)
       in { event: "exit", status: }
-        exit Integer(status)
+        # Store exit status and break out of loop to allow clean shutdown
+        @exit_status = Integer(status)
+        throw :exit
       end
     end
   end
