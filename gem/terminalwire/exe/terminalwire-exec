@@ -5,6 +5,8 @@ Zeitwerk::Loader.eager_load_all
 
 begin
   Terminalwire::Client::Exec.start
+rescue Interrupt
+  exit 0
 rescue Terminalwire::Error => e
   puts e.message
   exit 1
