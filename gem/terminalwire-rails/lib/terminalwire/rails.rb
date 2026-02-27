@@ -198,6 +198,8 @@ module Terminalwire
             end
           end
         end
+      rescue EOFError, IOError, Errno::ECONNRESET, Errno::EPIPE => e
+        logger.debug "ThorServer: Client disconnected (#{e.class})"
       end
     end
   end
