@@ -39,6 +39,10 @@ module Terminalwire
           adapter = Terminalwire::Adapter::Socket.new(transport)
           Terminalwire::Client::Handler.new(adapter, arguments:, endpoint:, &configuration).connect
         end
+      rescue Terminalwire::Error
+        raise
+      rescue => e
+        raise Terminalwire::Error, "Connection failed: #{e.message}"
       end
     end
   end

@@ -8,6 +8,7 @@ begin
 rescue Interrupt
   exit 0
 rescue Terminalwire::Error => e
-  puts e.message
+  $stderr.puts e.message
+  $stderr.puts e.cause.full_message if ENV["TERMINALWIRE_DEBUG"] && e.cause
   exit 1
 end
