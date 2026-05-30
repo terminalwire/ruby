@@ -12,8 +12,8 @@ module Terminalwire2
       EOF = :__eof__
 
       def self.pair
-        a = Queue.new
-        b = Queue.new
+        a = ::Queue.new
+        b = ::Queue.new
         [new(read_queue: a, write_queue: b), new(read_queue: b, write_queue: a)]
       end
 

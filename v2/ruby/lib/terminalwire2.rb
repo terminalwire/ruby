@@ -8,10 +8,12 @@ require_relative "terminalwire2/negotiator"
 require_relative "terminalwire2/frames"
 require_relative "terminalwire2/mux"
 require_relative "terminalwire2/transport/memory"
+require_relative "terminalwire2/transport/queue"
 require_relative "terminalwire2/server/connection"
 require_relative "terminalwire2/server/runtime"
 require_relative "terminalwire2/server/context"
 require_relative "terminalwire2/server/handler"
+require_relative "terminalwire2/server/session"
 require_relative "terminalwire2/conformance"
 
 # Note: terminalwire2/server/thor is required on demand (it needs the thor gem),
