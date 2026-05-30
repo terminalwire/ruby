@@ -51,7 +51,7 @@ module Terminalwire2
 
           unless answer[:ok]
             error = answer[:error] || {}
-            raise ResponseError.new(error["code"], error["message"])
+            raise ResponseError.new(error["code"] || "internal", error["message"] || "request failed")
           end
           return answer[:value]
         end

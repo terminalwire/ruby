@@ -15,12 +15,13 @@ module Terminalwire2
       def initialize(sink:)
         @sink = sink
         @inbox = ::Queue.new
+        @mutex = Mutex.new
         @closed = false
       end
 
       # Called by the websocket endpoint when a frame arrives from the client.
       def deliver(bytes)
-        @inbox << bytes unless @closed
+        @mutex.synchronize { @inbox << bytes unless @closed }
       end
 
       def read
@@ -33,8 +34,12 @@ module Terminalwire2
       end
 
       def close
-        @closed = true
-        @inbox << CLOSED
+        @mutex.synchronize do
+          next if @closed
+
+          @closed = true
+          @inbox << CLOSED
+        end
       end
     end
   end

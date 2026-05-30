@@ -80,9 +80,16 @@ module Terminalwire2
           raise ProtocolError, "expected hello, got #{frame["t"].inspect}"
         end
 
+        protocol = frame["protocol"]
+        capabilities = frame["capabilities"]
+        # Validate hello-specific fields up front so a malformed hello is a clean
+        # ProtocolError rather than a NoMethodError deep in the negotiator.
+        raise ProtocolError, "hello protocol must be an integer" unless protocol.is_a?(Integer)
+        raise ProtocolError, "hello capabilities must be an array" unless capabilities.is_a?(Array)
+
         result = Negotiator.negotiate(
-          client_protocol: frame["protocol"],
-          client_capabilities: frame["capabilities"] || [],
+          client_protocol: protocol,
+          client_capabilities: capabilities,
           server_min: @server_min,
           server_max: @server_max,
           server_capabilities: @server_capabilities
@@ -112,6 +119,10 @@ module Terminalwire2
         unless frame["t"] == Protocol::Type::RESPONSE
           raise ProtocolError, "expected response while ready, got #{frame["t"].inspect}"
         end
+
+        # A response for an unknown/already-resolved stream (duplicate, late, or
+        # hostile) is ignored rather than crashing the session.
+        return [] unless @mux.pending?(frame["sid"])
 
         context = @mux.resolve(frame["sid"])
         [[:event, :response, {

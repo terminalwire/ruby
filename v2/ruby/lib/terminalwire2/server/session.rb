@@ -25,7 +25,14 @@ module Terminalwire2
       end
 
       def start
-        @thread = Thread.new { @handler.call(transport: @transport) }
+        @thread = Thread.new do
+          @handler.call(transport: @transport)
+        ensure
+          # Once the worker is done (normal exit or error), close the transport so
+          # any further frames the endpoint delivers are dropped instead of piling
+          # up in the inbox behind a dead worker.
+          @transport.close
+        end
         self
       end
 
