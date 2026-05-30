@@ -1,0 +1,16 @@
+# Ruby
+ruby/coverage/
+ruby/.bundle/
+ruby/tmp/
+ruby/pkg/
+ruby/Gemfile.lock
+ruby/vendor/
+
+# Go
+go/terminalwire
+go/*.test
+go/coverage.out
+go/coverage.html
+
+# OS
+.DS_Store
