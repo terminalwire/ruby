@@ -36,6 +36,7 @@ module Terminalwire2
           status = handle_error(e, context)
         ensure
           context.exit(status)
+          runtime.close
         end
 
         status

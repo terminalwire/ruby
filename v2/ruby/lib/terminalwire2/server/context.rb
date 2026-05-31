@@ -18,6 +18,13 @@ module Terminalwire2
         @stderr_sid = nil
       end
 
+      # The client's live terminal (rows/cols/tty?/color?), kept current by the
+      # runtime's read pump as resize frames arrive.
+      def terminal = @runtime.terminal
+
+      # Register a callback fired when the client's window resizes.
+      def on_resize(&block) = @runtime.on_resize(&block)
+
       def print(data, stream: :stdout)
         sid = stream == :stderr ? (@stderr_sid ||= open(:stderr)) : (@stdout_sid ||= open(:stdout))
         bytes = data.to_s.b

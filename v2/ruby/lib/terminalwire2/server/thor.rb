@@ -42,7 +42,11 @@ module Terminalwire2
         def flush = self
         def sync = true
         def sync=(value); value; end
-        def tty? = false
+
+        # Reflect the *client's* terminal so tty-screen/tty-table/pastel size and
+        # colorize correctly against the remote terminal, not the server's.
+        def tty? = @context.terminal.tty?
+        def winsize = @context.terminal.winsize
       end
 
       # Bare puts/print/gets inside Thor commands. Defined in a module so Thor's

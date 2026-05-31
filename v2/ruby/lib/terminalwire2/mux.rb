@@ -9,33 +9,40 @@ module Terminalwire2
 
       @next = start
       @pending = {}
+      # The runtime allocates/registers from the caller thread while the read
+      # pump resolves from its own thread, so the registry is mutex-guarded.
+      @mutex = Mutex.new
     end
 
     # Allocate a fresh stream id.
     def allocate
-      sid = @next
-      @next += 1
-      sid
+      @mutex.synchronize do
+        sid = @next
+        @next += 1
+        sid
+      end
     end
 
     # Mark a request stream as awaiting a response, stashing caller context.
     def register(sid, context = nil)
-      @pending[sid] = context
+      @mutex.synchronize { @pending[sid] = context }
     end
 
     def pending?(sid)
-      @pending.key?(sid)
+      @mutex.synchronize { @pending.key?(sid) }
     end
 
     # Resolve a pending request, returning (and removing) its context.
     def resolve(sid)
-      raise ProtocolError, "response for unknown stream #{sid}" unless @pending.key?(sid)
+      @mutex.synchronize do
+        raise ProtocolError, "response for unknown stream #{sid}" unless @pending.key?(sid)
 
-      @pending.delete(sid)
+        @pending.delete(sid)
+      end
     end
 
     def pending_count
-      @pending.size
+      @mutex.synchronize { @pending.size }
     end
   end
 end

@@ -6,12 +6,20 @@ module Terminalwire2
   module Frames
     module_function
 
-    def hello(protocol:, capabilities:, program:, entitlement:)
+    def hello(protocol:, capabilities:, program:, entitlement:, terminal: DEFAULT_TERMINAL)
       {
         "t" => Protocol::Type::HELLO, "sid" => Protocol::CONTROL_SID,
         "protocol" => protocol, "capabilities" => capabilities,
-        "program" => program, "entitlement" => entitlement
+        "program" => program, "entitlement" => entitlement,
+        "terminal" => terminal
       }
+    end
+
+    # The client's terminal at connect time; resize frames update it thereafter.
+    DEFAULT_TERMINAL = { "tty" => false, "cols" => 80, "rows" => 24, "color" => false, "term" => "" }.freeze
+
+    def resize(cols:, rows:)
+      { "t" => Protocol::Type::RESIZE, "sid" => Protocol::CONTROL_SID, "cols" => cols, "rows" => rows }
     end
 
     def welcome(protocol:, capabilities:)

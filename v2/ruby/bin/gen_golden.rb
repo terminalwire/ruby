@@ -25,7 +25,8 @@ frames = {
   ),
   "request"      => Terminalwire2::Frames.request(
     sid: 13, resource: "file", method: "read", params: { "path" => "~/.acme/config" }
-  )
+  ),
+  "resize"       => Terminalwire2::Frames.resize(cols: 120, rows: 40)
 }
 
 # Convert binary strings to the { "$bin" => base64 } sentinel for YAML.

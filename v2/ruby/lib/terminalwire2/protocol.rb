@@ -27,6 +27,7 @@ module Terminalwire2
       CLOSE        = "close"
       REQUEST      = "request"
       RESPONSE     = "response"
+      RESIZE       = "resize"
     end
 
     # Error codes carried on a `response` with ok: false.
