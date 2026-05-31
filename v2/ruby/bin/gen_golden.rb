@@ -13,7 +13,19 @@ frames = {
   "welcome"      => Terminalwire2::Frames.welcome(protocol: 2, capabilities: %w[stdio file]),
   "open_stdout"  => Terminalwire2::Frames.open(sid: 7, stream: "stdout"),
   "data_hi"      => Terminalwire2::Frames.data(sid: 7, bytes: "hi"),
-  "response_ok"  => Terminalwire2::Frames.response_ok(sid: 12, value: "yes\n")
+  "response_ok"  => Terminalwire2::Frames.response_ok(sid: 12, value: "yes\n"),
+  "close"        => Terminalwire2::Frames.close(sid: 7),
+  "hello"        => Terminalwire2::Frames.hello(
+    protocol: 2, capabilities: %w[stdio file],
+    program: { "name" => "acme", "args" => %w[deploy] },
+    entitlement: { "authority" => "acme.example.com" }
+  ),
+  "incompatible" => Terminalwire2::Frames.incompatible(
+    supported: { min: 2, max: 2 }, message: "client speaks 1; server supports 2..2"
+  ),
+  "request"      => Terminalwire2::Frames.request(
+    sid: 13, resource: "file", method: "read", params: { "path" => "~/.acme/config" }
+  )
 }
 
 # Convert binary strings to the { "$bin" => base64 } sentinel for YAML.

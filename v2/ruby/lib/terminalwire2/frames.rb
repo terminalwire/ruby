@@ -22,9 +22,13 @@ module Terminalwire2
     end
 
     def incompatible(supported:, message:)
+      # Normalize to string keys so every wire frame is uniformly string-keyed
+      # (the negotiator hands us a symbol-keyed Ruby hash).
+      min = supported[:min] || supported["min"]
+      max = supported[:max] || supported["max"]
       {
         "t" => Protocol::Type::INCOMPATIBLE, "sid" => Protocol::CONTROL_SID,
-        "supported" => supported, "message" => message
+        "supported" => { "min" => min, "max" => max }, "message" => message
       }
     end
 
