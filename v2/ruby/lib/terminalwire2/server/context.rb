@@ -7,6 +7,11 @@ module Terminalwire2
     # via the Runtime. Output is one-way; input and filesystem ops are synchronous
     # request/response.
     class Context
+      # Cap on the payload of a single data frame; larger output is split across
+      # frames so one giant print can't produce a multi-megabyte msgpack frame
+      # (PROTOCOL.md: "Large output MUST be chunked").
+      CHUNK_SIZE = 32 * 1024
+
       def initialize(runtime)
         @runtime = runtime
         @stdout_sid = nil
@@ -15,7 +20,15 @@ module Terminalwire2
 
       def print(data, stream: :stdout)
         sid = stream == :stderr ? (@stderr_sid ||= open(:stderr)) : (@stdout_sid ||= open(:stdout))
-        @runtime.emit(Frames.data(sid: sid, bytes: data.to_s))
+        bytes = data.to_s.b
+        offset = 0
+        # Always emit at least one frame (so an empty print is still observable).
+        loop do
+          chunk = bytes.byteslice(offset, CHUNK_SIZE) || "".b
+          @runtime.emit(Frames.data(sid: sid, bytes: chunk))
+          offset += CHUNK_SIZE
+          break if offset >= bytes.bytesize
+        end
       end
 
       def puts(data = "", stream: :stdout)
