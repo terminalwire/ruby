@@ -44,8 +44,9 @@ module Terminalwire2
         def sync=(value); value; end
 
         # Reflect the *client's* terminal so tty-screen/tty-table/pastel size and
-        # colorize correctly against the remote terminal, not the server's.
-        def tty? = @context.terminal.tty?
+        # colorize correctly against the remote terminal, not the server's. tty?
+        # is per-stream (this proxy's own stream); winsize is the device size.
+        def tty? = @context.terminal.stream(@stream).tty?
         def winsize = @context.terminal.winsize
       end
 

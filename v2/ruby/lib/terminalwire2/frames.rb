@@ -15,8 +15,17 @@ module Terminalwire2
       }
     end
 
-    # The client's terminal at connect time; resize frames update it thereafter.
-    DEFAULT_TERMINAL = { "tty" => false, "cols" => 80, "rows" => 24, "color" => false, "term" => "" }.freeze
+    # The client's terminal at connect time (structured per TERMINAL.md: per-stream
+    # kinds + a device block); resize/mode frames update the device thereafter.
+    DEFAULT_TERMINAL = {
+      "stdin" => { "kind" => "tty" },
+      "stdout" => { "kind" => "tty" },
+      "stderr" => { "kind" => "tty" },
+      "device" => {
+        "cols" => 80, "rows" => 24, "xpixels" => 0, "ypixels" => 0,
+        "term" => "", "color" => "none", "encoding" => "UTF-8", "mode" => "cooked"
+      }
+    }.freeze
 
     def resize(cols:, rows:)
       { "t" => Protocol::Type::RESIZE, "sid" => Protocol::CONTROL_SID, "cols" => cols, "rows" => rows }
