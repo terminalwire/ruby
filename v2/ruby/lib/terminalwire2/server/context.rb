@@ -36,13 +36,13 @@ module Terminalwire2
         puts(data, stream: :stderr)
       end
 
-      def gets
-        @runtime.request(:stdin, :gets)
+      def stdin
+        @stdin ||= Stdin.new(@runtime)
       end
 
-      def getpass
-        @runtime.request(:stdin, :getpass)
-      end
+      # Convenience delegators (Thor's shell uses these).
+      def gets = stdin.gets
+      def getpass = stdin.getpass
 
       def env(name)
         @runtime.request(:env, :read, { "name" => name.to_s })
@@ -71,6 +71,47 @@ module Terminalwire2
       end
 
       # Resource facades — thin request wrappers with a Ruby-ish interface.
+
+      class Stdin
+        DEFAULT_CHUNK = 64 * 1024
+
+        def initialize(runtime) = @runtime = runtime
+
+        def gets = @runtime.request(:stdin, :gets)
+        def getpass = @runtime.request(:stdin, :getpass)
+
+        # Is the client's stdin a terminal (vs a pipe/file)? Branch on this to
+        # decide between prompting and draining piped data.
+        def tty? = @runtime.terminal.stdin.tty?
+
+        # Pull up to `n` bytes from the client's stdin. Returns [data, eof].
+        def read_chunk(n = DEFAULT_CHUNK)
+          response = @runtime.request(:stdin, :read_chunk, { "n" => n })
+          [response["data"] || "".b, response["eof"]]
+        end
+
+        # Drain the client's stdin to EOF (for piped input).
+        def read
+          buffer = +"".b
+          loop do
+            data, eof = read_chunk
+            buffer << data
+            break if eof
+          end
+          buffer
+        end
+
+        # Yield each chunk as it arrives until EOF (streaming without buffering).
+        def each_chunk(n = DEFAULT_CHUNK)
+          return enum_for(:each_chunk, n) unless block_given?
+
+          loop do
+            data, eof = read_chunk(n)
+            yield data unless data.empty?
+            break if eof
+          end
+        end
+      end
 
       class File
         def initialize(runtime) = @runtime = runtime
