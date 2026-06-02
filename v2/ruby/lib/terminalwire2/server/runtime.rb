@@ -31,6 +31,7 @@ module Terminalwire2
         @flow = FlowController.new
         @client_window = Protocol::DEFAULT_WINDOW
         @waiters = {}
+        @raw_inputs = {}
         @lock = Mutex.new
         @ready = Queue.new
         @signaled = false
@@ -94,6 +95,31 @@ module Terminalwire2
         @flow.close(sid)
       end
 
+      # Open a raw input stream: the client enters raw mode and streams keystrokes
+      # as data frames until we close it. Returns the stream id.
+      def open_raw_input
+        sid, frame = @connection.open_stream("stdin-raw")
+        @lock.synchronize { @raw_inputs[sid] = Queue.new }
+        emit(frame)
+        sid
+      end
+
+      # Read the next keystroke chunk from a raw input stream; blocks until input
+      # arrives, returns nil when the stream is closed or the connection dies.
+      def read_raw(sid)
+        queue = @lock.synchronize { @raw_inputs[sid] }
+        return nil unless queue
+
+        value = queue.pop
+        value == :closed ? nil : value
+      end
+
+      def close_raw_input(sid)
+        emit(@connection.close_stream(sid))
+        queue = @lock.synchronize { @raw_inputs.delete(sid) }
+        queue&.push(:closed) # unblock a pending read_raw
+      end
+
       # Synchronous resource call: register a waiter, write the request, and block
       # until the pump delivers the correlated response (or the connection dies).
       def request(resource, method, params = {})
@@ -137,6 +163,8 @@ module Terminalwire2
         signal_ready(ready_error)
         fail_waiters(waiter_error)
         @flow.shutdown(waiter_error)
+        # Unblock any read_raw waiting on a dead connection.
+        @lock.synchronize { @raw_inputs.values }.each { |queue| queue.push(:closed) }
       end
 
       def route(directives)
@@ -176,6 +204,9 @@ module Terminalwire2
           end
         when :window_adjust
           @flow.grant(payload[:sid], payload[:bytes])
+        when :input
+          queue = @lock.synchronize { @raw_inputs[payload[:sid]] }
+          queue&.push(payload[:bytes])
         end
       end
 

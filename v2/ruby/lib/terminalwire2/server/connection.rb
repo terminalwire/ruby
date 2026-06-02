@@ -131,6 +131,10 @@ module Terminalwire2
         if frame["t"] == Protocol::Type::WINDOW_ADJUST
           return [[:event, :window_adjust, { sid: frame["sid"], bytes: frame["bytes"] }]]
         end
+        # Client -> server data: keystrokes on a raw input stream the server opened.
+        if frame["t"] == Protocol::Type::DATA
+          return [[:event, :input, { sid: frame["sid"], bytes: frame["bytes"] }]]
+        end
 
         unless frame["t"] == Protocol::Type::RESPONSE
           raise ProtocolError, "expected response while ready, got #{frame["t"].inspect}"

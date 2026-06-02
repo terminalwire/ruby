@@ -48,6 +48,18 @@ module Terminalwire2
         @runtime.request(:env, :read, { "name" => name.to_s })
       end
 
+      # Read raw keystrokes for the duration of the block: the client enters raw
+      # mode, streams keypresses, and restores its terminal when the block exits
+      # (even on error). Foundation for REPLs and interactive TUIs.
+      #
+      #   context.raw_input { |keys| keys.each { |bytes| handle(bytes) } }
+      def raw_input
+        sid = @runtime.open_raw_input
+        yield RawInput.new(@runtime, sid)
+      ensure
+        @runtime.close_raw_input(sid) if sid
+      end
+
       def file
         @file ||= File.new(@runtime)
       end
@@ -68,6 +80,25 @@ module Terminalwire2
 
       def open(stream)
         @runtime.open_output(stream)
+      end
+
+      # Reads keystroke chunks from a raw input stream. #read returns the next
+      # chunk (or nil when the stream closes); #each yields until close.
+      class RawInput
+        def initialize(runtime, sid)
+          @runtime = runtime
+          @sid = sid
+        end
+
+        def read = @runtime.read_raw(@sid)
+
+        def each
+          return enum_for(:each) unless block_given?
+
+          while (bytes = read)
+            yield bytes
+          end
+        end
       end
 
       # Resource facades — thin request wrappers with a Ruby-ish interface.
