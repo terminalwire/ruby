@@ -21,21 +21,23 @@ module Terminalwire2
         @error = nil
       end
 
-      # Begin tracking a stream with an initial window (the client's offer).
+      # Begin tracking a stream with an initial window (the client's offer). The
+      # credit accounting itself lives in the pure Window (the protocol rule);
+      # this class only adds the blocking + thread-safety (the implementation).
       def open(sid, initial)
-        @mutex.synchronize { @windows[sid] = initial }
+        @mutex.synchronize { @windows[sid] = Window.new(initial) }
       end
 
-      # Reserve `bytes` of window for `sid`, blocking until enough credit exists.
+      # Reserve exactly `bytes` for `sid`, blocking until that much credit exists.
       # Raises if the connection is shut down while waiting.
       def consume(sid, bytes)
         @mutex.synchronize do
           loop do
             raise(@error || ProtocolError.new("flow closed")) if @closed
 
-            available = @windows[sid] || 0
-            if available >= bytes
-              @windows[sid] = available - bytes
+            window = @windows[sid]
+            if window && window.available >= bytes
+              window.take(bytes)
               return
             end
             @cv.wait(@mutex)
@@ -52,12 +54,10 @@ module Terminalwire2
           loop do
             raise(@error || ProtocolError.new("flow closed")) if @closed
 
-            available = @windows[sid] || 0
-            if available.positive?
-              take = [available, max].min
-              @windows[sid] = available - take
-              return take
-            end
+            window = @windows[sid]
+            taken = window ? window.take(max) : 0
+            return taken if taken.positive?
+
             @cv.wait(@mutex)
           end
         end
@@ -67,13 +67,13 @@ module Terminalwire2
       def grant(sid, bytes)
         @mutex.synchronize do
           # A grant for an unknown/closed stream is harmless and ignored.
-          @windows[sid] = (@windows[sid] || 0) + bytes if @windows.key?(sid)
+          @windows[sid]&.grant(bytes)
           @cv.broadcast
         end
       end
 
       def available(sid)
-        @mutex.synchronize { @windows[sid] || 0 }
+        @mutex.synchronize { @windows[sid]&.available || 0 }
       end
 
       def close(sid)
