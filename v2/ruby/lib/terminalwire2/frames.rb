@@ -36,8 +36,18 @@ module Terminalwire2
       }
     }.freeze
 
+    # Generic async terminal signal (client -> server). resize/interrupt are the
+    # named variants; collapsing them into one frame type keeps the protocol small.
+    def signal(name, payload = {})
+      { "t" => Protocol::Type::SIGNAL, "sid" => Protocol::CONTROL_SID, "name" => name }.merge(payload)
+    end
+
     def resize(cols:, rows:)
-      { "t" => Protocol::Type::RESIZE, "sid" => Protocol::CONTROL_SID, "cols" => cols, "rows" => rows }
+      signal(Protocol::Signal::RESIZE, { "cols" => cols, "rows" => rows })
+    end
+
+    def interrupt
+      signal(Protocol::Signal::INTERRUPT)
     end
 
     def welcome(protocol:, capabilities:)

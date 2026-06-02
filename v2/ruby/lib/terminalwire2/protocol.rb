@@ -27,8 +27,14 @@ module Terminalwire2
       CLOSE        = "close"
       REQUEST       = "request"
       RESPONSE      = "response"
-      RESIZE        = "resize"
+      SIGNAL        = "signal"
       WINDOW_ADJUST = "window_adjust"
+    end
+
+    # Names carried by a `signal` frame (client -> server, async terminal events).
+    module Signal
+      RESIZE    = "resize"
+      INTERRUPT = "interrupt"
     end
 
     # Default initial per-output-stream flow-control window (bytes) the client

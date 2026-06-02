@@ -44,7 +44,9 @@ module Terminalwire2
       end
 
       # Start the read pump and block until the handshake reaches ready (or fails).
+      # The calling thread is the CLI thread; an interrupt signal is raised into it.
       def handshake
+        @cli_thread = Thread.current
         @pump = Thread.new { pump }
         result = @ready.pop
         raise result if result.is_a?(Exception)
@@ -164,6 +166,14 @@ module Terminalwire2
         when :resize
           @terminal.resize(cols: payload[:cols], rows: payload[:rows])
           @on_resize&.call(@terminal)
+        when :interrupt
+          # Deliver Ctrl-C into the CLI thread, like a local SIGINT. A blocked
+          # request/read raises Interrupt; the Handler turns it into exit 130.
+          begin
+            @cli_thread&.raise(Interrupt)
+          rescue ThreadError
+            nil
+          end
         when :window_adjust
           @flow.grant(payload[:sid], payload[:bytes])
         end

@@ -118,8 +118,15 @@ module Terminalwire2
 
       def on_ready(frame)
         # Unsolicited control frames the client pushes any time; surface as events.
-        if frame["t"] == Protocol::Type::RESIZE
-          return [[:event, :resize, { cols: frame["cols"], rows: frame["rows"] }]]
+        if frame["t"] == Protocol::Type::SIGNAL
+          case frame["name"]
+          when Protocol::Signal::RESIZE
+            return [[:event, :resize, { cols: frame["cols"], rows: frame["rows"] }]]
+          when Protocol::Signal::INTERRUPT
+            return [[:event, :interrupt, {}]]
+          else
+            return [] # unknown signal: ignore (forward compatibility)
+          end
         end
         if frame["t"] == Protocol::Type::WINDOW_ADJUST
           return [[:event, :window_adjust, { sid: frame["sid"], bytes: frame["bytes"] }]]
