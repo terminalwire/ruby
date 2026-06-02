@@ -48,16 +48,34 @@ module Terminalwire2
         @runtime.request(:env, :read, { "name" => name.to_s })
       end
 
-      # Read raw keystrokes for the duration of the block: the client enters raw
-      # mode, streams keypresses, and restores its terminal when the block exits
-      # (even on error). Foundation for REPLs and interactive TUIs.
+      # Read keystrokes for the duration of the block: the client puts its terminal
+      # in `mode` and streams keypresses, restoring it when the block exits (even
+      # on error). Foundation for REPLs and interactive TUIs.
+      #
+      #   mode: :raw    — char-at-a-time, no echo, signals as bytes (TUIs)
+      #   mode: :cbreak — char-at-a-time, echo + signal keys on (single-key y/n)
       #
       #   context.raw_input { |keys| keys.each { |bytes| handle(bytes) } }
-      def raw_input
-        sid = @runtime.open_raw_input
+      def raw_input(mode: Protocol::Mode::RAW)
+        sid = @runtime.open_raw_input(mode: mode.to_s)
         yield RawInput.new(@runtime, sid)
       ensure
         @runtime.close_raw_input(sid) if sid
+      end
+
+      # Single-keypress read with echo + signal keys left on (cbreak): the y/n
+      # prompt case. Returns the first byte(s) the user types.
+      def read_key
+        raw_input(mode: Protocol::Mode::CBREAK) { |keys| return keys.read }
+      end
+
+      # Query the client's terminal with a control sequence and return its reply
+      # (e.g. cursor-position report "\e[6n" -> "\e[row;colR"). The client writes
+      # the query to its tty and reads the terminal's response. Used by advanced
+      # TUI libraries that probe the terminal. Gated by the terminal-query
+      # capability.
+      def query_terminal(sequence, timeout: 1.0)
+        @runtime.request(:terminal, :query, { "sequence" => sequence.b, "timeout" => timeout })
       end
 
       def file

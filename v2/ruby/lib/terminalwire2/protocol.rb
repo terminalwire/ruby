@@ -21,7 +21,7 @@ module Terminalwire2
     # gate optional protocol features.
     CAPABILITIES = %w[
       stdio file directory browser env
-      signal flow raw-input
+      signal flow raw-input terminal-query
     ].freeze
 
     # Output stream names (open.stream).
@@ -29,6 +29,15 @@ module Terminalwire2
       STDOUT    = "stdout"
       STDERR    = "stderr"
       STDIN_RAW = "stdin-raw"
+    end
+
+    # Terminal line-discipline modes the client applies to its real terminal while
+    # a raw input stream / secret read is open (see ../../TERMINAL.md §5).
+    module Mode
+      COOKED = "cooked" # line editing + echo + signal keys (default)
+      NOECHO = "noecho" # cooked, echo off (passwords)
+      CBREAK = "cbreak" # char-at-a-time, echo ON, signal keys ON (single-key y/n)
+      RAW    = "raw"    # char-at-a-time, echo off, signals delivered as bytes (TUIs)
     end
 
     # Frame types.

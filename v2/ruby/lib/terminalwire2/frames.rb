@@ -72,8 +72,10 @@ module Terminalwire2
       { "t" => Protocol::Type::EXIT, "sid" => Protocol::CONTROL_SID, "status" => status }
     end
 
-    def open(sid:, stream:)
-      { "t" => Protocol::Type::OPEN, "sid" => sid, "stream" => stream }
+    def open(sid:, stream:, mode: nil)
+      frame = { "t" => Protocol::Type::OPEN, "sid" => sid, "stream" => stream }
+      frame["mode"] = mode if mode # input streams carry the line-discipline mode
+      frame
     end
 
     def data(sid:, bytes:)

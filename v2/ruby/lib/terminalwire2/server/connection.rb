@@ -41,11 +41,12 @@ module Terminalwire2
 
       # --- application-driven outgoing helpers ---------------------------------
 
-      # Open an output stream (:stdout/:stderr). Returns [sid, frame].
-      def open_stream(stream)
+      # Open a stream (:stdout/:stderr output, or a stdin-raw input stream with a
+      # line-discipline mode). Returns [sid, frame].
+      def open_stream(stream, mode: nil)
         require_ready!
         sid = @mux.allocate
-        [sid, Frames.open(sid: sid, stream: stream.to_s)]
+        [sid, Frames.open(sid: sid, stream: stream.to_s, mode: mode)]
       end
 
       # Build a data frame for an open output stream.
