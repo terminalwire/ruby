@@ -13,8 +13,23 @@ module Terminalwire2
     # The reserved control stream id.
     CONTROL_SID = 0
 
-    # Capabilities advertised by a fully-featured client/server.
-    CAPABILITIES = %w[stdio file directory browser env].freeze
+    # Capabilities advertised by a fully-featured client/server. Negotiation
+    # intersects the two sides' sets, so a peer only uses a feature the other
+    # advertises. ADD a capability here when you add an optional feature; that is
+    # the additive-change path (old peers simply won't list it, and the feature
+    # stays dormant for them). Resource capabilities gate request(); the others
+    # gate optional protocol features.
+    CAPABILITIES = %w[
+      stdio file directory browser env
+      signal flow raw-input
+    ].freeze
+
+    # Output stream names (open.stream).
+    module Stream
+      STDOUT    = "stdout"
+      STDERR    = "stderr"
+      STDIN_RAW = "stdin-raw"
+    end
 
     # Frame types.
     module Type

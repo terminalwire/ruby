@@ -116,41 +116,48 @@ module Terminalwire2
         end
       end
 
+      # Single uniform dispatch over the inbound frame type (mirrors the Go
+      # client's Process switch). Every client->server-while-ready frame is one
+      # case here; an unrecognized type is a protocol violation.
       def on_ready(frame)
-        # Unsolicited control frames the client pushes any time; surface as events.
-        if frame["t"] == Protocol::Type::SIGNAL
-          case frame["name"]
-          when Protocol::Signal::RESIZE
-            return [[:event, :resize, { cols: frame["cols"], rows: frame["rows"] }]]
-          when Protocol::Signal::INTERRUPT
-            return [[:event, :interrupt, {}]]
-          else
-            return [] # unknown signal: ignore (forward compatibility)
-          end
+        case frame["t"]
+        when Protocol::Type::SIGNAL      then on_signal(frame)
+        when Protocol::Type::WINDOW_ADJUST
+          [[:event, :window_adjust, { sid: frame["sid"], bytes: frame["bytes"] }]]
+        when Protocol::Type::DATA        then on_input(frame)
+        when Protocol::Type::RESPONSE    then on_response(frame)
+        else
+          raise ProtocolError, "unexpected #{frame["t"].inspect} while ready"
         end
-        if frame["t"] == Protocol::Type::WINDOW_ADJUST
-          return [[:event, :window_adjust, { sid: frame["sid"], bytes: frame["bytes"] }]]
-        end
-        # Client -> server data: keystrokes on a raw input stream the server opened.
-        if frame["t"] == Protocol::Type::DATA
-          return [[:event, :input, { sid: frame["sid"], bytes: frame["bytes"] }]]
-        end
+      end
 
-        unless frame["t"] == Protocol::Type::RESPONSE
-          raise ProtocolError, "expected response while ready, got #{frame["t"].inspect}"
+      # Unsolicited terminal signals (resize/interrupt). Unknown names are ignored
+      # for forward compatibility — a newer client can send signals we don't know.
+      def on_signal(frame)
+        case frame["name"]
+        when Protocol::Signal::RESIZE
+          [[:event, :resize, { cols: frame["cols"], rows: frame["rows"] }]]
+        when Protocol::Signal::INTERRUPT
+          [[:event, :interrupt, {}]]
+        else
+          []
         end
+      end
 
+      # Client -> server data: keystrokes on a raw input stream the server opened.
+      def on_input(frame)
+        [[:event, :input, { sid: frame["sid"], bytes: frame["bytes"] }]]
+      end
+
+      def on_response(frame)
         # A response for an unknown/already-resolved stream (duplicate, late, or
         # hostile) is ignored rather than crashing the session.
         return [] unless @mux.pending?(frame["sid"])
 
         context = @mux.resolve(frame["sid"])
         [[:event, :response, {
-          sid: frame["sid"],
-          ok: frame["ok"],
-          value: frame["value"],
-          error: frame["error"],
-          context: context
+          sid: frame["sid"], ok: frame["ok"], value: frame["value"],
+          error: frame["error"], context: context
         }]]
       end
 

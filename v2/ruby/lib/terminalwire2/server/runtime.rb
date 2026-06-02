@@ -98,7 +98,7 @@ module Terminalwire2
       # Open a raw input stream: the client enters raw mode and streams keystrokes
       # as data frames until we close it. Returns the stream id.
       def open_raw_input
-        sid, frame = @connection.open_stream("stdin-raw")
+        sid, frame = @connection.open_stream(Protocol::Stream::STDIN_RAW)
         @lock.synchronize { @raw_inputs[sid] = Queue.new }
         emit(frame)
         sid
