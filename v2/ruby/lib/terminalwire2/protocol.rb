@@ -25,10 +25,16 @@ module Terminalwire2
       OPEN         = "open"
       DATA         = "data"
       CLOSE        = "close"
-      REQUEST      = "request"
-      RESPONSE     = "response"
-      RESIZE       = "resize"
+      REQUEST       = "request"
+      RESPONSE      = "response"
+      RESIZE        = "resize"
+      WINDOW_ADJUST = "window_adjust"
     end
+
+    # Default initial per-output-stream flow-control window (bytes) the client
+    # grants the server. Must be >= the server's output chunk size so a single
+    # chunk can never exceed an empty window and deadlock.
+    DEFAULT_WINDOW = 256 * 1024
 
     # Error codes carried on a `response` with ok: false.
     module ErrorCode

@@ -7,11 +7,6 @@ module Terminalwire2
     # via the Runtime. Output is one-way; input and filesystem ops are synchronous
     # request/response.
     class Context
-      # Cap on the payload of a single data frame; larger output is split across
-      # frames so one giant print can't produce a multi-megabyte msgpack frame
-      # (PROTOCOL.md: "Large output MUST be chunked").
-      CHUNK_SIZE = 32 * 1024
-
       def initialize(runtime)
         @runtime = runtime
         @stdout_sid = nil
@@ -25,17 +20,12 @@ module Terminalwire2
       # Register a callback fired when the client's window resizes.
       def on_resize(&block) = @runtime.on_resize(&block)
 
+      # Output is flow-controlled and chunked by the runtime: write_data sizes each
+      # data frame to the client's available credit and blocks when the window is
+      # exhausted, so a fast server can't outrun a slow client.
       def print(data, stream: :stdout)
         sid = stream == :stderr ? (@stderr_sid ||= open(:stderr)) : (@stdout_sid ||= open(:stdout))
-        bytes = data.to_s.b
-        offset = 0
-        # Always emit at least one frame (so an empty print is still observable).
-        loop do
-          chunk = bytes.byteslice(offset, CHUNK_SIZE) || "".b
-          @runtime.emit(Frames.data(sid: sid, bytes: chunk))
-          offset += CHUNK_SIZE
-          break if offset >= bytes.bytesize
-        end
+        @runtime.write_data(sid, data.to_s)
       end
 
       def puts(data = "", stream: :stdout)
@@ -77,9 +67,7 @@ module Terminalwire2
       private
 
       def open(stream)
-        sid, frame = @runtime.connection.open_stream(stream)
-        @runtime.emit(frame)
-        sid
+        @runtime.open_output(stream)
       end
 
       # Resource facades — thin request wrappers with a Ruby-ish interface.

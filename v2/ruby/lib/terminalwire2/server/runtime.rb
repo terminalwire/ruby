@@ -12,6 +12,10 @@ module Terminalwire2
     # Threading: the pump runs on its own thread; the CLI runs on the caller's
     # thread and blocks in #request on a per-stream queue the pump fulfills.
     class Runtime
+      # Largest payload in a single output data frame; actual frame size is
+      # min(this, available flow credit).
+      MAX_FRAME = 32 * 1024
+
       attr_reader :connection, :program, :entitlement, :terminal
 
       def initialize(transport:,
@@ -24,6 +28,8 @@ module Terminalwire2
           server_capabilities: server_capabilities
         )
         @terminal = Terminal.new
+        @flow = FlowController.new
+        @client_window = Protocol::DEFAULT_WINDOW
         @waiters = {}
         @lock = Mutex.new
         @ready = Queue.new
@@ -46,10 +52,44 @@ module Terminalwire2
         self
       end
 
-      # Fire-and-forget: write a single frame (one-way output, exit).
+      # Fire-and-forget: write a single control frame (welcome, exit, request,
+      # open/close). NOT flow-controlled — these are small control-plane frames.
       def emit(frame)
         @transport.write(Codec.encode(frame))
         nil
+      end
+
+      # Open an output stream (:stdout/:stderr) and start its flow window at the
+      # client's advertised offer. Returns the stream id.
+      def open_output(stream)
+        sid, frame = @connection.open_stream(stream)
+        @flow.open(sid, @client_window)
+        emit(frame)
+        sid
+      end
+
+      # Write output to a stream, flow-controlled: each frame is sized to the
+      # currently available credit (blocking when the window is empty), so the
+      # server can never outrun the client. Raises if the connection dies.
+      def write_data(sid, bytes)
+        bytes = bytes.b
+        total = bytes.bytesize
+        if total.zero?
+          emit(Frames.data(sid: sid, bytes: "".b))
+          return
+        end
+
+        offset = 0
+        while offset < total
+          take = @flow.reserve(sid, [total - offset, MAX_FRAME].min)
+          emit(Frames.data(sid: sid, bytes: bytes.byteslice(offset, take)))
+          offset += take
+        end
+      end
+
+      def close_output(sid)
+        emit(@connection.close_stream(sid))
+        @flow.close(sid)
       end
 
       # Synchronous resource call: register a waiter, write the request, and block
@@ -83,11 +123,18 @@ module Terminalwire2
           route(@connection.receive(Codec.decode(bytes)))
         end
         # transport closed
-        signal_ready(ProtocolError.new("client closed before hello"))
-        fail_waiters(ProtocolError.new("connection closed"))
+        shutdown(ProtocolError.new("client closed before hello"),
+                 ProtocolError.new("connection closed"))
       rescue StandardError => e
-        signal_ready(e)
-        fail_waiters(e)
+        shutdown(e, e)
+      end
+
+      # Release everyone blocked on the connection: handshake waiter, in-flight
+      # requests, and senders blocked on flow credit.
+      def shutdown(ready_error, waiter_error)
+        signal_ready(ready_error)
+        fail_waiters(waiter_error)
+        @flow.shutdown(waiter_error)
       end
 
       def route(directives)
@@ -107,6 +154,7 @@ module Terminalwire2
           @program = payload[:program]
           @entitlement = payload[:entitlement]
           @terminal.apply(payload[:terminal])
+          @client_window = payload.dig(:flow, "window") || Protocol::DEFAULT_WINDOW
           signal_ready(:ok)
         when :incompatible
           signal_ready(ProtocolError.new("incompatible client"))
@@ -116,6 +164,8 @@ module Terminalwire2
         when :resize
           @terminal.resize(cols: payload[:cols], rows: payload[:rows])
           @on_resize&.call(@terminal)
+        when :window_adjust
+          @flow.grant(payload[:sid], payload[:bytes])
         end
       end
 

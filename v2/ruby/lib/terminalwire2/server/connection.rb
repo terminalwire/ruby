@@ -103,7 +103,7 @@ module Terminalwire2
             [:send, Frames.welcome(protocol: @protocol, capabilities: @capabilities)],
             [:event, :ready, { protocol: @protocol, capabilities: @capabilities,
                                program: frame["program"], entitlement: frame["entitlement"],
-                               terminal: frame["terminal"] }]
+                               terminal: frame["terminal"], flow: frame["flow"] }]
           ]
         else
           @state = :closed
@@ -117,10 +117,12 @@ module Terminalwire2
       end
 
       def on_ready(frame)
-        # Resize is an unsolicited control frame the client pushes whenever the
-        # user's window changes; surface it as an event for the runtime.
+        # Unsolicited control frames the client pushes any time; surface as events.
         if frame["t"] == Protocol::Type::RESIZE
           return [[:event, :resize, { cols: frame["cols"], rows: frame["rows"] }]]
+        end
+        if frame["t"] == Protocol::Type::WINDOW_ADJUST
+          return [[:event, :window_adjust, { sid: frame["sid"], bytes: frame["bytes"] }]]
         end
 
         unless frame["t"] == Protocol::Type::RESPONSE

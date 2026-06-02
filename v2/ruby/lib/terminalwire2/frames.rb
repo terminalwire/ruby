@@ -6,13 +6,22 @@ module Terminalwire2
   module Frames
     module_function
 
-    def hello(protocol:, capabilities:, program:, entitlement:, terminal: DEFAULT_TERMINAL)
+    def hello(protocol:, capabilities:, program:, entitlement:, terminal: DEFAULT_TERMINAL, flow: DEFAULT_FLOW)
       {
         "t" => Protocol::Type::HELLO, "sid" => Protocol::CONTROL_SID,
         "protocol" => protocol, "capabilities" => capabilities,
         "program" => program, "entitlement" => entitlement,
-        "terminal" => terminal
+        "terminal" => terminal, "flow" => flow
       }
+    end
+
+    # The client's initial flow-control offer: how many bytes of output it will
+    # accept per stream before the server must wait for a window_adjust.
+    DEFAULT_FLOW = { "window" => Protocol::DEFAULT_WINDOW }.freeze
+
+    # Client -> server: extend the output window for a stream by `bytes`.
+    def window_adjust(sid:, bytes:)
+      { "t" => Protocol::Type::WINDOW_ADJUST, "sid" => sid, "bytes" => bytes }
     end
 
     # The client's terminal at connect time (structured per TERMINAL.md: per-stream
