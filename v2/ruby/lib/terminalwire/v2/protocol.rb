@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Terminalwire2
+module Terminalwire::V2
   # Wire-level constants for the v2 protocol. See ../../PROTOCOL.md.
   module Protocol
     # Frame protocol version this implementation speaks.

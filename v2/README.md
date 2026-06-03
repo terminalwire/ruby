@@ -14,8 +14,8 @@ client live in separate repositories:
 ## What's here
 
 ```
-v2/ruby/                     the `terminalwire2` gem (open server runtime)
-  lib/terminalwire2/
+v2/ruby/                     the `terminalwire-v2` gem (open server runtime)
+  lib/terminalwire/v2/
     codec / negotiator / frames / mux / window   sans-IO protocol core
     server/                  Connection, Runtime, Context, Handler, Session,
                              Terminal, Flow, Thor integration
@@ -27,12 +27,12 @@ maintained.
 
 ## Wiring a Rails (or any Rack) server
 
-`Terminalwire2::Server::Handler` runs a Thor CLI over any transport;
+`Terminalwire::V2::Server::Handler` runs a Thor CLI over any transport;
 `Server::Session` bridges a callback/event-loop WebSocket (ActionCable, async):
 
 ```ruby
 class MyCLI < Thor
-  include Terminalwire2::Server::Thor
+  include Terminalwire::V2::Server::Thor
 
   desc "deploy", "deploy the app"
   def deploy
@@ -42,7 +42,7 @@ end
 
 # In an ActionCable channel (binary frames):
 def subscribed
-  @session = Terminalwire2::Server::Session.start(
+  @session = Terminalwire::V2::Server::Session.start(
     cli_class: MyCLI,
     on_send:   ->(bytes) { transmit_binary(bytes) }
   )

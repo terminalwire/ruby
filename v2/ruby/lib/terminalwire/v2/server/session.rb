@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Terminalwire2
+module Terminalwire::V2
   module Server
     # Adapts a callback/event-loop websocket endpoint to the blocking Handler.
     # The endpoint supplies an `on_send` sink for outgoing frames and forwards
@@ -8,7 +8,7 @@ module Terminalwire2
     # the seam an ActionCable channel or an async-websocket Rack endpoint plugs
     # into (see ../../../README.md).
     #
-    #   session = Terminalwire2::Server::Session.start(
+    #   session = Terminalwire::V2::Server::Session.start(
     #     cli_class: MyCLI,
     #     on_send:   ->(bytes) { websocket.send_binary(bytes) }
     #   )

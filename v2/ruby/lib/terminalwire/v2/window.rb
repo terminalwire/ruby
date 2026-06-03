@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Terminalwire2
+module Terminalwire::V2
   # The flow-control credit rule, as a pure ledger — no threads, no I/O. This is
   # the *protocol* part of flow control: how much output may be in flight, and how
   # window_adjust extends it. The blocking behaviour when credit runs out is an

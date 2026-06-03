@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Terminalwire2
+module Terminalwire::V2
   module Server
     # Credit-based flow control for server -> client output streams (the SSH /
     # HTTP-2 window model). Each output stream has a window: the number of bytes

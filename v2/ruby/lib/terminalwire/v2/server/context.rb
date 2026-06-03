@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Terminalwire2
+module Terminalwire::V2
   module Server
     # The server's handle on the client's machine. CLI code calls these methods
     # (puts, gets, file.read, ...) and the Context turns them into protocol frames

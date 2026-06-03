@@ -2,7 +2,7 @@
 
 require "thor"
 
-module Terminalwire2
+module Terminalwire::V2
   module Server
     # Thor integration. Including this in a Thor CLI routes all of Thor's I/O —
     # say, ask, yes?, and bare puts/print/gets inside commands — through the

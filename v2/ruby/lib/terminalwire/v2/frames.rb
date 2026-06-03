@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Terminalwire2
+module Terminalwire::V2
   # Builders for each frame type. Keep frame construction in one place so the wire
   # shape is defined once. All builders return a Hash with string keys.
   module Frames

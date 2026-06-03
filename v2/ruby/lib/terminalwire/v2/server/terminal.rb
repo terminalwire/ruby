@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Terminalwire2
+module Terminalwire::V2
   module Server
     # The server's live model of the client's terminal. See ../../../TERMINAL.md.
     #

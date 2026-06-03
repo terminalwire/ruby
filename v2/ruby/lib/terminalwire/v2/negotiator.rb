@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Terminalwire2
+module Terminalwire::V2
   # Pure handshake negotiation: given what the client speaks and what the server
   # supports, decide the agreed protocol version and capability set. This is a
   # function, not a state machine, so it is trivially testable and identical

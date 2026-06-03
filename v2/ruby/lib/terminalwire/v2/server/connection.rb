@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Terminalwire2
+module Terminalwire::V2
   module Server
     # The server-role protocol state machine. Sans-IO: the application feeds it
     # incoming frames via #receive (getting back directives) and asks it to build

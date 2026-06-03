@@ -2,7 +2,7 @@
 
 require "thread"
 
-module Terminalwire2
+module Terminalwire::V2
   module Transport
     # A blocking in-memory duplex transport. Two ends share a pair of queues, so
     # one end's #write is the other end's #read. Used for tests and in-process

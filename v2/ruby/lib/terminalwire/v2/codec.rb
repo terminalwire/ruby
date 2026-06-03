@@ -2,7 +2,7 @@
 
 require "msgpack"
 
-module Terminalwire2
+module Terminalwire::V2
   # Pure bytes <-> frame conversion. A frame is a Hash with string keys (the wire
   # shape). No I/O, no transport — this is the sans-IO seam the conformance corpus
   # exercises directly.

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Terminalwire2
+module Terminalwire::V2
   module Server
     # An IO-shaped object backed by the Terminalwire Context. This is the
     # universal adapter: anything that writes to an IO (Kernel#puts, OptionParser

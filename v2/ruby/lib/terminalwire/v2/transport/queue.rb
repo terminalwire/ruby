@@ -2,7 +2,7 @@
 
 require "thread"
 
-module Terminalwire2
+module Terminalwire::V2
   module Transport
     # A queue-backed transport for callback-driven servers (ActionCable, async
     # websocket Rack endpoints, etc.). The endpoint pushes each received frame

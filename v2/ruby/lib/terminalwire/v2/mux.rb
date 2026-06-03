@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Terminalwire2
+module Terminalwire::V2
   # Allocates stream ids and correlates in-flight requests to their responses.
   # The starting id is injectable so recorded vectors replay deterministically.
   class Mux

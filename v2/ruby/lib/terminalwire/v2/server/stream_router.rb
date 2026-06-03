@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Terminalwire2
+module Terminalwire::V2
   module Server
     # A stand-in for a global IO stream ($stdout/$stderr/$stdin) that dispatches
     # every call to a **fiber-local** target, falling back to the real stream when

@@ -4,7 +4,7 @@ require "yaml"
 require "base64"
 require "pathname"
 
-module Terminalwire2
+module Terminalwire::V2
   # Loads the language-neutral conformance corpus and resolves its typed
   # sentinels ($bin, bytes_hex) into native Ruby values. The Go runner does the
   # equivalent. This is what lets one corpus validate every implementation.

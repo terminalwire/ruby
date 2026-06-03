@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Terminalwire2
+module Terminalwire::V2
   module Server
     # Drives a Server::Connection over a transport. A background **read pump**
     # continuously drains incoming frames and routes them: responses go to the

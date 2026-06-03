@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-module Terminalwire2
+module Terminalwire::V2
   module Server
     # Runs a block with Ruby's standard I/O globals pointed at the client's
     # terminal, so an ordinary CLI — OptionParser, GLI, dry-cli, or bare
     # Kernel#puts/gets — streams to/from the client with no Terminalwire-specific
     # code.
     #
-    #   Terminalwire2::Server.redirect(context, argv: args) do
+    #   Terminalwire::V2::Server.redirect(context, argv: args) do
     #     OptionParser.new { |o| ... }.parse!(args)   # help/errors -> client
     #     puts "done"                                 # -> client
     #   end

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Terminalwire2
+module Terminalwire::V2
   module Server
     # The framework-agnostic server entrypoint: performs the handshake, runs your
     # CLI with a Terminalwire-backed context, handles errors, and exits the client.

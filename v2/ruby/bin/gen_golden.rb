@@ -4,31 +4,31 @@
 # These pin the exact wire bytes so every other implementation must decode them
 # identically. Run: ruby bin/gen_golden.rb
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
-require "terminalwire2"
+require "terminalwire/v2"
 require "base64"
 
 frames = {
-  "exit_zero"    => Terminalwire2::Frames.exit(status: 0),
-  "exit_nonzero" => Terminalwire2::Frames.exit(status: 1),
-  "welcome"      => Terminalwire2::Frames.welcome(protocol: 2, capabilities: %w[stdio file]),
-  "open_stdout"  => Terminalwire2::Frames.open(sid: 7, stream: "stdout"),
-  "data_hi"      => Terminalwire2::Frames.data(sid: 7, bytes: "hi"),
-  "response_ok"  => Terminalwire2::Frames.response_ok(sid: 12, value: "yes\n"),
-  "close"        => Terminalwire2::Frames.close(sid: 7),
-  "hello"        => Terminalwire2::Frames.hello(
+  "exit_zero"    => Terminalwire::V2::Frames.exit(status: 0),
+  "exit_nonzero" => Terminalwire::V2::Frames.exit(status: 1),
+  "welcome"      => Terminalwire::V2::Frames.welcome(protocol: 2, capabilities: %w[stdio file]),
+  "open_stdout"  => Terminalwire::V2::Frames.open(sid: 7, stream: "stdout"),
+  "data_hi"      => Terminalwire::V2::Frames.data(sid: 7, bytes: "hi"),
+  "response_ok"  => Terminalwire::V2::Frames.response_ok(sid: 12, value: "yes\n"),
+  "close"        => Terminalwire::V2::Frames.close(sid: 7),
+  "hello"        => Terminalwire::V2::Frames.hello(
     protocol: 2, capabilities: %w[stdio file],
     program: { "name" => "acme", "args" => %w[deploy] },
     entitlement: { "authority" => "acme.example.com" }
   ),
-  "incompatible" => Terminalwire2::Frames.incompatible(
+  "incompatible" => Terminalwire::V2::Frames.incompatible(
     supported: { min: 2, max: 2 }, message: "client speaks 1; server supports 2..2"
   ),
-  "request"      => Terminalwire2::Frames.request(
+  "request"      => Terminalwire::V2::Frames.request(
     sid: 13, resource: "file", method: "read", params: { "path" => "~/.acme/config" }
   ),
-  "signal_resize"    => Terminalwire2::Frames.resize(cols: 120, rows: 40),
-  "signal_interrupt" => Terminalwire2::Frames.interrupt,
-  "window_adjust"    => Terminalwire2::Frames.window_adjust(sid: 7, bytes: 4096)
+  "signal_resize"    => Terminalwire::V2::Frames.resize(cols: 120, rows: 40),
+  "signal_interrupt" => Terminalwire::V2::Frames.interrupt,
+  "window_adjust"    => Terminalwire::V2::Frames.window_adjust(sid: 7, bytes: 4096)
 }
 
 # Convert binary strings to the { "$bin" => base64 } sentinel for YAML.
@@ -47,9 +47,9 @@ def to_hex(bytes)
 end
 
 cases = frames.map do |name, frame|
-  bytes = Terminalwire2::Codec.encode(frame)
+  bytes = Terminalwire::V2::Codec.encode(frame)
   # Sanity: it must decode back to the same frame.
-  raise "roundtrip failed for #{name}" unless Terminalwire2::Codec.decode(bytes) == frame
+  raise "roundtrip failed for #{name}" unless Terminalwire::V2::Codec.decode(bytes) == frame
 
   { "name" => name, "bytes_hex" => to_hex(bytes), "frame" => yaml_safe(frame) }
 end

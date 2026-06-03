@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Terminalwire2
+module Terminalwire::V2
   class Error < StandardError; end
 
   # Raised when bytes off the wire are not a well-formed frame.
