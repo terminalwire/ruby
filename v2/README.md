@@ -14,7 +14,7 @@ client live in separate repositories:
 ## What's here
 
 ```
-v2/ruby/                     the `terminalwire-v2` gem (open server runtime)
+v2/ruby/                     the `terminalwire` gem (open server runtime)
   lib/terminalwire/v2/
     codec / negotiator / frames / mux / window   sans-IO protocol core
     server/                  Connection, Runtime, Context, Handler, Session,

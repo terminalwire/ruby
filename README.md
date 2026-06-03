@@ -37,7 +37,7 @@ terminal, files, and browser stay on *their* machine.
 - **Auth is just your app's auth.** Sessions, current-user, and permissions are
   whatever your Rails app already does.
 
-The **v2** protocol (the `terminalwire-v2` gem under [`v2/`](v2/README.md)) adds a
+The **v2** protocol (the `terminalwire` gem under [`v2/`](v2/README.md)) adds a
 lot more — use *any* CLI library (Thor, Ruby's `OptionParser`, or bare
 `$stdin`/`$stdout`), output flow control, window resize, `Ctrl-C` to the
 server-side command, piping (`cat data.csv | your-app import`), and raw/
@@ -86,7 +86,7 @@ input — are part of the v2 protocol; see [`v2/`](v2/README.md).)
 
 ## What's in this repository
 
-- **`v2/ruby/`** — the modern (v2) open-source server runtime, the `terminalwire-v2`
+- **`v2/ruby/`** — the modern (v2) open-source server runtime, the `terminalwire`
   gem. This is where active development happens. See the
   [v2 README](v2/README.md) for wiring details (Rails/ActionCable, Rack, Thor,
   OptionParser).
