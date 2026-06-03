@@ -1,69 +1,113 @@
-# Terminalwire
+# Terminalwire for Ruby & Rails
 
-Unlike most command-line tools for web services that require an API, Terminalwire streams terminal I/O between a web server and client over WebSockets. This means you can use your preferred command-line parser within your favorite web server framework to deliver a delightful CLI experience to your users.
+**Ship a CLI for your web app. No API required.**
 
-## What's in this repo?
+Terminalwire streams a command-line app straight from your server. Instead of
+building a REST/GraphQL API, generating an SDK, and maintaining a separately
+released client, you write your CLI *in your Rails app* — and it runs on your
+users' machines over a single WebSocket.
 
-This is a monolithic repository with several Terminalwire components, including the Terminalwire thin-client and Ruby & Rails servers.
+```ruby
+# app/terminal/main_terminal.rb
+class MainTerminal < ApplicationTerminal
+  desc "deploy", "Deploy the app"
+  def deploy
+    puts "Deploying #{current_user.app} to production…"
+    # ...your real app code: models, jobs, mailers, the works
+    puts "Done. ✅"
+  end
+end
+```
 
-### Terminalwire Client
+Your user runs `your-app deploy` and the command executes **on your server**,
+with full access to your database, models, and business logic — while their
+terminal, files, and browser stay on *their* machine.
 
-The Terminalwire thin-client is pacakged using Tebako and is installed on end-user workstations. The thin-client connects to a Terminalwire server and streams stdio, browser, filesystem, and other commands between the server and client via WebSockets through an entitlement-based security layer.
+## Why this is nice
 
-[Read the Terminalwire-client manual](https://terminalwire.com/docs/client)
+- **No API to build or version.** Your CLI calls your app's code directly. No
+  serializers, no SDK, no client/server version skew to manage.
+- **It feels local.** Output streams in real time, prompts and passwords work,
+  and it's color/TTY-aware. Your server runs the command; the user's terminal
+  renders it.
+- **Secure by construction.** The client is the trust boundary: the server
+  *requests* access to a file, an env var, or the browser, and the client
+  enforces a per-app entitlement policy. Your server never touches the user's
+  machine directly.
+- **Auth is just your app's auth.** Sessions, current-user, and permissions are
+  whatever your Rails app already does.
 
-### Terminalwire Ruby & Rails servers
+The **v2** protocol (the `terminalwire2` gem under [`v2/`](v2/README.md)) adds a
+lot more — use *any* CLI library (Thor, Ruby's `OptionParser`, or bare
+`$stdin`/`$stdout`), output flow control, window resize, `Ctrl-C` to the
+server-side command, piping (`cat data.csv | your-app import`), and raw/
+interactive input. The Rails integration for v2 is in progress; the shipping
+Rails installer today uses the v1 (Thor) runtime.
 
-Terminalwire servers can run on any platform or framework. This repo has source for the Ruby Terminalwire server, specifically targeting Ruby on Rails.
+## Install (Rails)
 
-[Read the Terminalwire Ruby on Rails manual](https://terminalwire.com/docs/rails)
+Add the gem and run the installer:
 
-## Installation
+```ruby
+# Gemfile
+gem "terminalwire-rails"
+```
 
-### Client
+```sh
+bundle install
+rails generate terminalwire:install my-app   # "my-app" is the launcher name
+```
 
-The Terminalwire thin-client may be installed by running:
+That generates `bin/my-app` (the launcher your users run), your CLI in
+`app/terminal/main_terminal.rb`, and a `/terminal` route. Edit the CLI, and your
+users get the new behavior immediately — there's no client to re-release.
 
-    $ curl -sSL https://terminalwire.sh/ | bash
+Your users install the client once:
 
-This installs the Tebako packaged version of the Terminalwire client, which is recommended for production use.
+```sh
+curl -sSL https://terminalwire.sh | bash
+```
 
-#### RubyGem client
+## How it works
 
-The Terminalwire thin-client gem may be installed for development purposes by running:
+```
+ your users' machine            your Rails server
+ ┌────────────────┐   one WS    ┌─────────────────────────────┐
+ │ terminalwire    │ ◀────────▶ │ ActionCable / Rack endpoint  │
+ │ client (their   │            │   → your Thor (v1) / any-CLI │
+ │ terminal, files)│            │     (v2) command, your app   │
+ └────────────────┘            └─────────────────────────────┘
+```
 
-    $ gem install terminalwire
+The client is a small, fast binary on the user's workstation. Your server runs
+the CLI and streams terminal I/O — stdout/stderr, prompts, files, the browser —
+over the wire. (The richer I/O modes — flow control, piping, raw/interactive
+input — are part of the v2 protocol; see [`v2/`](v2/README.md).)
 
-*This approach is not recommended for production use since developer workstations likely don't have the correct Ruby dependencies installed*
+## What's in this repository
 
-## Rails
+- **`v2/ruby/`** — the modern (v2) open-source server runtime, the `terminalwire2`
+  gem. This is where active development happens. See the
+  [v2 README](v2/README.md) for wiring details (Rails/ActionCable, Rack, Thor,
+  OptionParser).
+- **`gem/`** — the v1 gems (`terminalwire`, `terminalwire-rails`, …), still
+  published and maintained.
 
-Run the intallation command:
+There are servers for other languages too — e.g. [Elixir](https://github.com/terminalwire/elixir).
+They all speak the same wire protocol and interoperate with the same client.
 
-    $ rails g terminalwire:install my-app
+## Documentation
 
-This generates the `./bin/my-app` file. Run it to verify that it connects to the server.
-
-    $ bin/my-app
-    Commands:
-      my-app help [COMMAND]  # Describe available commands or one specific command
-
-To edit the command-line, open `./app/cli/main_cli.rb` and make changes to the `MainCLI` class.
-
-## Development
-
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
-
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
-
-## Contributing
-
-Bug reports and pull requests are welcome on GitHub at https://github.com/terminalwire/ruby. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/terminalwire/ruby/blob/main/CODE_OF_CONDUCT.md).
+- Rails guide: https://terminalwire.com/docs/rails
+- Client manual: https://terminalwire.com/docs/client
 
 ## License
 
-The gem is available as a propietary license. The tl;dr is that it's free for personal use and for commercial use email brad@terminalwire.com to discuss licensing.
+Source-available. Free for personal use and small/early-stage businesses;
+commercial use is licensed — see `LICENSE.txt` or https://terminalwire.com/license.
 
-## Code of Conduct
+## Contributing
 
-Everyone interacting in the Terminalwire project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/terminalwire/ruby/blob/main/CODE_OF_CONDUCT.md).
+Bug reports and pull requests are welcome at
+https://github.com/terminalwire/ruby. Please follow the
+[code of conduct](CODE_OF_CONDUCT.md).
