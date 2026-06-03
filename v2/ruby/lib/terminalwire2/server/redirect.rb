@@ -5,43 +5,67 @@ module Terminalwire2
     # Runs a block with Ruby's standard I/O globals pointed at the client's
     # terminal, so an ordinary CLI — OptionParser, GLI, dry-cli, or bare
     # Kernel#puts/gets — streams to/from the client with no Terminalwire-specific
-    # code. Restores the originals afterward, always.
+    # code.
     #
-    #   Terminalwire2::Server.redirect(context) do
-    #     parser = OptionParser.new { |o| ... }   # its help/errors -> client
-    #     parser.parse!(args)
-    #     puts "done"                              # -> client
+    #   Terminalwire2::Server.redirect(context, argv: args) do
+    #     OptionParser.new { |o| ... }.parse!(args)   # help/errors -> client
+    #     puts "done"                                 # -> client
     #   end
     #
-    # Note: this redirects the *global* streams, so it is process-wide for the
-    # duration of the block. A threaded server should run one command per thread
-    # and rely on thread-local fibers, OR serialize; for the common Rails/ActionCable
-    # case each session already runs on its own thread. See `redirect_thread_safe`
-    # below for the fiber/thread-local-safe variant when available.
+    # Concurrency-safe by design. We do NOT swap the process-global $stdout per
+    # command (that interleaves when two run at once). Instead we install a
+    # StreamRouter as $stdout/$stderr/$stdin ONCE, and each call to #redirect binds
+    # a fiber-local target. Two commands running concurrently — on different
+    # threads (Puma) or fibers (Falcon) — each see their own client and never cross
+    # streams. Outside a #redirect block the routers delegate to the real streams,
+    # so installing them is transparent to the rest of the process.
     module_function
 
+    STDOUT_KEY = :terminalwire_stdout
+    STDERR_KEY = :terminalwire_stderr
+    STDIN_KEY  = :terminalwire_stdin
+
+    # Install the routers as the global streams, once per process. Idempotent and
+    # thread-safe. Safe to leave installed: with no fiber-local target they pass
+    # straight through to the original $stdout/$stderr/$stdin.
+    @install_mutex = Mutex.new
+
+    def install!
+      @install_mutex.synchronize do
+        return if @installed
+
+        $stdout = StreamRouter.new(STDOUT_KEY, $stdout)
+        $stderr = StreamRouter.new(STDERR_KEY, $stderr)
+        $stdin  = StreamRouter.new(STDIN_KEY, $stdin)
+        @installed = true
+      end
+    end
+
+    def installed? = @installed == true
+
+    # Run the block with this fiber's standard streams pointed at `context`.
+    #
+    # `argv:` is accepted for convenience but ARGV / $PROGRAM_NAME are genuinely
+    # process-global (Ruby has no fiber-local ARGV), so we pass the arguments to
+    # the block instead of mutating ARGV — the Handler hands them to your CLI
+    # directly. We deliberately do NOT mutate global ARGV here, to avoid the exact
+    # cross-command races this method exists to prevent.
     def redirect(context, argv: nil)
+      install!
+
       out = IO.new(context, :stdout)
       err = IO.new(context, :stderr)
       in_ = IO.new(context, :stdin)
 
-      old = { out: $stdout, err: $stderr, in: $stdin, argv: ARGV.dup, prog: $PROGRAM_NAME }
+      prev_out = $stdout.__bind__(out)
+      prev_err = $stderr.__bind__(err)
+      prev_in  = $stdin.__bind__(in_)
 
-      $stdout = out
-      $stderr = err
-      $stdin = in_
-      if argv
-        ARGV.replace(argv)
-        $PROGRAM_NAME = context.program_name if context.respond_to?(:program_name) && context.program_name
-      end
-
-      yield(out: out, err: err, in: in_)
+      yield(out: out, err: err, in: in_, argv: argv)
     ensure
-      $stdout = old[:out]
-      $stderr = old[:err]
-      $stdin = old[:in]
-      ARGV.replace(old[:argv])
-      $PROGRAM_NAME = old[:prog]
+      $stdout.__restore__(prev_out)
+      $stderr.__restore__(prev_err)
+      $stdin.__restore__(prev_in)
     end
   end
 end
