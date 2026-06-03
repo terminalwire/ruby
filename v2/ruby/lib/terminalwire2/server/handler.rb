@@ -2,34 +2,55 @@
 
 module Terminalwire2
   module Server
-    # The framework-agnostic server entrypoint. Given a transport and a Thor CLI
-    # class, it performs the handshake, runs the requested command with a
-    # Terminalwire-backed context, handles errors, and exits the client. A Rails
-    # or Rack adapter just builds a transport and calls this.
+    # The framework-agnostic server entrypoint: performs the handshake, runs your
+    # CLI with a Terminalwire-backed context, handles errors, and exits the client.
+    # A Rails or Rack adapter just builds a transport and calls this.
+    #
+    # Your CLI can be ANY of:
+    #   * a block / callable run(context, args) — works with OptionParser, GLI,
+    #     dry-cli, or hand-rolled parsing. The block runs inside `Server.redirect`,
+    #     so $stdout/$stderr/$stdin and bare puts/gets already target the client.
+    #   * a Thor class via `cli_class:` (it gets Thor's dedicated shell adapter).
+    #
+    #   # OptionParser (or anything using the standard IO globals):
+    #   Handler.new do |ctx, args|
+    #     opts = {}
+    #     OptionParser.new { |o| o.on("--name NAME") { |v| opts[:name] = v } }.parse!(args)
+    #     puts "hello #{opts[:name]}"
+    #   end
+    #
+    #   # Thor:
+    #   Handler.new(cli_class: MyThorCLI)
     class Handler
       DEFAULT_ERROR_MESSAGE = "An error occurred. Please try again."
 
-      # @param cli_class [Class] a Thor CLI that `include`s Server::Thor
+      # @param cli_class [Class, nil] a Thor CLI that `include`s Server::Thor
+      # @param run [#call, nil] a callable (context, args) for non-Thor CLIs
       # @param report [#call, nil] optional callable invoked with unexpected errors
       # @param verbose [Boolean] show full backtraces to the client (dev only)
-      def initialize(cli_class:, report: nil, verbose: false, error_message: DEFAULT_ERROR_MESSAGE)
+      # @yield [context, args] block form of `run:`
+      def initialize(cli_class: nil, run: nil, report: nil, verbose: false,
+                     error_message: DEFAULT_ERROR_MESSAGE, &block)
         @cli_class = cli_class
+        @run = run || block
         @report = report
         @verbose = verbose
         @error_message = error_message
+
+        return if @cli_class || @run
+
+        raise ArgumentError, "provide a Thor cli_class:, a run: callable, or a block"
       end
 
       # Run one session over the given transport. Returns the exit status.
       def call(transport:)
         runtime = Runtime.new(transport: transport).handshake
         context = Context.new(runtime)
-        arguments = Array(runtime.program && runtime.program["args"])
+        arguments = context.program_arguments
         status = 0
 
         begin
-          @cli_class.terminalwire(arguments: arguments, context: context) do |cli|
-            yield cli, context if block_given?
-          end
+          dispatch(context, arguments)
         rescue Interrupt
           status = 130
         rescue StandardError => e
@@ -44,16 +65,36 @@ module Terminalwire2
 
       private
 
+      # Route to the Thor adapter or the generic redirect-based runner.
+      def dispatch(context, arguments)
+        if @cli_class
+          @cli_class.terminalwire(arguments: arguments, context: context) do |cli|
+            yield cli, context if block_given?
+          end
+        else
+          # Generic path: point the global IO streams at the client, then run the
+          # user's callable. OptionParser/GLI/dry-cli/bare puts all Just Work.
+          Server.redirect(context, argv: arguments) do
+            @run.call(context, arguments)
+          end
+        end
+      end
+
       def handle_error(error, context)
         # Thor's own user-facing errors (unknown command, bad args) are friendly
-        # already — pass them through verbatim.
-        if defined?(::Thor::Error) && error.is_a?(::Thor::Error)
+        # already — pass them through verbatim. OptionParser's are too.
+        if friendly_error?(error)
           context.warn(error.message)
         else
           @report&.call(error)
           context.warn(@verbose ? backtrace(error) : @error_message)
         end
         1
+      end
+
+      def friendly_error?(error)
+        (defined?(::Thor::Error) && error.is_a?(::Thor::Error)) ||
+          (defined?(::OptionParser::ParseError) && error.is_a?(::OptionParser::ParseError))
       end
 
       def backtrace(error)

@@ -17,6 +17,11 @@ module Terminalwire2
       # runtime's read pump as resize frames arrive.
       def terminal = @runtime.terminal
 
+      # The program name + arguments the client launched with (from the hello).
+      # CLI parsers (OptionParser, Thor, GLI, …) consume `program_arguments`.
+      def program_name = @runtime.program && @runtime.program["name"]
+      def program_arguments = Array(@runtime.program && @runtime.program["args"])
+
       # Register a callback fired when the client's window resizes.
       def on_resize(&block) = @runtime.on_resize(&block)
 

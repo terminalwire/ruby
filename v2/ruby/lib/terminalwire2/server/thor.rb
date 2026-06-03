@@ -8,48 +8,12 @@ module Terminalwire2
     # say, ask, yes?, and bare puts/print/gets inside commands — through the
     # Terminalwire Context instead of the server's real $stdin/$stdout. This is
     # what lets you keep writing an ordinary Thor CLI while it runs on the client.
+    #
+    # Thor needs this dedicated adapter (rather than the generic Server.redirect)
+    # because its shell captures the output streams at construction instead of
+    # reading the $stdout/$stderr globals at call time. The byte plumbing is the
+    # shared Server::IO.
     module Thor
-      # An IO-shaped adapter so Thor's shell writes land on the client.
-      class IO
-        def initialize(context, stream)
-          @context = context
-          @stream = stream
-        end
-
-        def print(*args)
-          args.each { |arg| @context.print(arg.to_s, stream: @stream) }
-          nil
-        end
-
-        def write(*args)
-          args.sum { |arg| s = arg.to_s; @context.print(s, stream: @stream); s.bytesize }
-        end
-
-        def <<(arg)
-          @context.print(arg.to_s, stream: @stream)
-          self
-        end
-
-        def puts(*args)
-          if args.empty?
-            @context.print("\n", stream: @stream)
-          else
-            args.flatten.each { |arg| @context.print("#{arg}\n", stream: @stream) }
-          end
-          nil
-        end
-
-        def flush = self
-        def sync = true
-        def sync=(value); value; end
-
-        # Reflect the *client's* terminal so tty-screen/tty-table/pastel size and
-        # colorize correctly against the remote terminal, not the server's. tty?
-        # is per-stream (this proxy's own stream); winsize is the device size.
-        def tty? = @context.terminal.stream(@stream).tty?
-        def winsize = @context.terminal.winsize
-      end
-
       # Bare puts/print/gets inside Thor commands. Defined in a module so Thor's
       # method_added hook never sees them and they are not registered as commands.
       module Helpers
@@ -71,8 +35,8 @@ module Terminalwire2
 
         protected
 
-        def stdout = @stdout ||= IO.new(@context, :stdout)
-        def stderr = @stderr ||= IO.new(@context, :stderr)
+        def stdout = @stdout ||= Server::IO.new(@context, :stdout)
+        def stderr = @stderr ||= Server::IO.new(@context, :stderr)
 
         # Override Thor's line-editor input (which hardcodes $stdin) to read from
         # the client through the context. Fixes ask, yes?, no?, and passwords.
