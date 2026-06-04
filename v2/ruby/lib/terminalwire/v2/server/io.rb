@@ -74,6 +74,18 @@ module Terminalwire::V2
       def tty? = @context.terminal.stream(@stream).tty?
       def winsize = @context.terminal.winsize
       def isatty = tty?
+
+      # Answer the window-size ioctl (TIOCGWINSZ) that tty-screen probes, filling
+      # the caller's buffer with the CLIENT's [rows, cols] — so tty-screen-based
+      # libraries (tty-progressbar, tty-spinner, …) size to the client instead of
+      # crashing on a non-IO stream. Other ioctls are no-ops.
+      def ioctl(_cmd, buf = nil)
+        if buf.is_a?(String)
+          rows, cols = @context.terminal.winsize
+          buf[0, 8] = [rows.to_i, cols.to_i, 0, 0].pack("S4") # matches tty-screen's "SSSS"
+        end
+        0
+      end
     end
   end
 end
