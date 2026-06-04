@@ -1,0 +1,22 @@
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+# A one-page Rails app that serves a Thor CLI over Terminalwire v2.
+# The terminalwire/v2 server library itself is loaded from the repo (see app.rb),
+# so it isn't listed here.
+
+gem "rails", "~> 8.0"            # actionpack + railties (Rack 3)
+gem "rackup"                     # `rackup`/handler glue for Rack 3
+
+# Run on either server — async-websocket speaks the Rack 3 streaming protocol:
+gem "puma", "~> 8.0"             # the one most people deploy
+gem "falcon"                     # the async-native one
+
+gem "async-websocket", "~> 0.30" # WebSocket over Rack 3 (Puma + Falcon)
+
+# The CLI + its output toys:
+gem "thor"
+gem "msgpack"                    # protocol codec
+gem "pastel"                     # color
+gem "tty-table"                  # tables sized to the client terminal
