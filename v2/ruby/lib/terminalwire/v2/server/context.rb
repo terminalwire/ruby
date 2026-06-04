@@ -22,6 +22,22 @@ module Terminalwire::V2
       def program_name = @runtime.program && @runtime.program["name"]
       def program_arguments = Array(@runtime.program && @runtime.program["args"])
 
+      # The entitlement the client granted this session: its authority (origin),
+      # the path globs it will allow writes within, and the permitted schemes/env
+      # vars. The CLIENT enforces this; here it's a read-only view so server code
+      # can stay inside the sandbox (e.g. learn where it may persist a file).
+      def entitlement = @runtime.entitlement
+
+      # The client directory this origin may persist files into — its sandbox —
+      # derived from the first granted path glob (".../**" -> "..."). Returns nil
+      # if no writable path was granted. Used like:
+      #
+      #   context.file.write("#{context.storage_path}/session.json", data)
+      def storage_path
+        glob = entitlement && entitlement.dig("paths", 0, "glob")
+        glob && glob.sub(%r{/\*\*\z}, "")
+      end
+
       # Register a callback fired when the client's window resizes.
       def on_resize(&block) = @runtime.on_resize(&block)
 
