@@ -20,3 +20,11 @@ gem "thor"
 gem "msgpack"                    # protocol codec
 gem "pastel"                     # color
 gem "tty-table"                  # tables sized to the client terminal
+
+# TTY showcase widgets (the demo renders these against the client terminal):
+gem "tty-box"
+gem "tty-tree"
+gem "tty-progressbar"
+gem "tty-spinner"
+gem "tty-markdown"
+gem "tty-font"

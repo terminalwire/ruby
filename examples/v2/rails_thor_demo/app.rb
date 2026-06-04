@@ -28,8 +28,23 @@ $LOAD_PATH.unshift(V2_LIB) unless $LOAD_PATH.include?(V2_LIB)
 require "terminalwire/v2"
 require "terminalwire/v2/server/thor" # the Thor integration (opt-in; pulls in thor)
 require "terminalwire/v2/server/rack" # the WebSocket Rack endpoint (opt-in; async-websocket)
+
+# Install Terminalwire's stream routing BEFORE loading the TTY libs. Some (tty-color,
+# which Pastel uses) snapshot $stdout/$stderr at load time; installing first means
+# they capture the router, so under #render they detect the CLIENT's color + size.
+Terminalwire::V2::Server.install!
+
+# TTY ecosystem — dropped in unmodified. Under #render (Server.redirect) their own
+# APIs (Pastel.new, TTY::Screen.width) auto-detect the CLIENT terminal over the wire.
 require "pastel"
+require "tty-screen"
 require "tty-table"
+require "tty-box"
+require "tty-tree"
+require "tty-progressbar"
+require "tty-spinner"
+require "tty-markdown"
+require "tty-font"
 
 require "rails"
 require "action_controller/railtie"
@@ -55,20 +70,19 @@ class DemoCLI < Thor
   end
   default_command :hello
 
-  desc "table", "Render a tty-table sized to your terminal"
+  desc "table", "tty-table, dropped in — auto-colors via Pastel, no special args"
   def table
-    pastel = Pastel.new(enabled: context.terminal.color?)
-    rows = [
-      ["stdout/stderr", "streaming", pastel.green("✓")],
-      ["ask / yes? / password", "interactive", pastel.green("✓")],
-      ["file + directory", "sandboxed to your origin", pastel.green("✓")],
-      ["terminal size / color", "live", pastel.green("✓")],
-      ["tty-table / pastel", "server-side TUI libs", pastel.green("✓")],
-    ]
-    table = TTY::Table.new(header: %w[Capability Notes Works], rows: rows)
-    # Render against the *client's* width, not the server's.
-    puts table.render(:unicode, resize: true, width: [context.terminal.cols, 80].min,
-                                padding: [0, 1])
+    render do
+      pastel = Pastel.new # auto-detects color from $stdout (the client) under #render
+      rows = [
+        ["stdout/stderr", "streaming", pastel.green("✓")],
+        ["ask / yes? / password", "interactive", pastel.green("✓")],
+        ["file + directory", "sandboxed to your origin", pastel.green("✓")],
+        ["terminal size / color", "live", pastel.green("✓")],
+        ["tty-table / pastel", "server-side TUI libs", pastel.green("✓")],
+      ]
+      $stdout.puts TTY::Table.new(header: %w[Capability Notes Works], rows: rows).render(:unicode, padding: [0, 1])
+    end
   end
 
   desc "survey", "Show off interactive prompts (ask, yes?, password)"
@@ -120,7 +134,134 @@ class DemoCLI < Thor
     end
   end
 
+  # ----------------------------------------------------------------------------
+  # TTY showcase — spot-check rich terminal output rendered server-side and drawn
+  # on YOUR terminal. Each wraps the body in #render so $stdout points at the
+  # client and the TTY libs auto-detect its color + width.
+  # ----------------------------------------------------------------------------
+
+  desc "colors", "Pastel palette: foreground, background, and styles"
+  def colors
+    render do
+      p = Pastel.new
+      $stdout.puts p.bold("Foreground:")
+      $stdout.puts %i[black red green yellow blue magenta cyan white].map { |c| p.decorate("  #{c} ", c) }.join
+      $stdout.puts %i[bright_red bright_green bright_yellow bright_blue bright_magenta bright_cyan].map { |c| p.decorate(" #{c} ", c) }.join
+      $stdout.puts p.bold("\nBackgrounds:")
+      $stdout.puts %i[on_red on_green on_yellow on_blue on_magenta on_cyan].map { |c| p.decorate("  #{c}  ", c, :black) }.join
+      $stdout.puts p.bold("\nStyles:")
+      $stdout.puts [p.bold("bold"), p.dim("dim"), p.italic("italic"), p.underline("underline"), p.inverse("inverse"), p.strikethrough("strike")].join("  ")
+    end
+  end
+
+  desc "box [TEXT]", "tty-box, dropped in — TTY::Screen.width is your terminal"
+  def box(text = "Terminalwire renders this box server-side; it's drawn on your terminal.")
+    render do
+      $stdout.puts TTY::Box.frame(
+        text,
+        width: TTY::Screen.width, padding: 1, align: :center,
+        title: { top_left: " 📦 box ", bottom_right: " #{TTY::Screen.width}cols " },
+        style: { border: { fg: :cyan } }
+      )
+    end
+  end
+
+  desc "tree", "A tty-tree of a nested structure"
+  def tree
+    render do
+      data = { "terminalwire" => [
+        { "client (Go)" => ["transport", "entitlement", "frontend"] },
+        { "server" => [{ "ruby" => ["puma", "falcon"] }, "elixir"] },
+        "protocol + conformance",
+      ] }
+      $stdout.puts TTY::Tree.new(data).render
+    end
+  end
+
+  desc "markdown", "Render Markdown (headings, list, code, table) with tty-markdown"
+  def markdown
+    doc = <<~MD
+      # Terminalwire
+      Ship a **CLI** from your web app — the server drives _your_ terminal.
+
+      - streaming output
+      - interactive prompts
+      - `tty-*` widgets
+
+      ```ruby
+      class CLI < Thor
+        include Terminalwire::V2::Server::Thor
+      end
+      ```
+
+      | Server | Transport |
+      |--------|-----------|
+      | Ruby   | Puma / Falcon |
+      | Elixir | Bandit |
+    MD
+    render { $stdout.puts TTY::Markdown.parse(doc) } # tty-markdown auto-sizes via TTY::Screen
+  end
+
+  desc "bigtext [TEXT]", "Big ASCII-art text (tty-font)"
+  def bigtext(text = "WIRE")
+    render { $stdout.puts Pastel.new.cyan(TTY::Font.new(:standard).write(text)) }
+  end
+
+  desc "progress", "An animated progress bar streaming to your terminal"
+  def progress
+    render do
+      bar = TTY::ProgressBar.new("downloading [:bar] :percent :eta", total: 40, width: 30, output: $stdout)
+      40.times { sleep 0.04; bar.advance }
+      bar.finish
+      $stdout.puts "done."
+    end
+  end
+
+  desc "spinner", "An animated spinner (manual frames over the wire)"
+  def spinner
+    render do
+      spin = TTY::Spinner.new("[:spinner] crunching numbers…", format: :dots, output: $stdout)
+      30.times { spin.spin; sleep 0.05 }
+      spin.success(Pastel.new.green("(done)"))
+    end
+  end
+
+  desc "resize", "Draw a frame sized to your terminal; resize to watch it reflow (Enter quits)"
+  def resize
+    draw = lambda do
+      t = context.terminal
+      frame = TTY::Box.frame(
+        "Resize your terminal — this frame redraws to fit.\n\n" \
+        "cols=#{t.cols}  rows=#{t.rows}  term=#{t.term}",
+        width: [t.cols, 24].max, height: [t.rows - 1, 6].max, align: :center, padding: 1,
+        title: { top_left: " terminalwire ", bottom_right: " Enter to quit " }
+      )
+      context.print("\e[2J\e[H#{frame}") # clear + home, then the frame
+    end
+    context.on_resize { draw.call }      # fires on resize (SIGWINCH from the client)
+    draw.call
+    gets                                 # block until Enter; resizes redraw meanwhile
+  ensure
+    context.print("\e[2J\e[H")
+  end
+
+  desc "menu", "Single-keypress menu (cbreak mode — no Enter needed)"
+  def menu
+    puts "Pick one — press a key: [r]uby  [e]lixir  [g]o  [q]uit"
+    key = context.read_key
+    label = { "r" => "Ruby", "e" => "Elixir", "g" => "Go", "q" => "(quit)" }[key.to_s.downcase] || "unknown (#{key.inspect})"
+    puts "You pressed #{key.inspect} → #{label}"
+  end
+
   no_commands do
+    # Run a block with the client's terminal as $stdout/$stderr (fiber-locally),
+    # so Pastel/tty-* auto-detect the client's color + size. The clean way to run
+    # ordinary terminal libraries server-side. (Resize redraws can't use this —
+    # they fire on the pump thread — so #resize writes via the context directly.)
+    def render(&block)
+      Terminalwire::V2::Server.redirect(context) { |**| block.call }
+    end
+
     # The client sandbox we may write to (its ~/.terminalwire/authorities/<origin>/
     # folder), reported in the entitlement. nil if the client granted nothing.
     def session_file
