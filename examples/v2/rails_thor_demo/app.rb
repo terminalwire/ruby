@@ -5,12 +5,12 @@
 # Boot it, then drive it from your own terminal with the Terminalwire client:
 #
 #     puma examples/v2/rails_thor_demo/config.ru -p 3000
-#     /tmp/terminalwire ws://localhost:3000/terminal hello
-#     /tmp/terminalwire ws://localhost:3000/terminal           # the welcome banner
-#     /tmp/terminalwire ws://localhost:3000/terminal table
-#     /tmp/terminalwire ws://localhost:3000/terminal survey
-#     /tmp/terminalwire ws://localhost:3000/terminal login
-#     /tmp/terminalwire ws://localhost:3000/terminal whoami
+#     terminalwire-connect ws://localhost:3000/terminal hello
+#     terminalwire-connect ws://localhost:3000/terminal           # the welcome banner
+#     terminalwire-connect ws://localhost:3000/terminal table
+#     terminalwire-connect ws://localhost:3000/terminal survey
+#     terminalwire-connect ws://localhost:3000/terminal login
+#     terminalwire-connect ws://localhost:3000/terminal whoami
 #
 # The whole story in one file:
 #   1. an ordinary Thor CLI that `include`s Terminalwire::V2::Server::Thor — its
@@ -283,10 +283,10 @@ WELCOME_HTML = <<~HTML
   <body style="font:16px/1.5 ui-monospace,monospace;max-width:42rem;margin:4rem auto;padding:0 1rem">
   <h1>🚀 Terminalwire Thor demo</h1>
   <p>This Rails app serves a Thor CLI over a WebSocket. Drive it from your terminal:</p>
-  <pre style="background:#111;color:#eee;padding:1rem;border-radius:8px">terminalwire ws://localhost:3000/terminal hello
-  terminalwire ws://localhost:3000/terminal table
-  terminalwire ws://localhost:3000/terminal survey
-  terminalwire ws://localhost:3000/terminal login</pre>
+  <pre style="background:#111;color:#eee;padding:1rem;border-radius:8px">terminalwire-connect ws://localhost:3000/terminal hello
+  terminalwire-connect ws://localhost:3000/terminal table
+  terminalwire-connect ws://localhost:3000/terminal survey
+  terminalwire-connect ws://localhost:3000/terminal login</pre>
   </body>
 HTML
 

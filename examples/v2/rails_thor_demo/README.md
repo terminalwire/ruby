@@ -19,16 +19,21 @@ bundle exec falcon serve --bind http://127.0.0.1:3000   # async
 Then drive it from your terminal with the Terminalwire client:
 
 ```sh
-terminalwire ws://localhost:3000/terminal hello
-terminalwire ws://localhost:3000/terminal table     # a tty-table sized to your terminal
-terminalwire ws://localhost:3000/terminal sysinfo   # what the server sees about you
-terminalwire ws://localhost:3000/terminal survey    # ask / yes? / hidden password
-terminalwire ws://localhost:3000/terminal login     # writes a token into your origin's sandbox
-terminalwire ws://localhost:3000/terminal whoami    # reads it back
-terminalwire ws://localhost:3000/terminal logout
+terminalwire-connect ws://localhost:3000/terminal hello
+terminalwire-connect ws://localhost:3000/terminal table     # a tty-table sized to your terminal
+terminalwire-connect ws://localhost:3000/terminal sysinfo   # what the server sees about you
+terminalwire-connect ws://localhost:3000/terminal survey    # ask / yes? / hidden password
+terminalwire-connect ws://localhost:3000/terminal login     # writes a token into your origin's sandbox
+terminalwire-connect ws://localhost:3000/terminal whoami    # reads it back
+terminalwire-connect ws://localhost:3000/terminal logout
 ```
 
-(During development the client binary lives at `/tmp/terminalwire`.)
+`terminalwire-connect` connects to an explicit endpoint URL and runs — handy in
+development. In a real app you don't type a URL: you ship a `chmod +x` shebang
+file (`#!/usr/bin/env terminalwire-exec` + `url: "wss://your.app/terminal"`) and
+users just run `your-cli <command>`. (The flagship `terminalwire` binary is the
+product itself — install/setup/manage.) During dev, build the connect tool from
+the cli repo: `go build -o terminalwire-connect ./cmd/terminalwire`.
 
 ## What's in `app.rb`
 
