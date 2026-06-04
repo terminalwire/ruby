@@ -216,7 +216,7 @@ module Terminalwire::V2
           # one if absent), giving the connection's fiber I/O a scheduler.
           Sync do |task|
             outbox = ::Queue.new
-            wake_read, wake_write = IO.pipe
+            wake_read, wake_write = ::IO.pipe # ::IO — Server::IO is the lib's stream class
             transport = Transport::Queue.new(
               sink: ->(bytes) { outbox << bytes; wake_write.write(".") rescue nil }
             )
