@@ -7,6 +7,11 @@ module Terminalwire::V2
   # shape). No I/O, no transport — this is the sans-IO seam the conformance corpus
   # exercises directly.
   module Codec
+    # Largest valid stream id: a signed 64-bit max. Go decodes sids into int64, so
+    # anything above this would wrap to a negative (colliding) sid there; bounding
+    # it here keeps all three impls' sid validity identical.
+    MAX_SID = (1 << 63) - 1
+
     module_function
 
     # @param frame [Hash] a frame with string keys
@@ -33,7 +38,13 @@ module Terminalwire::V2
       # Ruby used to let it through to the state machine. An empty type is not a
       # valid frame — reject it here so all three behave identically.
       raise ProtocolError, "frame missing string 't'" unless obj["t"].is_a?(String) && !obj["t"].empty?
-      raise ProtocolError, "frame missing integer 'sid'" unless obj["sid"].is_a?(Integer)
+      # 'sid' must be a non-negative integer that fits in a signed 64-bit int (see
+      # MAX_SID): real sids are small and server-allocated, and the range bound keeps
+      # the three impls aligned (Go would otherwise wrap a uint64 sid to a negative).
+      sid = obj["sid"]
+      unless sid.is_a?(Integer) && sid >= 0 && sid <= MAX_SID
+        raise ProtocolError, "frame missing integer 'sid'"
+      end
 
       obj
     end

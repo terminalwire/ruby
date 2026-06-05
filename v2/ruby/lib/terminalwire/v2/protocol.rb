@@ -66,6 +66,14 @@ module Terminalwire::V2
     # chunk can never exceed an empty window and deadlock.
     DEFAULT_WINDOW = 256 * 1024
 
+    # Hard ceiling on a flow window (bytes). A window can never grow past this no
+    # matter what a peer offers or grants — the credit ledger clamps to it (see
+    # Window). This bounds how much output a server may buffer ahead of a slow or
+    # hostile client: without it, a client could offer/grant an enormous window and
+    # dissolve backpressure entirely, ballooning the server's transport buffers. 64×
+    # the default offer — ample for any terminal stream, far below a memory hazard.
+    MAX_WINDOW = 16 * 1024 * 1024
+
     # Error codes carried on a `response` with ok: false.
     module ErrorCode
       DENIED    = "denied"

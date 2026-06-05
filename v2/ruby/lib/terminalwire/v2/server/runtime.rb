@@ -158,7 +158,17 @@ module Terminalwire::V2
 
       def pump
         while (bytes = @transport.read)
-          route(@connection.receive(Codec.decode(bytes)))
+          frame =
+            begin
+              Codec.decode(bytes)
+            rescue ProtocolError
+              # A single malformed frame is dropped, not fatal — one bad frame must
+              # not tear down the whole session (matches the Go client and the Elixir
+              # server). The WebSocket transport delimits messages, so the next frame
+              # is unaffected. State-machine violations from #receive stay fatal.
+              next
+            end
+          route(@connection.receive(frame))
         end
         # transport closed
         shutdown(ProtocolError.new("client closed before hello"),

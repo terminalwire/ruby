@@ -11,7 +11,7 @@ module Terminalwire::V2
     attr_reader :available
 
     def initialize(size)
-      @available = size
+      @available = size > Protocol::MAX_WINDOW ? Protocol::MAX_WINDOW : size
     end
 
     # The number of bytes that may be sent right now toward a request for `want`:
@@ -23,9 +23,11 @@ module Terminalwire::V2
       amount
     end
 
-    # Extend the window (a window_adjust arrived).
+    # Extend the window (a window_adjust arrived), clamped to the protocol ceiling
+    # (Protocol::MAX_WINDOW) so a peer can't grow the window without bound.
     def grant(bytes)
       @available += bytes
+      @available = Protocol::MAX_WINDOW if @available > Protocol::MAX_WINDOW
     end
   end
 end
