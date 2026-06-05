@@ -23,7 +23,19 @@ module Terminalwire::V2
 
     # Load every .yml file in a category (e.g. "negotiate") and return a flat
     # array of cases with $bin sentinels resolved to binary strings.
+    #
+    # Fails LOUDLY when the corpus directory is absent, rather than letting
+    # Dir.glob return [] and the corpus specs run zero examples (a silent green).
+    # This matches the Go runner (t.Skip with a message) and the Elixir loader
+    # (asserts non-empty): a missing/misconfigured corpus must never look like a
+    # pass. The corpus ships in terminalwire/protocol; point TERMINALWIRE_CORPUS
+    # at it.
     def load(category)
+      unless vectors_dir.directory?
+        raise "conformance corpus not found at #{vectors_dir} — set TERMINALWIRE_CORPUS " \
+              "to the corpus directory (it ships in terminalwire/protocol). Without it " \
+              "the corpus specs would silently run zero cases."
+      end
       Dir.glob(vectors_dir.join(category, "*.yml")).sort.flat_map do |path|
         data = YAML.safe_load_file(path)
         resolve(data)
