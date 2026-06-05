@@ -121,31 +121,58 @@ module Terminalwire::V2
 
         private
 
+        # A non-destructive read cursor over the buffer. Each read either returns
+        # the next bytes and advances, or throws :incomplete — meaning a whole frame
+        # isn't buffered yet, so we must leave @buf untouched and wait for more. That
+        # "consume nothing until the frame is complete" rule is the parser's one
+        # sharp edge; the cursor makes it structural instead of a hand-checked guard
+        # before every slice.
+        class Cursor
+          def initialize(buf)
+            @buf = buf
+            @off = 0
+          end
+
+          def byte
+            throw :incomplete if @off >= @buf.bytesize
+            b = @buf.getbyte(@off)
+            @off += 1
+            b
+          end
+
+          def take(n)
+            throw :incomplete if @buf.bytesize < @off + n
+            slice = @buf.byteslice(@off, n)
+            @off += n
+            slice
+          end
+
+          # The unconsumed tail — what's left after a frame is committed.
+          def rest = @buf.byteslice(@off..) || "".b
+        end
+
+        # Decode one frame from @buf, or return nil if a whole frame isn't buffered
+        # yet (consuming nothing). Reads top to bottom in RFC 6455 wire order:
+        # 2-byte header, optional extended length, optional mask key, then payload.
+        # @buf is only advanced (cur.rest) once the full frame is in hand.
         def next_frame
-          return nil if @buf.bytesize < 2
-          b0 = @buf.getbyte(0)
-          b1 = @buf.getbyte(1)
-          fin = (b0 & 0x80) != 0
-          opcode = b0 & 0x0F
-          masked = (b1 & 0x80) != 0
-          len = b1 & 0x7F
-          off = 2
-          if len == 126
-            return nil if @buf.bytesize < off + 2
-            len = @buf.byteslice(off, 2).unpack1("n"); off += 2
-          elsif len == 127
-            return nil if @buf.bytesize < off + 8
-            len = @buf.byteslice(off, 8).unpack1("Q>"); off += 8
+          catch(:incomplete) do
+            cur = Cursor.new(@buf)
+            b0 = cur.byte
+            b1 = cur.byte
+            fin    = b0.anybits?(0x80)
+            opcode = b0 & 0x0F
+            masked = b1.anybits?(0x80)
+            len    = b1 & 0x7F
+            len = cur.take(2).unpack1("n")  if len == 126
+            len = cur.take(8).unpack1("Q>") if len == 127
+            key     = cur.take(4).bytes if masked
+            payload = cur.take(len).b
+            @buf = cur.rest
+            unmask!(payload, key) if masked
+            return [fin, opcode, payload]
           end
-          if masked
-            return nil if @buf.bytesize < off + 4
-            key = @buf.byteslice(off, 4).bytes; off += 4
-          end
-          return nil if @buf.bytesize < off + len
-          payload = @buf.byteslice(off, len).b
-          @buf = @buf.byteslice(off + len..) || "".b
-          unmask!(payload, key) if masked
-          [fin, opcode, payload]
+          nil # incomplete frame: need more bytes, @buf left untouched
         end
 
         def unmask!(payload, key)
