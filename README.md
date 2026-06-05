@@ -44,6 +44,35 @@ server-side command, piping (`cat data.csv | your-app import`), and raw/
 interactive input. The Rails integration for v2 is in progress; the shipping
 Rails installer today uses the v1 (Thor) runtime.
 
+## "I'll just build this myself"
+
+You can! Here's the part that isn't a weekend project:
+
+- **The terminal is a swamp.** "Stream stdout" is the easy 10%. The other 90%:
+  window size + live `SIGWINCH` resize, raw vs. cbreak vs. cooked input, no-echo
+  password reads, color/TTY detection, alt-screen hygiene, piping, and `Ctrl-C`
+  landing on the *server-side* command. Terminalwire models the whole terminal —
+  and makes server-side TUI libraries (`tty-table`, `pastel`, `tty-box`, …)
+  render on the user's terminal **unmodified**. Roll your own and you'll reinvent
+  a worse pty.
+- **The trust boundary is subtle.** Your server runs with your DB and your
+  secrets; it must NOT get to read `~/.ssh` off a user's box. The *client* has to
+  enforce an origin-scoped sandbox — and getting "origin" right (scheme/port
+  identity, homograph + path-traversal hardening) is exactly the stuff that
+  quietly leaks in a hand-rolled build. Terminalwire's is adversarially tested and
+  fuzzed.
+- **Distribution is a product.** Users need a client: a signed, cross-platform,
+  self-updating binary you'd build and babysit per app. Terminalwire is *one*
+  client; your app is a tiny `chmod +x` file with your URL baked in — users run
+  `your-app deploy`, no API key, no URL to type.
+- **Staying honest across versions.** Multiplexing, flow control, capability +
+  version negotiation — a sans-IO protocol with a language-neutral conformance
+  corpus keeps the client and every server (Ruby, Elixir, …) in lockstep. Bespoke
+  JSON-over-WebSocket drifts and rots.
+
+And after all that you've rebuilt the very thing you were avoiding — an API, plus
+an SDK, plus a client — just to ship one CLI. The point of Terminalwire is to not.
+
 ## Install (Rails)
 
 Add the gem and run the installer:
