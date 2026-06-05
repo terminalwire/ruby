@@ -50,8 +50,10 @@ module Terminalwire::V2
         if async_reactor?
           # Async server (Falcon): let async-websocket own the connection. Pull the
           # adapter in here — this is the only path that needs the async stack.
+          # :nocov: Falcon transport wiring — exercised live by the conformance suite, not units.
           require "async/websocket/adapters/rack"
           Async::WebSocket::Adapters::Rack.open(env) { |connection| ReactorBridge.new(connection, @handler).run }
+          # :nocov:
         else
           # Threaded server (Puma & friends): hand-roll the upgrade and stream.
           [101, upgrade_headers(env), ThreadBridge.new(@handler)]
@@ -205,6 +207,7 @@ module Terminalwire::V2
           @handler = handler
         end
 
+        # :nocov: blocking-socket threading — exercised live by the conformance suite, not units.
         def call(stream)
           write_lock = Mutex.new
           parser = Parser.new
@@ -235,6 +238,7 @@ module Terminalwire::V2
             stream.close rescue nil
           end
         end
+        # :nocov:
       end
 
       # --- async path (Falcon): bridge async-websocket to the thread runtime ----
@@ -250,6 +254,7 @@ module Terminalwire::V2
           @handler = handler
         end
 
+        # :nocov: reactor-fiber bridge — exercised live by the conformance suite, not units.
         def run
           # Falcon already runs us in a reactor; Sync reuses it (and would create
           # one if absent), giving the connection's fiber I/O a scheduler.
@@ -287,6 +292,7 @@ module Terminalwire::V2
             wake_read&.close rescue nil
           end
         end
+        # :nocov:
       end
     end
   end
