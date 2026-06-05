@@ -36,6 +36,7 @@ module Terminalwire::V2
         @ready = Queue.new
         @signaled = false
         @on_resize = nil
+        @interrupted = false
       end
 
       # Register a callback fired (on the pump thread) whenever the client's
@@ -112,6 +113,12 @@ module Terminalwire::V2
         return nil unless queue
 
         value = queue.pop
+        # An interrupt and the connection's :closed both unblock this pop and can
+        # race; the interrupt is the user's intent, so it wins (-> exit 130). This
+        # makes the outcome deterministic regardless of which arrives first (the
+        # async/Falcon bridge could let :closed land before Thread#raise lands).
+        raise Interrupt if @interrupted
+
         value == :closed ? nil : value
       end
 
@@ -130,6 +137,8 @@ module Terminalwire::V2
         emit(frame)
 
         answer = waiter.pop
+        # Interrupt wins over a racing connection-closed failure (see read_raw).
+        raise Interrupt if @interrupted
         raise answer if answer.is_a?(Exception)
 
         unless answer[:ok]
@@ -198,6 +207,9 @@ module Terminalwire::V2
         when :interrupt
           # Deliver Ctrl-C into the CLI thread, like a local SIGINT. A blocked
           # request/read raises Interrupt; the Handler turns it into exit 130.
+          # Set the flag BEFORE raising so a blocked read/request that unblocks via
+          # a racing connection-close still sees the interrupt (see read_raw).
+          @interrupted = true
           begin
             @cli_thread&.raise(Interrupt)
           rescue ThreadError
