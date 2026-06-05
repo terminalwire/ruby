@@ -244,8 +244,19 @@ module Terminalwire::V2
       # --- async path (Falcon): bridge async-websocket to the thread runtime ----
 
       # One WebSocket connection over async-websocket. inbound: connection.read
-      # (reactor fiber) -> transport.deliver; outbound: runtime threads -> queue +
-      # a wake pipe -> writer fiber -> connection.
+      # (reactor fiber) -> transport.deliver; outbound: the CLI thread pushes to a
+      # Thread::Queue that a writer fiber drains -> connection.
+      #
+      # The cross-thread hand-off is a plain Thread::Queue, NOT a self-pipe. A fiber
+      # blocked in `outbox.pop` yields the reactor, and a `push` from the CLI thread
+      # wakes it through the fiber scheduler's own cross-thread wakeup
+      # (Async::Scheduler#unblock -> selector.wakeup). We verified this empirically
+      # against async 2.39: the reactor keeps running while the writer is parked, and
+      # a push from a real OS thread resumes it. An earlier version hand-rolled an
+      # IO.pipe to wake the reactor — that just reimplemented selector.wakeup, so it
+      # is gone. The CLI runs on a real Thread (not a fiber) on purpose: a user's CLI
+      # makes arbitrary blocking calls, which would stall the whole reactor if run as
+      # a fiber — Sam's own guidance is to offload blocking work to a thread.
       class ReactorBridge
         JOIN_TIMEOUT = 2
 
@@ -259,22 +270,20 @@ module Terminalwire::V2
           # Falcon already runs us in a reactor; Sync reuses it (and would create
           # one if absent), giving the connection's fiber I/O a scheduler.
           Sync do |task|
-            outbox = ::Queue.new
-            wake_read, wake_write = ::IO.pipe # ::IO — Server::IO is the lib's stream class
-            transport = Transport::Queue.new(
-              sink: ->(bytes) { outbox << bytes; wake_write.write(".") rescue nil }
-            )
+            outbox = ::Queue.new # Thread::Queue: thread-safe + fiber-scheduler aware
+            transport = Transport::Queue.new(sink: ->(bytes) { outbox << bytes })
 
             cli = Thread.new { @handler.call(transport: transport) }
 
             writer = task.async do
-              loop do
-                wake_read.readpartial(4096)
-                @connection.send_binary(outbox.pop) until outbox.empty?
-                @connection.flush
+              # pop blocks the fiber until the CLI thread pushes (cross-thread wakeup
+              # via the scheduler); nil means the outbox was closed in teardown.
+              while (bytes = outbox.pop)
+                @connection.send_binary(bytes)
+                @connection.flush if outbox.empty? # batch: flush once the burst drains
               end
             rescue EOFError, IOError, Errno::EPIPE
-              # pipe closed during teardown
+              # connection died mid-write
             end
 
             begin
@@ -285,11 +294,10 @@ module Terminalwire::V2
               # client disconnected
             end
           ensure
-            transport&.close
-            cli&.join(JOIN_TIMEOUT)
-            wake_write&.close rescue nil
-            writer&.wait rescue nil
-            wake_read&.close rescue nil
+            transport&.close      # unblock the handler's pending reads/requests
+            cli&.join(JOIN_TIMEOUT) # let it emit the exit frame (writer drains it meanwhile)
+            outbox&.close         # -> writer's pop returns nil -> writer fiber ends
+            writer&.wait
           end
         end
         # :nocov:
