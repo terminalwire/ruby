@@ -172,8 +172,8 @@ module Terminalwire::V2
           buffer = +"".b
           loop do
             data, eof = read_chunk
-            buffer << data
-            break if eof
+            buffer << data.b # force binary: chunks may arrive as UTF-8 (msgpack
+            break if eof     # str) or binary (bin); mixing them would raise.
           end
           buffer
         end

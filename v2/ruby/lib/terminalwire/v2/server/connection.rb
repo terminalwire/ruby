@@ -124,7 +124,16 @@ module Terminalwire::V2
         case frame["t"]
         when Protocol::Type::SIGNAL      then on_signal(frame)
         when Protocol::Type::WINDOW_ADJUST
-          [[:event, :window_adjust, { sid: frame["sid"], bytes: frame["bytes"] }]]
+          sid = frame["sid"]
+          bytes = frame["bytes"]
+          # Ignore a malformed grant rather than letting it through: a negative
+          # `bytes` would drive the window negative and permanently stall the
+          # stream, and a non-integer would crash the pump thread (TypeError).
+          if sid.is_a?(Integer) && bytes.is_a?(Integer) && bytes >= 0
+            [[:event, :window_adjust, { sid: sid, bytes: bytes }]]
+          else
+            []
+          end
         when Protocol::Type::DATA        then on_input(frame)
         when Protocol::Type::RESPONSE    then on_response(frame)
         else

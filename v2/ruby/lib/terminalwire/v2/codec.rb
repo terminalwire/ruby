@@ -29,7 +29,10 @@ module Terminalwire::V2
         end
 
       raise ProtocolError, "frame must be a map" unless obj.is_a?(Hash)
-      raise ProtocolError, "frame missing string 't'" unless obj["t"].is_a?(String)
+      # 't' must be a NON-EMPTY type string. Go and Elixir reject "" at the codec;
+      # Ruby used to let it through to the state machine. An empty type is not a
+      # valid frame — reject it here so all three behave identically.
+      raise ProtocolError, "frame missing string 't'" unless obj["t"].is_a?(String) && !obj["t"].empty?
       raise ProtocolError, "frame missing integer 'sid'" unless obj["sid"].is_a?(Integer)
 
       obj
