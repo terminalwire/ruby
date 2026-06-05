@@ -68,9 +68,7 @@ module Terminalwire::V2
       # Route to the Thor adapter or the generic redirect-based runner.
       def dispatch(context, arguments)
         if @cli_class
-          @cli_class.terminalwire(arguments: arguments, context: context) do |cli|
-            yield cli, context if block_given?
-          end
+          @cli_class.terminalwire(arguments: arguments, context: context)
         else
           # Generic path: point the global IO streams at the client, then run the
           # user's callable. OptionParser/GLI/dry-cli/bare puts all Just Work.

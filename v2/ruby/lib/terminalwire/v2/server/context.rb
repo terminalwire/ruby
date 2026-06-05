@@ -28,6 +28,11 @@ module Terminalwire::V2
       # can stay inside the sandbox (e.g. learn where it may persist a file).
       def entitlement = @runtime.entitlement
 
+      # The capability set negotiated for this session — the intersection the
+      # client and server agreed on in the handshake. Branch on this to offer
+      # optional features only when the connected client supports them.
+      def capabilities = @runtime.connection.capabilities
+
       # The client directory this origin may persist files into — its sandbox —
       # derived from the first granted path glob (".../**" -> "..."). Returns nil
       # if no writable path was granted. Used like:
@@ -93,8 +98,10 @@ module Terminalwire::V2
       # Query the client's terminal with a control sequence and return its reply
       # (e.g. cursor-position report "\e[6n" -> "\e[row;colR"). The client writes
       # the query to its tty and reads the terminal's response. Used by advanced
-      # TUI libraries that probe the terminal. Gated by the terminal-query
-      # capability.
+      # TUI libraries that probe the terminal. Support is advertised via the
+      # terminal-query capability (see #capabilities); a client without a tty
+      # answers with an io error. (Enforcement isn't wired yet — this issues the
+      # request regardless — so check #capabilities yourself if that matters.)
       def query_terminal(sequence, timeout: 1.0)
         @runtime.request(:terminal, :query, { "sequence" => sequence.b, "timeout" => timeout })
       end

@@ -4,11 +4,12 @@ module Terminalwire::V2
   module Server
     # Credit-based flow control for server -> client output streams (the SSH /
     # HTTP-2 window model). Each output stream has a window: the number of bytes
-    # the client will accept before the server must wait. #consume is called on
-    # the sending (CLI) thread before emitting a data frame and blocks when the
-    # window is exhausted; #grant is called on the read-pump thread when a
-    # window_adjust arrives and wakes the sender. This is what stops a fast server
-    # from outrunning a slow client and ballooning the transport's buffers.
+    # the client will accept before the server must wait. #reserve is called on
+    # the sending (CLI) thread before emitting a data frame — it blocks only until
+    # *some* credit exists, then takes up to what's asked (so a write larger than
+    # the window can never deadlock); #grant is called on the read-pump thread when
+    # a window_adjust arrives and wakes the sender. This is what stops a fast
+    # server from outrunning a slow client and ballooning the transport's buffers.
     #
     # The core invariant it enforces: at any instant, the bytes the server has
     # sent but not yet had credited never exceed the window the client granted.
@@ -26,23 +27,6 @@ module Terminalwire::V2
       # this class only adds the blocking + thread-safety (the implementation).
       def open(sid, initial)
         @mutex.synchronize { @windows[sid] = Window.new(initial) }
-      end
-
-      # Reserve exactly `bytes` for `sid`, blocking until that much credit exists.
-      # Raises if the connection is shut down while waiting.
-      def consume(sid, bytes)
-        @mutex.synchronize do
-          loop do
-            raise(@error || ProtocolError.new("flow closed")) if @closed
-
-            window = @windows[sid]
-            if window && window.available >= bytes
-              window.take(bytes)
-              return
-            end
-            @cv.wait(@mutex)
-          end
-        end
       end
 
       # Reserve up to `max` bytes for `sid`, blocking only until at least one byte
