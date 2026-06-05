@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
 require "digest"
-require "async"                          # Async::Task / Sync (reactor detection + Falcon path)
-require "async/websocket/adapters/rack"
 require_relative "handler"
 require_relative "../transport/queue"
+# NOTE: the async stack (async, async-websocket) is required lazily, only when a
+# request actually arrives inside an Async reactor (Falcon). Threaded servers
+# (Puma & friends) and the frame parser never load it — see #call / #async_reactor?.
 
 module Terminalwire; end
 module Terminalwire::V2
@@ -30,7 +31,9 @@ module Terminalwire::V2
     #   * Async (Falcon): async-websocket drives the connection in reactor fibers,
     #     bridged to the runtime's threads via a queue + a wake pipe.
     #
-    # Opt-in require — it pulls in async-websocket: require "terminalwire/v2/server/rack".
+    # Opt-in require: require "terminalwire/v2/server/rack". The async stack is
+    # pulled in lazily and only on the Falcon path, so Puma deployments (and the
+    # frame parser in unit tests) never load async/async-websocket at all.
     class Rack
       WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
@@ -44,8 +47,10 @@ module Terminalwire::V2
       def call(env)
         return upgrade_required unless websocket?(env)
 
-        if Async::Task.current?
-          # Async server (Falcon): let async-websocket own the connection.
+        if async_reactor?
+          # Async server (Falcon): let async-websocket own the connection. Pull the
+          # adapter in here — this is the only path that needs the async stack.
+          require "async/websocket/adapters/rack"
           Async::WebSocket::Adapters::Rack.open(env) { |connection| ReactorBridge.new(connection, @handler).run }
         else
           # Threaded server (Puma & friends): hand-roll the upgrade and stream.
@@ -54,6 +59,13 @@ module Terminalwire::V2
       end
 
       private
+
+      # Are we running inside an Async reactor (Falcon)? If the async gem isn't even
+      # loaded we cannot be in a reactor — so this is a threaded server and we never
+      # touch async. defined? short-circuits before Async::Task is referenced.
+      def async_reactor?
+        defined?(Async::Task) && Async::Task.current?
+      end
 
       def websocket?(env)
         env["HTTP_UPGRADE"].to_s.casecmp?("websocket") && env["HTTP_SEC_WEBSOCKET_KEY"]
