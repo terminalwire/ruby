@@ -36,3 +36,18 @@ jobs:
 
     - name: Run RSpec
       run: bundle exec rspec --format documentation
+
+    # Advisory only (never fails the build): surface high-complexity methods in the
+    # v2 lib so a module doesn't quietly turn gnarly. A high flog score isn't
+    # automatically wrong — it's a "give this a look" signal, posted to the summary.
+    - name: Method complexity — v2 lib (flog, advisory)
+      if: always()
+      continue-on-error: true
+      run: |
+        gem install flog --no-document
+        {
+          echo "### Ruby method complexity — v2/ruby/lib (flog, advisory)"
+          echo '```'
+          flog -g v2/ruby/lib | head -30
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"
