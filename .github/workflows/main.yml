@@ -1,5 +1,12 @@
 name: Ruby
 
+# This repo's CI covers the v1 gems (the still-published Thor runtime). The v2
+# server library (v2/ruby) is validated cross-language in terminalwire/protocol's
+# interop matrix (it holds the conformance corpus): `make test` / `make conformance`.
+#
+# NOTE: the old Tebako packaging job was removed — Tebako is no longer how the
+# client ships (the client is the Go binary in terminalwire/cli).
+
 on:
   push:
     branches:
@@ -10,7 +17,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: Ruby ${{ matrix.ruby }}
+    name: Ruby ${{ matrix.ruby }} (v1 gems)
     strategy:
       matrix:
         ruby:
@@ -29,32 +36,3 @@ jobs:
 
     - name: Run RSpec
       run: bundle exec rspec --format documentation
-
-  package:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        ruby:
-          - '3.3.0'
-
-    runs-on: ${{ matrix.os }}
-    name: Package ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ${{ matrix.ruby }}
-          bundler-cache: false
-
-      - name: Install dependencies
-        run: bundle install --jobs 4 --retry 3 --verbose
-
-      - name: Run Tebako
-        run: bundle exec rake package:build
-
-      - name: Upload package
-        uses: actions/upload-artifact@v4
-        with:
-          name: package
-          path: build/*
