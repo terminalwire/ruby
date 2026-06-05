@@ -51,7 +51,7 @@ module Terminalwire::V2
 
         begin
           dispatch(context, arguments)
-        rescue Interrupt
+        rescue Interrupt, Interrupted
           status = 130
         rescue StandardError => e
           status = handle_error(e, context)

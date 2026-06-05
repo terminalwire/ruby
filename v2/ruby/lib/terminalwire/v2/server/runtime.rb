@@ -117,7 +117,7 @@ module Terminalwire::V2
         # race; the interrupt is the user's intent, so it wins (-> exit 130). This
         # makes the outcome deterministic regardless of which arrives first (the
         # async/Falcon bridge could let :closed land before Thread#raise lands).
-        raise Interrupt if @interrupted
+        raise Interrupted if @interrupted
 
         value == :closed ? nil : value
       end
@@ -138,7 +138,7 @@ module Terminalwire::V2
 
         answer = waiter.pop
         # Interrupt wins over a racing connection-closed failure (see read_raw).
-        raise Interrupt if @interrupted
+        raise Interrupted if @interrupted
         raise answer if answer.is_a?(Exception)
 
         unless answer[:ok]
@@ -205,13 +205,18 @@ module Terminalwire::V2
           @terminal.resize(cols: payload[:cols], rows: payload[:rows])
           @on_resize&.call(@terminal)
         when :interrupt
-          # Deliver Ctrl-C into the CLI thread, like a local SIGINT. A blocked
-          # request/read raises Interrupt; the Handler turns it into exit 130.
-          # Set the flag BEFORE raising so a blocked read/request that unblocks via
-          # a racing connection-close still sees the interrupt (see read_raw).
+          # Deliver Ctrl-C into the CLI thread, like a local SIGINT — a blocked
+          # request/read/sleep unwinds and the Handler turns it into exit 130.
+          # Raise Interrupted, NOT Ruby's Interrupt: Interrupt is a SignalException,
+          # and raising one into a thread inside a Falcon worker disturbs the async
+          # reactor and kills the connection before the exit frame can flush (the
+          # client then hangs). A plain Exception subclass interrupts the same
+          # blocking calls without touching Falcon's signal machinery. Set the flag
+          # BEFORE raising so a blocked read/request that unblocks via a racing
+          # connection-close still sees the interrupt (see read_raw).
           @interrupted = true
           begin
-            @cli_thread&.raise(Interrupt)
+            @cli_thread&.raise(Interrupted.new)
           rescue ThreadError
             nil
           end
