@@ -50,14 +50,27 @@ module Terminalwire::V2
         status = 0
 
         begin
-          dispatch(context, arguments)
+          begin
+            dispatch(context, arguments)
+          rescue Interrupt, Interrupted
+            status = 130
+          rescue StandardError => e
+            status = handle_error(e, context)
+          ensure
+            # Teardown must not be interrupted. A late Ctrl-C (delivered as an async
+            # Interrupted via Thread#raise) landing here would abort the exit-frame
+            # write or runtime close and hang the client — the very failure the
+            # interrupt machinery exists to avoid. Mask async interrupts for the
+            # duration so the exit frame always flushes and the runtime always closes.
+            Thread.handle_interrupt(Interrupt => :never, Interrupted => :never) do
+              context.exit(status)
+              runtime.close
+            end
+          end
         rescue Interrupt, Interrupted
+          # An interrupt that fired in a rescue clause above, before the mask took
+          # hold, surfaces here. Teardown still ran in the ensure, so just report it.
           status = 130
-        rescue StandardError => e
-          status = handle_error(e, context)
-        ensure
-          context.exit(status)
-          runtime.close
         end
 
         status

@@ -117,7 +117,7 @@ module Terminalwire::V2
         # race; the interrupt is the user's intent, so it wins (-> exit 130). This
         # makes the outcome deterministic regardless of which arrives first (the
         # async/Falcon bridge could let :closed land before Thread#raise lands).
-        raise Interrupted if @interrupted
+        raise Interrupted if interrupted?
 
         value == :closed ? nil : value
       end
@@ -138,7 +138,7 @@ module Terminalwire::V2
 
         answer = waiter.pop
         # Interrupt wins over a racing connection-closed failure (see read_raw).
-        raise Interrupted if @interrupted
+        raise Interrupted if interrupted?
         raise answer if answer.is_a?(Exception)
 
         unless answer[:ok]
@@ -224,7 +224,7 @@ module Terminalwire::V2
           # blocking calls without touching Falcon's signal machinery. Set the flag
           # BEFORE raising so a blocked read/request that unblocks via a racing
           # connection-close still sees the interrupt (see read_raw).
-          @interrupted = true
+          @lock.synchronize { @interrupted = true }
           begin
             @cli_thread&.raise(Interrupted.new)
           rescue ThreadError
@@ -246,6 +246,13 @@ module Terminalwire::V2
           @signaled = true
         end
         @ready.push(value)
+      end
+
+      # Read the interrupt flag under the lock: it's written on the pump thread and
+      # read on the CLI thread, so it needs a memory barrier on both sides (not just
+      # the GVL) to be visible across threads on every Ruby runtime.
+      def interrupted?
+        @lock.synchronize { @interrupted }
       end
 
       # Unblock every in-flight request so callers don't hang on a dead connection.
