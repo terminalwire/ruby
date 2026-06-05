@@ -27,8 +27,9 @@ maintained.
 
 ## Wiring a Rails (or any Rack) server
 
-`Terminalwire::V2::Server::Handler` runs a Thor CLI over any transport;
-`Server::Session` bridges a callback/event-loop WebSocket (ActionCable, async):
+Write an ordinary Thor CLI and `include Terminalwire::V2::Server::Thor` — that
+reroutes its I/O (`puts`/`ask`/`yes?`/password, and any `tty-*` / `pastel` output)
+to the connected client's terminal:
 
 ```ruby
 class MyCLI < Thor
@@ -39,17 +40,31 @@ class MyCLI < Thor
     say "Deploying for #{ask('environment?')}…"
   end
 end
-
-# In an ActionCable channel (binary frames):
-def subscribed
-  @session = Terminalwire::V2::Server::Session.start(
-    cli_class: MyCLI,
-    on_send:   ->(bytes) { transmit_binary(bytes) }
-  )
-end
-def receive(bytes) = @session.receive(bytes)
-def unsubscribed   = @session&.close
 ```
+
+Then mount the WebSocket endpoint — one line, the whole integration:
+
+```ruby
+require "terminalwire/v2/server/rack"
+
+# config/routes.rb (or any Rack app)
+mount Terminalwire::V2::Server::Rack.new(MyCLI), at: "/terminal"
+```
+
+`Server::Rack` speaks the Rack 3 streaming protocol, so the same line runs on
+**Puma** (threaded) and **Falcon** (async) — it picks the right strategy per
+request and owns the WebSocket upgrade, framing, and per-connection threading
+internally. (`Server::Handler` + the `Transport::Memory`/`Transport::Queue`
+transports are the lower-level seams if you're bridging a different server,
+e.g. an ActionCable channel.)
+
+### Server-side TTY libraries, dropped in
+
+Run `Server.install!` once before loading your TTY libs, then wrap a command body
+in `Server.redirect(context)` and unmodified `tty-table` / `tty-box` / `pastel` /
+… render on the *client's* terminal — they auto-detect its color and width
+(`Pastel.new`, `TTY::Screen.width`) because `$stdout` points at the client. See
+`examples/v2/rails_thor_demo` for a runnable showcase (table, prompts, resize).
 
 ## Capabilities
 
