@@ -51,3 +51,25 @@ jobs:
           flog -g v2/ruby/lib | head -30
           echo '```'
         } >> "$GITHUB_STEP_SUMMARY"
+
+  v2-lib:
+    runs-on: ubuntu-latest
+    name: v2 gem (terminalwire) unit specs
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.3.0'
+        bundler-cache: false
+    # The v2 gem's own RSpec suite: sans-IO protocol core (codec/frames/negotiator/
+    # window) at ~96% line / ~88% branch, plus the conformance runner driven over a
+    # local seed corpus (spec/corpus/vectors). It narrowly-requires the protocol bits,
+    # so the async stack never loads. The full cross-impl corpus runs in
+    # terminalwire/protocol's interop matrix (set TERMINALWIRE_CORPUS to point here).
+    - name: Install v2 gem dependencies
+      working-directory: v2/ruby
+      run: bundle install --jobs 4 --retry 3
+    - name: Run v2 RSpec
+      working-directory: v2/ruby
+      run: bundle exec rspec --format documentation
