@@ -20,6 +20,12 @@ module Terminalwire::Server
     def_delegators :@stdout, :puts, :print
     def_delegators :@stdin, :gets, :getpass
 
+    # Direct stderr write, matching the v2 context's I/O surface so one Thor adapter
+    # (Terminalwire::V2::Server.dualize) can route `context.warn` over either protocol.
+    def warn(data = "")
+      @stderr.puts(data)
+    end
+
     def initialize(adapter:, entitlement:)
       @adapter = adapter
       @entitlement = entitlement
