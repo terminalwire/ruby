@@ -202,6 +202,7 @@ module Terminalwire::V2
       class Directory
         def initialize(runtime) = @runtime = runtime
         def list(path)          = @runtime.request(:directory, :list, { "path" => path.to_s })
+        alias_method :ls, :list # v1 commands call `directory.ls`; same op, no protocol change
         def create(path)        = @runtime.request(:directory, :create, { "path" => path.to_s })
         def exist?(path)        = @runtime.request(:directory, :exist, { "path" => path.to_s })
         def delete(path)        = @runtime.request(:directory, :delete, { "path" => path.to_s })
