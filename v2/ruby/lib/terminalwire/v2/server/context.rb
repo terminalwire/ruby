@@ -197,6 +197,9 @@ module Terminalwire::V2
         def append(path, content) = @runtime.request(:file, :append, { "path" => path.to_s, "content" => content })
         def delete(path)          = @runtime.request(:file, :delete, { "path" => path.to_s })
         def exist?(path)          = @runtime.request(:file, :exist, { "path" => path.to_s })
+        # chmod the file to `mode` (an integer like 0o755). The client requires an
+        # rw grant on the path and rejects a missing mode.
+        def change_mode(path, mode) = @runtime.request(:file, :change_mode, { "path" => path.to_s, "mode" => mode })
       end
 
       class Directory
