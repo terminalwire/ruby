@@ -1,0 +1,42 @@
+# Negotiation vectors: handshake inputs -> the agreed decision. Replayed against
+# Negotiator.negotiate in every implementation.
+- name: same version, overlapping capabilities
+  client_protocol: 2
+  client_capabilities: [stdio, file, flow]
+  server_min: 2
+  server_max: 2
+  server_capabilities: [stdio, flow]
+  decision: welcome
+  protocol: 2
+  capabilities: [stdio, flow]
+
+- name: client newer than server caps to server_max
+  client_protocol: 9
+  client_capabilities: [stdio]
+  server_min: 1
+  server_max: 4
+  server_capabilities: [stdio, file]
+  decision: welcome
+  protocol: 4
+  capabilities: [stdio]
+
+- name: disjoint capabilities still welcome
+  client_protocol: 2
+  client_capabilities: [browser]
+  server_min: 2
+  server_max: 2
+  server_capabilities: [stdio]
+  decision: welcome
+  protocol: 2
+  capabilities: []
+
+- name: client too old is incompatible
+  client_protocol: 1
+  client_capabilities: [stdio]
+  server_min: 2
+  server_max: 4
+  server_capabilities: [stdio]
+  decision: incompatible
+  supported:
+    min: 2
+    max: 4

@@ -1,0 +1,31 @@
+# Round-trip vectors: a frame must survive encode -> decode unchanged. Exercises
+# the same frames as JSON to prove the loader handles both extensions.
+- name: request frame
+  frame:
+    t: request
+    sid: 5
+    resource: file
+    method: read
+    params:
+      path: /tmp/x
+
+- name: response ok
+  frame:
+    t: response
+    sid: 5
+    ok: true
+    value: 42
+
+- name: open with mode
+  frame:
+    t: open
+    sid: 7
+    stream: stdin-raw
+    mode: raw
+
+- name: data with binary sentinel
+  frame:
+    t: data
+    sid: 9
+    bytes:
+      $bin: "AP8A"

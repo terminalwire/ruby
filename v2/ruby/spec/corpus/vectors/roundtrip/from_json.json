@@ -1,0 +1,10 @@
+[
+  {
+    "name": "signal resize (json)",
+    "frame": { "t": "signal", "sid": 0, "name": "resize", "cols": 80, "rows": 24 }
+  },
+  {
+    "name": "exit nonzero (json)",
+    "frame": { "t": "exit", "sid": 0, "status": 130 }
+  }
+]

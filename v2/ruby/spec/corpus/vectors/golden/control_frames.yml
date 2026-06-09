@@ -1,0 +1,43 @@
+# Golden vectors: a frame's canonical wire shape -> its exact MessagePack bytes.
+# The conformance runner asserts Codec.encode(frame) == hex_to_bytes(bytes_hex)
+# and that decode(bytes) round-trips back to the frame. Shared across impls.
+#
+# `bytes` payloads use the { "$bin": base64 } sentinel so the loader resolves them
+# to binary strings (Conformance.resolve), exercising the typed-sentinel path.
+- name: exit ok
+  frame:
+    t: exit
+    sid: 0
+    status: 0
+  bytes_hex: "83 a1 74 a4 65 78 69 74 a3 73 69 64 00 a6 73 74 61 74 75 73 00"
+
+- name: close stream 1
+  frame:
+    t: close
+    sid: 1
+  bytes_hex: "82 a1 74 a5 63 6c 6f 73 65 a3 73 69 64 01"
+
+- name: window_adjust 4096
+  frame:
+    t: window_adjust
+    sid: 2
+    bytes: 4096
+  bytes_hex: "83 a1 74 ad 77 69 6e 64 6f 77 5f 61 64 6a 75 73 74 a3 73 69 64 02 a5 62 79 74 65 73 cd 10 00"
+
+- name: data binary payload
+  frame:
+    t: data
+    sid: 3
+    bytes:
+      $bin: "aGk="
+  bytes_hex: "83 a1 74 a4 64 61 74 61 a3 73 69 64 03 a5 62 79 74 65 73 c4 02 68 69"
+
+- name: welcome with capabilities
+  frame:
+    t: welcome
+    sid: 0
+    protocol: 2
+    capabilities:
+      - stdio
+      - flow
+  bytes_hex: "84 a1 74 a7 77 65 6c 63 6f 6d 65 a3 73 69 64 00 a8 70 72 6f 74 6f 63 6f 6c 02 ac 63 61 70 61 62 69 6c 69 74 69 65 73 92 a5 73 74 64 69 6f a4 66 6c 6f 77"
