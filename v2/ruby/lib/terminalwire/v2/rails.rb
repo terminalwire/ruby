@@ -4,6 +4,22 @@ require "terminalwire/v2"                  # full v2 server (runtime, handler, �
 require "terminalwire/v2/server/rack"      # the v2 Rack endpoint
 require "terminalwire/v2/server/dual_thor" # one Thor CLI, both protocols
 
+# Rails `session` parity (v1 -> v2 with NO Thor app changes). v1's Rails shell
+# (Terminalwire::Rails::Thor::Shell) exposes a JWT-backed `session`; the plain v2
+# shell doesn't — so unchanged v1 Thor code that touches `session` (current_user,
+# whoami, login) raised NoMethodError over v2. Reopen the v2 shell to provide the
+# SAME session, backed by the protocol-agnostic context (file/directory/storage_path,
+# which v2 implements identically). PUBLIC, not protected: Ruby 4's Forwardable —
+# used by the v1 `def_delegators :shell, :session` — refuses to forward to a
+# non-public method (the "forwarding to private method" warning is now a hard error).
+# Terminalwire::Rails::Session is referenced lazily so this file needn't hard-depend
+# on the v1 rails gem at load (it's present at call time in a dual-transition app).
+Terminalwire::V2::Server::Thor::Shell.class_eval do
+  def session
+    @session ||= ::Terminalwire::Rails::Session.new(context: context)
+  end
+end
+
 module Terminalwire
   module V2
     # Drop-in Rails integration for serving a Terminalwire CLI over BOTH the v1
