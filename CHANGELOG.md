@@ -47,6 +47,28 @@ with v1 over the same endpoint** so existing apps keep working unchanged.
 - **`directory.ls`** alias on the v2 context (rides the existing `directory.list`
   op) so v1-era command code that calls `client.directory.ls` runs unchanged.
 
+### Distribution & updates
+
+The client ships, installs, and keeps itself current with no work from the app or
+its users — the evergreen story end to end:
+
+- **Channels** (`alpha` → `beta` → `stable`) are plain path segments on a static
+  public bucket (`channels/<channel>/{manifest.json,<os-arch>.tar.gz}`). Promotion
+  copies the **exact** signed artifact up the ladder, so what bakes in alpha is
+  byte-for-byte what reaches stable.
+- **Install picks a channel from the URL path** — `curl <app>.terminalwire.sh/alpha
+  | bash`. Channels are v2-only, so the path implies v2 (no header). A bare
+  `curl … | bash` stays the unchanged v1 install until v2 is GA. The path pins a
+  *channel*, never a version; a fresh install always takes the channel's latest.
+- **Background auto-update** — a detached worker (throttled, swap-on-next-launch)
+  keeps the binary current without ever blocking or disrupting a session; **forced
+  upgrade + re-exec** only when a server requires a newer protocol. Verified live:
+  an old install ran its session immediately while the worker swapped binaries
+  underneath it.
+- **Operator tooling** (vendor side): `release.sh` (cut + sign a build to a
+  channel), `promote.sh` (copy + re-sign up the ladder, no rebuild), `channels.sh`
+  (status). Signing keys live offline in 1Password; the bucket never holds a key.
+
 ### Compatibility
 
 - **v1 and v2 coexist over the same `/terminal` endpoint**, distinguished by the
