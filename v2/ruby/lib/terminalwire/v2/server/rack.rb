@@ -46,17 +46,20 @@ module Terminalwire::V2
 
       def call(env)
         return upgrade_required unless websocket?(env)
+        # The request host — threaded into the session so server-side URL helpers
+        # (login, `browser open`, license) can build absolute URLs, as v1 did.
+        host = env["HTTP_HOST"]
 
         if async_reactor?
           # Async server (Falcon): let async-websocket own the connection. Pull the
           # adapter in here — this is the only path that needs the async stack.
           # :nocov: Falcon transport wiring — exercised live by the conformance suite, not units.
           require "async/websocket/adapters/rack"
-          Async::WebSocket::Adapters::Rack.open(env) { |connection| ReactorBridge.new(connection, @handler).run }
+          Async::WebSocket::Adapters::Rack.open(env) { |connection| ReactorBridge.new(connection, @handler, host: host).run }
           # :nocov:
         else
           # Threaded server (Puma & friends): hand-roll the upgrade and stream.
-          [101, upgrade_headers(env), ThreadBridge.new(@handler)]
+          [101, upgrade_headers(env), ThreadBridge.new(@handler, host: host)]
         end
       end
 
@@ -203,8 +206,9 @@ module Terminalwire::V2
       # blocking socket after the 101; it runs the CLI on its own thread and pumps
       # the socket on another, then returns so the web server can reuse the worker.
       class ThreadBridge
-        def initialize(handler)
+        def initialize(handler, host: nil)
           @handler = handler
+          @host = host
         end
 
         # :nocov: blocking-socket threading — exercised live by the conformance suite, not units.
@@ -217,7 +221,7 @@ module Terminalwire::V2
             sink: ->(bytes) { write_lock.synchronize { stream.write(Frame.binary(bytes)) } }
           )
 
-          cli = Thread.new { @handler.call(transport: transport) }
+          cli = Thread.new { @handler.call(transport: transport, host: @host) }
 
           Thread.new do
             loop do
@@ -260,9 +264,10 @@ module Terminalwire::V2
       class ReactorBridge
         JOIN_TIMEOUT = 2
 
-        def initialize(connection, handler)
+        def initialize(connection, handler, host: nil)
           @connection = connection
           @handler = handler
+          @host = host
         end
 
         # :nocov: reactor-fiber bridge — exercised live by the conformance suite, not units.
@@ -273,7 +278,7 @@ module Terminalwire::V2
             outbox = ::Queue.new # Thread::Queue: thread-safe + fiber-scheduler aware
             transport = Transport::Queue.new(sink: ->(bytes) { outbox << bytes })
 
-            cli = Thread.new { @handler.call(transport: transport) }
+            cli = Thread.new { @handler.call(transport: transport, host: @host) }
 
             writer = task.async do
               # pop blocks the fiber until the CLI thread pushes (cross-thread wakeup

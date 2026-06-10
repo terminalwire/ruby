@@ -32,8 +32,27 @@ module Terminalwire
         Terminalwire::V2::Server.dualize(cli)
         Dispatcher.new(
           v1: v1 || default_v1(cli),
-          v2: v2 || Terminalwire::V2::Server::Rack.new(cli)
+          v2: v2 || Terminalwire::V2::Server::Rack.new(cli, verbose: verbose?, report: report)
         )
+      end
+
+      # In dev/test, show the full backtrace to the client (consider_all_requests_local,
+      # like v1). In production the client sees the generic message — but the real
+      # exception is still LOGGED + reported (below), never silently swallowed.
+      def self.verbose?
+        ::Rails.application.config.consider_all_requests_local
+      rescue StandardError
+        false
+      end
+
+      # Log + report unexpected command errors to Rails (mirrors the v1 handler).
+      # Without this the v2 Handler drops the exception on the floor behind the
+      # generic message, which is exactly what made the missing-host bug hard to find.
+      def self.report
+        lambda do |error|
+          ::Rails.error.report(error, handled: true) if ::Rails.respond_to?(:error)
+          ::Rails.logger&.error("terminalwire: #{error.class}: #{error.message}\n#{Array(error.backtrace).join("\n")}")
+        end
       end
 
       # Lazily resolve the v1 handler so this gem doesn't hard-depend on the v1

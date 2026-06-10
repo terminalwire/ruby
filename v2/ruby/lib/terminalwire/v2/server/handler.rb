@@ -43,7 +43,10 @@ module Terminalwire::V2
       end
 
       # Run one session over the given transport. Returns the exit status.
-      def call(transport:)
+      # `host` is the request's HTTP host (from the Rack env), threaded in so
+      # server-side URL helpers (login, `browser open`, …) can build absolute URLs —
+      # the v1 handler set `cli.default_url_options[:host]` the same way.
+      def call(transport:, host: nil)
         runtime = Runtime.new(transport: transport).handshake
         context = Context.new(runtime)
         arguments = context.program_arguments
@@ -51,7 +54,7 @@ module Terminalwire::V2
 
         begin
           begin
-            dispatch(context, arguments)
+            dispatch(context, arguments, host)
           rescue Interrupt, Interrupted
             status = 130
           rescue StandardError => e
@@ -78,10 +81,14 @@ module Terminalwire::V2
 
       private
 
-      # Route to the Thor adapter or the generic redirect-based runner.
-      def dispatch(context, arguments)
+      # Route to the Thor adapter or the generic redirect-based runner. `host`, when
+      # present, is set on the per-session Thor instance so Rails URL helpers resolve
+      # (instance-level, like v1 — no shared class-global to race across sessions).
+      def dispatch(context, arguments, host = nil)
         if @cli_class
-          @cli_class.terminalwire(arguments: arguments, context: context)
+          @cli_class.terminalwire(arguments: arguments, context: context) do |cli|
+            cli.default_url_options[:host] = host if host && cli.respond_to?(:default_url_options)
+          end
         else
           # Generic path: point the global IO streams at the client, then run the
           # user's callable. OptionParser/GLI/dry-cli/bare puts all Just Work.
