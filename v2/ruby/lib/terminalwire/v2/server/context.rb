@@ -11,6 +11,26 @@ module Terminalwire::V2
         @runtime = runtime
         @stdout_sid = nil
         @stderr_sid = nil
+        @request = {}
+      end
+
+      # The incoming HTTP connection profile, captured at the WebSocket upgrade
+      # (the Rack adapter sets it): { host:, ip:, user_agent:, headers: }. The
+      # client identifies itself in headers — chiefly a real User-Agent — so server
+      # code can see who connected (and a `terminalwire about` can light it up).
+      attr_accessor :request
+
+      # The client's real IP (through Fly/proxies), its User-Agent, and the raw
+      # incoming HTTP headers. nil/empty when unknown (e.g. non-HTTP transports).
+      def remote_ip   = @request[:ip]
+      def user_agent  = @request[:user_agent]
+      def http_headers = @request[:headers] || {}
+
+      # The client build version, parsed from the User-Agent
+      # ("terminalwire-exec/<version> (…)"). The version is a client-reported fact
+      # in a header, never derived from the URL. nil if the client sent no UA.
+      def client_version
+        user_agent && user_agent[%r{terminalwire-exec/(\S+)}, 1]
       end
 
       # The client's live terminal (rows/cols/tty?/color?), kept current by the

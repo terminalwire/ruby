@@ -43,18 +43,20 @@ module Terminalwire::V2
       end
 
       # Run one session over the given transport. Returns the exit status.
-      # `host` is the request's HTTP host (from the Rack env), threaded in so
-      # server-side URL helpers (login, `browser open`, …) can build absolute URLs —
-      # the v1 handler set `cli.default_url_options[:host]` the same way.
-      def call(transport:, host: nil)
+      # `request` is the incoming HTTP connection profile from the Rack env
+      # ({ host:, ip:, user_agent:, headers: }) — threaded in so URL helpers can use
+      # the host (v1 set `cli.default_url_options[:host]` the same way) and so server
+      # code / `about` can see who connected.
+      def call(transport:, request: {})
         runtime = Runtime.new(transport: transport).handshake
         context = Context.new(runtime)
+        context.request = request
         arguments = context.program_arguments
         status = 0
 
         begin
           begin
-            dispatch(context, arguments, host)
+            dispatch(context, arguments, request[:host])
           rescue Interrupt, Interrupted
             status = 130
           rescue StandardError => e
