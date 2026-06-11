@@ -5,6 +5,7 @@
 # can see who connected. The client identifies itself in HEADERS (a real
 # User-Agent), never in the URL; client_version is parsed from that UA.
 require "terminalwire/v2"
+require "terminalwire/v2/server/rack" # not pulled by terminalwire/v2 (async stack is lazy)
 
 RSpec.describe "v2 context connection profile" do
   def ctx(request)
