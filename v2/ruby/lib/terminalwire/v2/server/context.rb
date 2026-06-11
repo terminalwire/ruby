@@ -65,13 +65,14 @@ module Terminalwire::V2
         glob && glob.sub(%r{/\*\*\z}, "")
       end
 
-      # The Terminalwire root on the client (~/.terminalwire) as a SYMBOLIC tilde
-      # path — the client expands `~` and enforces it against the grant, so the
-      # server never needs the absolute home. Used by management commands (apps,
-      # install, list) to address bin/. Only the privileged terminalwire.com origin
-      # is granted ~/.terminalwire/bin/** (seeded by the installer); other origins
-      # get a "denied" they can act on. It's a tilde constant, not a learned fact.
-      def root_path = Pathname.new("~/.terminalwire")
+      # The server-manageable root on the client — the USER subtree
+      # (~/.terminalwire/usr), so binary_path = root_path/bin = ~/.terminalwire/usr/bin
+      # (installed app launchers). It deliberately does NOT point at ~/.terminalwire:
+      # the system bin (the terminalwire-exec engine) and the control dir (authorities)
+      # live above this and are off-limits — a server can't reach them even with a
+      # grant. A SYMBOLIC tilde path the client expands + enforces; only the privileged
+      # terminalwire.com origin is granted ~/.terminalwire/usr/bin/** (installer-seeded).
+      def root_path = Pathname.new("~/.terminalwire/usr")
 
       # Register a callback fired when the client's window resizes.
       def on_resize(&block) = @runtime.on_resize(&block)
