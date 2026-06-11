@@ -32,4 +32,22 @@ RSpec.describe "v2 context connection profile" do
     expect(c.user_agent).to be_nil
     expect(c.http_headers).to eq({})
   end
+
+  describe "header allowlist (sane client headers, no infra chrome)" do
+    subject(:rack) { Terminalwire::V2::Server::Rack.new(Class.new) }
+
+    it "keeps standard client headers, drops Fly/proxy/handshake noise" do
+      headers = rack.send(:http_headers, {
+        "HTTP_USER_AGENT"             => "terminalwire-exec/2.0.1",
+        "HTTP_HOST"                   => "terminalwire.com",
+        "HTTP_SEC_WEBSOCKET_PROTOCOL" => "terminalwire.v2",
+        "HTTP_FLY_CLIENT_IP"          => "1.2.3.4",
+        "HTTP_X_FORWARDED_FOR"        => "1.2.3.4, 5.6.7.8",
+        "HTTP_VIA"                    => "1.1 fly.io",
+        "HTTP_X_REQUEST_START"        => "t=123",
+        "HTTP_SEC_WEBSOCKET_KEY"      => "nonce==",
+      })
+      expect(headers.keys).to contain_exactly("User-Agent", "Host", "Sec-Websocket-Protocol")
+    end
+  end
 end

@@ -86,11 +86,23 @@ module Terminalwire::V2
         env["HTTP_FLY_CLIENT_IP"] || (fwd && fwd.split(",").first&.strip) || env["REMOTE_ADDR"]
       end
 
-      # Rack's HTTP_* env keys -> human header names (HTTP_USER_AGENT -> User-Agent).
+      # The client/connection headers worth surfacing — standard request headers,
+      # not infra chrome. Everything else (Fly-*, X-Forwarded-*, Via, X-Request-*,
+      # the WS handshake nonce/mechanics) is proxy/transport noise and is dropped;
+      # the real client IP is still recovered separately (see #client_ip). Matched
+      # case-insensitively. Allowlist (not denylist) so new proxy headers can't leak in.
+      ALLOWED_HEADERS = %w[
+        user-agent host origin accept accept-language accept-encoding
+        sec-websocket-protocol sec-websocket-version
+      ].freeze
+
+      # Rack's HTTP_* env keys -> human header names (HTTP_USER_AGENT -> User-Agent),
+      # filtered to the allowlist above.
       def http_headers(env)
         env.each_with_object({}) do |(k, v), h|
           next unless k.is_a?(String) && k.start_with?("HTTP_")
-          h[k.sub(/\AHTTP_/, "").split("_").map(&:capitalize).join("-")] = v
+          name = k.sub(/\AHTTP_/, "").split("_").map(&:capitalize).join("-")
+          h[name] = v if ALLOWED_HEADERS.include?(name.downcase)
         end
       end
 
