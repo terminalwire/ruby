@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "pathname"
+
 module Terminalwire::V2
   module Server
     # The server's handle on the client's machine. CLI code calls these methods
@@ -62,6 +64,14 @@ module Terminalwire::V2
         glob = entitlement && entitlement.dig("paths", 0, "glob")
         glob && glob.sub(%r{/\*\*\z}, "")
       end
+
+      # The Terminalwire root on the client (~/.terminalwire) as a SYMBOLIC tilde
+      # path — the client expands `~` and enforces it against the grant, so the
+      # server never needs the absolute home. Used by management commands (apps,
+      # install, list) to address bin/. Only the privileged terminalwire.com origin
+      # is granted ~/.terminalwire/bin/** (seeded by the installer); other origins
+      # get a "denied" they can act on. It's a tilde constant, not a learned fact.
+      def root_path = Pathname.new("~/.terminalwire")
 
       # Register a callback fired when the client's window resizes.
       def on_resize(&block) = @runtime.on_resize(&block)

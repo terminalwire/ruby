@@ -34,6 +34,13 @@ RSpec.describe "v2 context connection profile" do
     expect(c.http_headers).to eq({})
   end
 
+  it "root_path is the symbolic tilde root the client expands (for apps/install/list)" do
+    c = ctx({})
+    expect(c.root_path.to_s).to eq "~/.terminalwire"
+    expect(c.root_path.join("bin").to_s).to eq "~/.terminalwire/bin"        # binary_path
+    expect(c.root_path.join("bin", "twdemo").to_s).to eq "~/.terminalwire/bin/twdemo"
+  end
+
   describe "header allowlist (sane client headers, no infra chrome)" do
     subject(:rack) { Terminalwire::V2::Server::Rack.new(Class.new) }
 

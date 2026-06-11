@@ -45,4 +45,15 @@ RSpec.describe Terminalwire::V2::Server::Handler do
     handler = described_class.new(cli_class: cli_yielding(plain))
     expect { handler.send(:dispatch, Object.new, [], "terminalwire.com") }.not_to raise_error
   end
+
+  it "renders a denied ResponseError as an actionable grant message, not the generic one" do
+    warned = []
+    ctx = Object.new
+    ctx.define_singleton_method(:warn) { |m| warned << m }
+    handler = described_class.new(cli_class: cli_yielding(url_helpered_instance))
+    denied = Terminalwire::V2::ResponseError.new("denied", "path not permitted: ~/.terminalwire/bin/x")
+    expect(handler.send(:handle_error, denied, ctx)).to eq 1
+    expect(warned.first).to include("terminalwire-policy")
+    expect(warned.first).not_to include("An error occurred")
+  end
 end

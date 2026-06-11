@@ -101,15 +101,27 @@ module Terminalwire::V2
       end
 
       def handle_error(error, context)
+        # A denied resource op means the client refused the grant: show an actionable
+        # message (the client also prints the exact `terminalwire-policy … --approve`
+        # locally) instead of the scary generic one — and don't report it (it's a
+        # consent decision, not a bug).
+        if denied_error?(error)
+          context.warn("Terminalwire couldn't manage your install — it needs filesystem " \
+                       "access you haven't granted (#{error.message}). Your client printed " \
+                       "the `terminalwire-policy … --approve` command to grant it.")
         # Thor's own user-facing errors (unknown command, bad args) are friendly
         # already — pass them through verbatim. OptionParser's are too.
-        if friendly_error?(error)
+        elsif friendly_error?(error)
           context.warn(error.message)
         else
           @report&.call(error)
           context.warn(@verbose ? backtrace(error) : @error_message)
         end
         1
+      end
+
+      def denied_error?(error)
+        error.is_a?(ResponseError) && error.code == "denied"
       end
 
       def friendly_error?(error)
