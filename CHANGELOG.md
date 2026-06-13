@@ -69,6 +69,32 @@ its users — the evergreen story end to end:
   channel), `promote.sh` (copy + re-sign up the ladder, no rebuild), `channels.sh`
   (status). Signing keys live offline in 1Password; the bucket never holds a key.
 
+### Client architecture & sandbox
+
+- **One binary.** The client is a single `terminalwire-exec` — engine + update
+  worker + `setup`/`install`/`update`/`policy`/`--version`. The `terminalwire`
+  command is a YAML stub and `terminalwire-policy` a symlink to it. So an update is
+  a single atomic file swap, not a fleet of binaries to keep in lockstep.
+- **System vs user dirs.** `~/.terminalwire/bin` (the engine, the stub, the symlink)
+  is the SYSTEM dir — higher PATH precedence and **never** covered by a server
+  grant. Installed app launchers live in `~/.terminalwire/usr/bin` (the only path a
+  grant covers, `usr/bin/**`). A server can manage launchers but can never reach,
+  shadow, or overwrite the engine.
+- **terminalwire's own files are sacrosanct.** No server-driven op — whatever the
+  grant — may write the engine, the stubs, or the control files (`policy`/`origin`).
+  Enforced in `PermitPath`, with a belt-and-suspenders check that a server can never
+  write the running binary.
+- **Baked management grant.** The `terminalwire.com → usr/bin` grant is compiled
+  into the engine (not a seeded file), so it's present with no policy file and can't
+  be stripped by one — honestly standing, changed only by shipping a new client.
+- **`terminalwire about`** surfaces the live connection — the client identifies
+  itself with a real `User-Agent` on the WebSocket upgrade (version, platform,
+  channel, protocol), and the server reads the full incoming profile (IP, a curated
+  header allowlist) at the upgrade.
+- **Self-management is self-hosting.** `terminalwire` is itself a Terminalwire app
+  (the stub → terminalwire.com); `apps`/`install`/`list`/`about` run server-side
+  over the wire under the baked grant — same protocol any app uses.
+
 ### Compatibility
 
 - **v1 and v2 coexist over the same `/terminal` endpoint**, distinguished by the

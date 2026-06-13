@@ -62,10 +62,12 @@ jobs:
       with:
         ruby-version: '3.3.0'
         bundler-cache: false
-    # The v2 gem's own RSpec suite: sans-IO protocol core (codec/frames/negotiator/
-    # window) at ~96% line / ~88% branch, plus the conformance runner driven over a
-    # local seed corpus (spec/corpus/vectors). It narrowly-requires the protocol bits,
-    # so the async stack never loads. The full cross-impl corpus runs in
+    # The v2 gem's own RSpec suite: the sans-IO protocol core (codec/frames/
+    # negotiator/window) + the conformance runner over a local seed corpus
+    # (spec/corpus/vectors), PLUS the server-runtime specs (spec/server: handler URL
+    # host, Rails session, connection profile / header allowlist, the baked
+    # management grant, system-bin lockdown). The async stack stays lazy (loaded only
+    # on the Falcon path), so it never loads here. The full cross-impl corpus runs in
     # terminalwire/protocol's interop matrix (set TERMINALWIRE_CORPUS to point here).
     - name: Install v2 gem dependencies
       working-directory: v2/ruby
