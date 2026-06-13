@@ -137,10 +137,10 @@ terminal resize, credit-based flow control, and a self-updating client.
 
 ### One difference worth knowing
 
-In v2, **`setup` and `install` run client-side, in the Go binary** (`terminalwire
-setup`, `terminalwire install <app> <url>`) — the thin client does its own local
-filesystem work. In v1 those ran server-side, driving the client's filesystem over
-the wire. So the server-side `MainTerminal` `setup`/`install` commands are a v1
+In v2, the **bootstrap `setup` and `install` run client-side, in the engine binary**
+(`terminalwire-exec setup`, `terminalwire-exec install <app> <url>`) — the thin
+client does its own local filesystem work. In v1 those ran server-side, driving the
+client's filesystem over the wire. So the server-side `MainTerminal` `setup`/`install` commands are a v1
 flow; v2 apps install locally. Everything else (your app's own commands, I/O,
 prompts, `apps`, `tree`, `help`) runs the same over both.
 
