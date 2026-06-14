@@ -34,6 +34,13 @@ jobs:
     - name: Install dependencies
       run: bundle install --jobs 4 --retry 3 --verbose
 
+    # The fullstack specs (spec/fullstack) build a Docker image that COPYs the
+    # built gem packages (gem/*/pkg/*.gem). Build them first, or the COPY glob is
+    # empty and `docker build` fails. (Runs locally for free since they're usually
+    # already built; on a clean CI checkout pkg/ is empty until this step.)
+    - name: Build v1 gem packages
+      run: bundle exec rake gem:build
+
     - name: Run RSpec
       run: bundle exec rspec --format documentation
 
