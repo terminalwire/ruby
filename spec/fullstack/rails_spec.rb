@@ -31,36 +31,36 @@ RSpec.describe "Terminalwire Install", type: :system do
   end
 
   it "runs Terminalwire client against server" do
-    console do
-      it.puts "#{BINARY_NAME} hello World"
-      expect(it.gets).to include("Hello World")
+    console do |repl|
+      repl.puts "#{BINARY_NAME} hello World"
+      expect(repl.gets).to include("Hello World")
     end
   end
 
   it "logs in successfully" do
-    console do
-      it.puts "#{BINARY_NAME} login"
-      it.expect "Email: "
-      it.puts "brad@example.com"
-      it.expect "Password: "
-      it.puts "password123"
-      expect(it.gets).to include("Successfully logged in as brad@example.com.")
+    console do |repl|
+      repl.puts "#{BINARY_NAME} login"
+      repl.expect "Email: "
+      repl.puts "brad@example.com"
+      repl.expect "Password: "
+      repl.puts "password123"
+      expect(repl.gets).to include("Successfully logged in as brad@example.com.")
     end
   end
 
   it "runs default task with no arguments" do
-    console do
-      it.puts "#{BINARY_NAME}"
-      expect(it.expect("Commands:")).to include("Commands:")
+    console do |repl|
+      repl.puts "#{BINARY_NAME}"
+      expect(repl.expect("Commands:")).to include("Commands:")
     end
   end
 
   it "prints stack trace" do
-    console do
-      it.puts "#{BINARY_NAME} integration exception"
+    console do |repl|
+      repl.puts "#{BINARY_NAME} integration exception"
       # The `gsub` normalizes the line endings from the HEREDOC to
       # match how PTY/stdio changes the line endings.
-      expect(it.gets).to include <<~ERROR.gsub(/\n/, "\r\n")
+      expect(repl.gets).to include <<~ERROR.gsub(/\n/, "\r\n")
         RuntimeError (An exception occurred)
 
         /rails/app/terminal/integration_terminal.rb:4:in `exception'
