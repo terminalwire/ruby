@@ -34,16 +34,14 @@ jobs:
     - name: Install dependencies
       run: bundle install --jobs 4 --retry 3 --verbose
 
-    # Run everything EXCEPT the heavy fullstack docker E2E tier (spec/fullstack):
-    # it boots a containerized v1 Rails server and drives the client through a PTY,
-    # which is environment-fragile in CI — a legacy v1 threading issue ("Attempt to
-    # unlock a mutex which is not locked") surfaces there, and this tier has never
-    # been green in CI. It stays runnable locally / on demand:
-    #   bundle exec rake gem:build && bundle exec rspec spec/fullstack
-    # The unit + integration + package tiers (and the separate v2 gem job below) are
-    # the gate.
+    # The fullstack specs (spec/fullstack) build a Docker image that COPYs the built
+    # gem packages (gem/*/pkg/*.gem), so build them first or the COPY glob is empty
+    # and `docker build` fails.
+    - name: Build v1 gem packages
+      run: bundle exec rake gem:build
+
     - name: Run RSpec
-      run: bundle exec rspec --format documentation --exclude-pattern "spec/fullstack/**/*_spec.rb"
+      run: bundle exec rspec --format documentation
 
     # Advisory only (never fails the build): surface high-complexity methods in the
     # v2 lib so a module doesn't quietly turn gnarly. A high flog score isn't

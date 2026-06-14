@@ -115,10 +115,12 @@ module Terminalwire::Client::Resource
     def print(data:)
       @io.print(data)
       @io.flush
+      nil # IO#flush returns the IO; the response is msgpack'd, so never return non-serializable objects
     end
 
     def print_line(data:)
       @io.puts(data)
+      nil
     end
 
     protected
