@@ -4,8 +4,9 @@ This is the **open-source Ruby server runtime** for Terminalwire v2. It lets a
 Ruby/Rails app expose a CLI that streams terminal I/O to the Terminalwire client
 over a single multiplexed WebSocket — no web API required.
 
-It is one implementation of the Terminalwire v2 protocol; more servers are
-planned (Elixir next). The protocol spec, conformance suite, and the proprietary
+It is one implementation of the Terminalwire v2 protocol — the Go client, this
+Ruby server, and an **Elixir** server all speak it, validated by a shared
+conformance corpus. The protocol spec, conformance suite, and the proprietary
 client live in separate repositories:
 
 - **Protocol spec + conformance suite** — `terminalwire/protocol` (private)
@@ -57,6 +58,42 @@ request and owns the WebSocket upgrade, framing, and per-connection threading
 internally. (`Server::Handler` + the `Transport::Memory`/`Transport::Queue`
 transports are the lower-level seams if you're bridging a different server,
 e.g. an ActionCable channel.)
+
+### Any parser, or none
+
+Thor is the easy path (`Rack.new(MyThorCLI)`), but you can use **any** CLI library —
+or none. For `OptionParser`, GLI, dry-cli, or hand-rolled parsing, give the handler
+a `run:` block instead of a Thor class; it runs inside `Server.redirect`, so
+`$stdout` / `$stderr` / `$stdin` (and bare `puts`/`gets`/`warn`) already target the
+client:
+
+```ruby
+handler = Terminalwire::V2::Server::Handler.new(run: ->(ctx, args) do
+  opts = {}
+  OptionParser.new { |o| o.on("--env ENV") { |v| opts[:env] = v } }.parse!(args)
+  puts "Deploying to #{opts[:env]}…"   # bare puts → the client (so does warn → stderr)
+end)
+```
+
+Unlike Elixir (where only stdout flows through the group leader), Ruby's redirect
+points **both** `$stdout` and `$stderr` at the client — so `puts` *and* `warn` reach
+the user with no special call.
+
+### Beyond stdio: the context
+
+`puts`/`ask`/etc. cover the terminal; for everything else, the command gets a
+`context` (aliased `client` in Thor commands) — the client's machine, behind its
+entitlement policy:
+
+```ruby
+context.file.write("#{context.storage_path}/state.json", data)  # per-origin storage
+context.env("API_KEY")            # an env var the user granted
+context.browser.launch(login_url) # open a URL (same-origin by default)
+context.terminal.cols             # the client's terminal size
+```
+
+Files / env / browser are **requests the client enforces** — your server can't touch
+the user's machine unless they've granted it (`terminalwire-policy <origin> …`).
 
 ### Server-side TTY libraries, dropped in
 

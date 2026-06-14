@@ -41,8 +41,10 @@ The **v2** protocol (the `terminalwire` gem under [`v2/`](v2/README.md)) adds a
 lot more — use *any* CLI library (Thor, Ruby's `OptionParser`, or bare
 `$stdin`/`$stdout`), output flow control, window resize, `Ctrl-C` to the
 server-side command, piping (`cat data.csv | your-app import`), and raw/
-interactive input. The Rails integration for v2 is in progress; the shipping
-Rails installer today uses the v1 (Thor) runtime.
+interactive input. The Rails integration is wired and running in production
+(`Terminalwire::V2::Rails.dual_terminal` serves v1 and v2 on one `/terminal`
+endpoint); v2 is currently an opt-in **alpha** channel, so the default
+`curl … | bash` installer still hands out the v1 (Thor) runtime until v2 is GA.
 
 ## "I'll just build this myself"
 
