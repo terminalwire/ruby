@@ -172,7 +172,8 @@ module Terminalwire
                 cli.default_url_options[:host] = env["HTTP_HOST"]
               end
             rescue ::Thor::UndefinedCommandError, ::Thor::InvocationError => e
-              context.stdout.puts e.message
+              context.stderr.puts e.message
+              exit_code = 1
             rescue ::StandardError => e
               # Log the error
               handler_error_message = <<~ERROR
