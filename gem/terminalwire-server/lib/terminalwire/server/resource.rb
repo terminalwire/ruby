@@ -36,8 +36,8 @@ module Terminalwire::Server
     end
 
     class STDOUT < Base
-      def puts(data)
-        command("print_line", data: data)
+      def puts(data = nil)
+        command("print_line", data: data.to_s)
       end
 
       def print(data)
