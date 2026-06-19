@@ -12,3 +12,8 @@
 
 /gem/**/*/pkg
 /gem/terminalwire/package/*
+
+# Local env + Tigris/release secrets (direnv-loaded) — NEVER commit
+.env
+.env.*
+bucket.txt
