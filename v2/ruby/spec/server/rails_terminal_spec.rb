@@ -47,9 +47,11 @@ RSpec.describe Terminalwire::V2::Rails do
       expect(endpoint.instance_variable_get(:@by_subprotocol)["terminalwire.v2"]).to be(rack)
     end
 
-    it "dualizes the cli so it answers the v2 wire" do
+    it "terminalizes the cli so it speaks v2 natively (no v1 needed)" do
       described_class.terminal(cli)
-      expect(cli.include?(Terminalwire::V2::Server::DualThor)).to be(true)
+      expect(cli.include?(Terminalwire::V2::Server::Thor)).to be(true)
+      refute_includes_dual = !cli.include?(Terminalwire::V2::Server::DualThor)
+      expect(refute_includes_dual).to be(true)
     end
   end
 end

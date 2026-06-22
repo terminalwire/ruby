@@ -65,7 +65,7 @@ module Terminalwire
       # route. (A bare Rack handed to `match to:` drops streaming output in production;
       # the endpoint, like dual_terminal's, is what Rails routing needs.)
       def self.terminal(cli, verbose: nil, report: nil)
-        Terminalwire::V2::Server.dualize(cli)
+        Terminalwire::V2::Server.terminalize(cli)
         v2 = Terminalwire::V2::Server::Rack.new(
           cli,
           verbose: verbose.nil? ? verbose?() : verbose,

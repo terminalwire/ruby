@@ -44,5 +44,18 @@ module Terminalwire::V2
       klass.subcommand_classes.each_value { |sub| dualize(sub, seen) } if klass.respond_to?(:subcommand_classes)
       klass
     end
+
+    # Walk a Thor class + its subcommand tree, making every command class speak v2
+    # NATIVELY — it includes Terminalwire::V2::Server::Thor (whose `terminalwire`
+    # dispatches with the v2 shell, no v1 `super`). This is the v2-only path: the
+    # app loads only the v2 gem. `dualize` is the transitional both-protocols path.
+    # Idempotent. Returns the class.
+    def self.terminalize(klass, seen = {})
+      return klass if seen[klass]
+      seen[klass] = true
+      klass.include(Terminalwire::V2::Server::Thor) unless klass.include?(Terminalwire::V2::Server::Thor)
+      klass.subcommand_classes.each_value { |sub| terminalize(sub, seen) } if klass.respond_to?(:subcommand_classes)
+      klass
+    end
   end
 end
