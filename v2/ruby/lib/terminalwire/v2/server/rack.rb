@@ -37,6 +37,12 @@ module Terminalwire::V2
     class Rack
       WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
+      # WebSocket subprotocols this server speaks, best first. The handshake echoes
+      # the first one the client also offered (RFC 6455 negotiation) — the v1 handler
+      # did this (`protocols: ['ws']`) and some edges/proxies (e.g. Fly) drop a
+      # WebSocket whose Sec-WebSocket-Protocol the server never echoes back.
+      SUBPROTOCOLS = %w[terminalwire.v2 ws].freeze
+
       # @param cli_class [Class] a Thor CLI that includes Terminalwire::V2::Server::Thor
       # @param verbose [Boolean] send full backtraces to the client (dev only)
       # @param report [#call, nil] optional callable invoked with unexpected errors
@@ -56,7 +62,7 @@ module Terminalwire::V2
           # adapter in here — this is the only path that needs the async stack.
           # :nocov: Falcon transport wiring — exercised live by the conformance suite, not units.
           require "async/websocket/adapters/rack"
-          Async::WebSocket::Adapters::Rack.open(env) { |connection| ReactorBridge.new(connection, @handler, request: request).run }
+          Async::WebSocket::Adapters::Rack.open(env, protocols: SUBPROTOCOLS) { |connection| ReactorBridge.new(connection, @handler, request: request).run }
           # :nocov:
         else
           # Threaded server (Puma & friends): hand-roll the upgrade and stream.
@@ -119,7 +125,17 @@ module Terminalwire::V2
 
       def upgrade_headers(env)
         accept = [Digest::SHA1.digest("#{env['HTTP_SEC_WEBSOCKET_KEY']}#{WS_GUID}")].pack("m0")
-        { "upgrade" => "websocket", "connection" => "Upgrade", "sec-websocket-accept" => accept }
+        headers = { "upgrade" => "websocket", "connection" => "Upgrade", "sec-websocket-accept" => accept }
+        if (proto = negotiated_subprotocol(env))
+          headers["sec-websocket-protocol"] = proto
+        end
+        headers
+      end
+
+      # The first subprotocol both we and the client support (RFC 6455), or nil.
+      def negotiated_subprotocol(env)
+        offered = env["HTTP_SEC_WEBSOCKET_PROTOCOL"].to_s.split(/,\s*/)
+        (SUBPROTOCOLS & offered).first
       end
 
       def upgrade_required
