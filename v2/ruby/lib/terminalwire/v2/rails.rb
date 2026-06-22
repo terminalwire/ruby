@@ -52,6 +52,28 @@ module Terminalwire
         )
       end
 
+      # The v2-DEFAULT endpoint: serve `cli` over v2, with no v1. Mount it the same way
+      # as dual_terminal:
+      #
+      #   match "/terminal", to: Terminalwire::V2::Rails.terminal(MainTerminal),
+      #                      via: [:get, :connect]
+      #
+      # It returns a version endpoint (not the bare Rack): a connection advertising the
+      # `terminalwire.v2` subprotocol — and any connection that doesn't ask for another
+      # version — is served by the v2 server. The endpoint is the forward-compatible
+      # seam: a future v3 registers another handler here without changing the app's
+      # route. (A bare Rack handed to `match to:` drops streaming output in production;
+      # the endpoint, like dual_terminal's, is what Rails routing needs.)
+      def self.terminal(cli, verbose: nil, report: nil)
+        Terminalwire::V2::Server.dualize(cli)
+        v2 = Terminalwire::V2::Server::Rack.new(
+          cli,
+          verbose: verbose.nil? ? verbose?() : verbose,
+          report: report || self.report
+        )
+        VersionEndpoint.new(default: v2, by_subprotocol: { SUBPROTOCOL => v2 })
+      end
+
       # In dev/test, show the full backtrace to the client (consider_all_requests_local,
       # like v1). In production the client sees the generic message — but the real
       # exception is still LOGGED + reported (below), never silently swallowed.
@@ -95,6 +117,23 @@ module Terminalwire
         def call(env)
           protos = env["HTTP_SEC_WEBSOCKET_PROTOCOL"].to_s.split(/,\s*/)
           (protos.include?(SUBPROTOCOL) ? @v2 : @v1).call(env)
+        end
+      end
+
+      # Routes a WebSocket upgrade to a handler by the version subprotocol it advertises,
+      # falling back to `default` (v2) when none matches — the forward-compatible seam for
+      # registering future protocol versions. Same Rack-endpoint shape as Dispatcher, so
+      # Rails `match to:` hands the connection off correctly in production.
+      class VersionEndpoint
+        def initialize(default:, by_subprotocol: {})
+          @default = default
+          @by_subprotocol = by_subprotocol
+        end
+
+        def call(env)
+          protos = env["HTTP_SEC_WEBSOCKET_PROTOCOL"].to_s.split(/,\s*/)
+          handler = protos.lazy.filter_map { |proto| @by_subprotocol[proto] }.first || @default
+          handler.call(env)
         end
       end
     end
