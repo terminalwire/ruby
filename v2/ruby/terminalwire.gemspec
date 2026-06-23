@@ -30,6 +30,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency "msgpack", "~> 1.7"
   # base64 left the Ruby default gems in 3.4; the conformance loader needs it.
   spec.add_dependency "base64", "~> 0.2"
+  # JWT-backed client session (Terminalwire::V2::Rails::Session).
+  spec.add_dependency "jwt", "~> 2.7"
 
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "rspec", "~> 3.13"

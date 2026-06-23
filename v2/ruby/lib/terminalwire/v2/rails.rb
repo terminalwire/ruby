@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+require "forwardable"
+require "pathname"
+require "jwt"
+
 require "terminalwire/v2"                  # full v2 server (runtime, handler, …)
 require "terminalwire/v2/server/rack"      # the v2 Rack endpoint
 require "terminalwire/v2/server/dual_thor" # one Thor CLI, both protocols
@@ -12,11 +16,10 @@ require "terminalwire/v2/server/dual_thor" # one Thor CLI, both protocols
 # which v2 implements identically). PUBLIC, not protected: Ruby 4's Forwardable —
 # used by the v1 `def_delegators :shell, :session` — refuses to forward to a
 # non-public method (the "forwarding to private method" warning is now a hard error).
-# Terminalwire::Rails::Session is referenced lazily so this file needn't hard-depend
-# on the v1 rails gem at load (it's present at call time in a dual-transition app).
+# Backed by the v2-native Terminalwire::V2::Rails::Session (below) — no v1 gem needed.
 Terminalwire::V2::Server::Thor::Shell.class_eval do
   def session
-    @session ||= ::Terminalwire::Rails::Session.new(context: context)
+    @session ||= Terminalwire::V2::Rails::Session.new(context: context)
   end
 end
 
@@ -40,6 +43,86 @@ module Terminalwire
     # `mount Terminalwire::V2::Server::Rack.new(cli)` directly.
     module Rails
       SUBPROTOCOL = "terminalwire.v2"
+
+      # A JWT-backed session stored on the CLIENT — the v2-native version of v1's
+      # Terminalwire::Rails::Session, so a v2-only app needs no v1 gem. It reads/writes
+      # an encrypted blob via the context (file/directory/storage_path, which v2
+      # implements identically to v1), signed with the app's secret_key_base.
+      #
+      # Resilient by design: a missing, empty, tampered, or wrong-key session reads as
+      # EMPTY, so the user simply logs in again — upgrading v1 -> v2 (or rotating the
+      # secret) never crashes a command, it just signs them out.
+      class Session
+        FILENAME = "session.jwt"
+        EMPTY_SESSION = {}.freeze
+
+        extend Forwardable
+        def_delegators :read, :dig, :fetch, :[]
+
+        def initialize(context:, path: nil, secret_key: self.class.secret_key)
+          @context = context
+          @path = Pathname.new(path || context.storage_path)
+          @config_file_path = @path.join(FILENAME)
+          @secret_key = secret_key
+          ensure_file
+        end
+
+        # The session payload, or EMPTY_SESSION when there isn't a valid one (missing,
+        # empty, tampered, wrong key, unreadable). To the user these all mean the same
+        # thing — log in again — so none of them raise.
+        def read
+          token = @context.file.read(@config_file_path)
+          return EMPTY_SESSION if token.nil? || token.to_s.empty?
+
+          JWT.decode(token, @secret_key, true, algorithm: "HS256").first || EMPTY_SESSION
+        rescue StandardError
+          EMPTY_SESSION
+        end
+
+        def reset
+          @context.file.delete(@config_file_path)
+        rescue StandardError
+          nil
+        end
+
+        def edit
+          config = read.dup
+          yield config
+          write(config)
+        end
+
+        def []=(key, value)
+          edit { |config| config[key] = value }
+        end
+
+        def write(config)
+          token = JWT.encode(config, @secret_key, "HS256")
+          @context.file.write(@config_file_path, token)
+        end
+
+        def self.secret_key
+          ::Rails.application.secret_key_base
+        end
+
+        private
+
+        # Best-effort: seed an empty session file if absent. A failure here is not
+        # fatal — read/write degrade gracefully on their own.
+        def ensure_file
+          return true if file_exist?
+
+          @context.directory.create(@path)
+          write(EMPTY_SESSION)
+        rescue StandardError
+          nil
+        end
+
+        def file_exist?
+          @context.file.exist?(@config_file_path)
+        rescue StandardError
+          false
+        end
+      end
 
       # Returns a Rack endpoint that serves `cli` over both protocols. Pass `v1:`/`v2:`
       # to override the handlers (tests, custom adapters); by default it builds the
