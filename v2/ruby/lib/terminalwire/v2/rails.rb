@@ -131,6 +131,25 @@ module Terminalwire
         end
       end
 
+      # Drop-in Rails terminal mixin — the v2 equivalent of v1's `Terminalwire::Thor`.
+      # `include Terminalwire::V2::Rails::Thor` in your Thor CLI and it:
+      #   * streams I/O over the v2 wire (Terminalwire::V2::Server::Thor),
+      #   * exposes the client `session` (the shell delegator), and
+      #   * mixes in Rails route URL helpers (root_url, *_url, *_path) so commands like
+      #     login/browser-open can build links. The per-connection host is set by the
+      #     handler, so the *_url helpers resolve to the host the client connected on.
+      # The url_helpers go in `no_commands` so Thor doesn't register them as commands.
+      module Thor
+        def self.included(base)
+          base.include Terminalwire::V2::Server::Thor
+          base.class_eval do
+            no_commands do
+              include ::Rails.application.routes.url_helpers
+            end
+          end
+        end
+      end
+
       # Returns a Rack endpoint that serves `cli` over both protocols. Pass `v1:`/`v2:`
       # to override the handlers (tests, custom adapters); by default it builds the
       # stock v1 `Terminalwire::Rails::Thor` and v2 `Terminalwire::V2::Server::Rack`.

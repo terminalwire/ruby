@@ -23,6 +23,13 @@ module Terminalwire::V2
         def gets = shell.context.gets
         def getpass = shell.context.getpass
         def context = shell.context
+        # The client-side resources, exposed on the CLI instance like v1 (so a Thor
+        # command can call `browser.launch(url)`, `file.read(path)`, `env("HOME")`).
+        def browser = shell.context.browser
+        def file = shell.context.file
+        def directory = shell.context.directory
+        def env(name) = shell.context.env(name)
+        def client = shell.context
       end
 
       class Shell < ::Thor::Shell::Basic
