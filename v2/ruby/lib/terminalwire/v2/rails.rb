@@ -23,6 +23,13 @@ Terminalwire::V2::Server::Thor::Shell.class_eval do
   end
 end
 
+# Delegate `session` from the CLI instance to its shell — matching v1's
+# `def_delegators :shell, :session` — so unchanged Thor code that calls `session`
+# (current_user, login, whoami) works over v2 without app changes.
+Terminalwire::V2::Server::Thor::Helpers.module_eval do
+  def session = shell.session
+end
+
 module Terminalwire
   module V2
     # Drop-in Rails integration for serving a Terminalwire CLI over BOTH the v1
