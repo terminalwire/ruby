@@ -248,3 +248,34 @@ module Terminalwire
     end
   end
 end
+
+# --- Drop-in v1 API -----------------------------------------------------------
+# A 1.x/0.x app upgrades to v2 by bumping the gem version and redeploying — nothing
+# else. Its unchanged `include Terminalwire::Thor` and
+# `match "/terminal", to: Terminalwire::Rails::Thor.new(MainTerminal)` keep working,
+# now serving v2, because these names resolve to the v2 implementations.
+#
+# Guarded with `defined?` so a transitional app that still loads the v1 gems keeps
+# v1's classes (and drives both wires with `dual_terminal` explicitly); only a
+# v2-only app (no v1 gems) picks up these.
+module Terminalwire
+  # `include Terminalwire::Thor` -> the v2 Rails terminal mixin.
+  Thor = V2::Rails::Thor unless defined?(Terminalwire::Thor)
+
+  module Rails
+    # `Terminalwire::Rails::Thor.new(cli)` -> a Rack endpoint serving `cli` over v2,
+    # mounted exactly like the v1 handler was.
+    unless defined?(Terminalwire::Rails::Thor)
+      class Thor
+        def initialize(cli)
+          @app = Terminalwire::V2::Rails.terminal(cli)
+        end
+
+        def call(env) = @app.call(env)
+      end
+    end
+
+    # `Terminalwire::Rails::Session` -> the v2-native client session.
+    Session = V2::Rails::Session unless defined?(Terminalwire::Rails::Session)
+  end
+end
