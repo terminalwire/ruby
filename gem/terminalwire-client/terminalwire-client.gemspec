@@ -11,7 +11,8 @@ Gem::Specification.new do |spec|
   spec.summary = core.summary
   spec.description = core.description
   spec.homepage = core.homepage
-  spec.license = core.license
+  # Client library — proprietary, not Apache.
+  spec.license = "Nonstandard"
   spec.required_ruby_version = core.required_ruby_version
 
   spec.metadata = core.metadata

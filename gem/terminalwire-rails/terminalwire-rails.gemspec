@@ -20,7 +20,7 @@ Gem::Specification.new do |spec|
   spec.summary     = "Drop-in Terminalwire v2 integration for Rails"
   spec.description = "Serve a Thor CLI over Terminalwire v2 from a Rails app. Drop-in for the v1 terminalwire-rails: bump to 2.x and redeploy."
   spec.homepage    = "https://terminalwire.com"
-  spec.license     = "Nonstandard"
+  spec.license     = "Apache-2.0"
   spec.required_ruby_version = ">= 3.2.0"
 
   spec.metadata["allowed_push_host"] = "https://rubygems.invalid"

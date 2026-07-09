@@ -18,7 +18,7 @@ Gem::Specification.new do |spec|
   spec.summary     = "Terminalwire v2 protocol core + Ruby server runtime"
   spec.description = "Sans-IO implementation of the Terminalwire v2 protocol, plus a server runtime and Thor integration."
   spec.homepage    = "https://terminalwire.com"
-  spec.license     = "Nonstandard"
+  spec.license     = "Apache-2.0"
   spec.required_ruby_version = ">= 3.2.0"
 
   # Belt-and-suspenders: an invalid push host makes `gem push` fail too.
