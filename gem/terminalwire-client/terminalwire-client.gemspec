@@ -26,6 +26,18 @@ Gem::Specification.new do |spec|
   ).select { |f| File.file?(f) }
   spec.require_paths = core.require_paths
 
+  # Non-breaking heads-up: the Ruby client is superseded by the v2 client. v1
+  # keeps working as-is; upgrade when you can. (Purely informational.)
+  spec.post_install_message = <<~MSG
+    Terminalwire v2 is here. This v1 Ruby client is superseded by the new
+    auto-updating client — install it with:
+
+        curl https://terminalwire.sh | bash
+
+    Your existing v1 setup keeps working for now; please upgrade when you can.
+    Details: https://terminalwire.com/docs/client
+  MSG
+
   # Uncomment to register a new dependency of your gem
   spec.add_dependency "launchy", "~> 3.0"
   spec.add_dependency "terminalwire-core", core.version
