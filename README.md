@@ -131,11 +131,23 @@ They all speak the same wire protocol and interoperate with the same client.
 
 - Rails guide: https://terminalwire.com/docs/rails
 - Client manual: https://terminalwire.com/docs/client
+- All docs: https://terminalwire.com/docs
 
 ## License
 
-Source-available. Free for personal use and small/early-stage businesses;
-commercial use is licensed — see `LICENSE.txt` or https://terminalwire.com/license.
+The Terminalwire **server** gems in this repo (`terminalwire-server`,
+`terminalwire-rails`, `terminalwire-core`) are open source under the **Apache
+License 2.0** — free to use, modify, and self-host, including commercially.
+
+The Terminalwire **client** your users install (`terminalwire`,
+`terminalwire-client`) is proprietary, and only Terminalwire distributes it.
+Shipping a **commercial** CLI to your users needs a subscription, priced per
+active client install:
+
+- Pricing & licensing: https://terminalwire.com/pricing
+- Terms: https://terminalwire.com/terms — Privacy: https://terminalwire.com/privacy
+
+See `LICENSE.txt` for the full Apache-2.0 text.
 
 ## Contributing
 
