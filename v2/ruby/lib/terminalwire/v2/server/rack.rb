@@ -87,6 +87,14 @@ module Terminalwire::V2
 
       # Real client IP behind Fly/proxies: Fly-Client-IP, else the first
       # X-Forwarded-For hop, else the direct peer.
+      #
+      # SECURITY: Fly-Client-IP and X-Forwarded-For are client-settable and are
+      # trusted verbatim here — there is no trusted-proxy check. This value is for
+      # logging and `about` only; it MUST NOT be used as an authorization input
+      # (allow/deny, rate-limit identity, audit-as-proof). A direct client can send
+      # any IP it likes. If you deploy behind a proxy that isn't Fly, the first
+      # X-Forwarded-For hop is likewise attacker-controlled unless your proxy
+      # overwrites it.
       def client_ip(env)
         fwd = env["HTTP_X_FORWARDED_FOR"]
         env["HTTP_FLY_CLIENT_IP"] || (fwd && fwd.split(",").first&.strip) || env["REMOTE_ADDR"]

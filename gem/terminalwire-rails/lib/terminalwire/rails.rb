@@ -7,7 +7,9 @@
 #
 #   * Terminalwire::Thor          -> the v2 Rails terminal mixin (include in your CLI)
 #   * Terminalwire::Rails::Thor   -> the v2 Rack handler (mount in routes)
-#   * Terminalwire::Rails::Session -> the v2 JWT client session
+#   * Terminalwire::Rails::Session -> the v2 encrypted client session
+#     (AES-256-GCM via ActiveSupport::MessageEncryptor; reads and migrates
+#     legacy signed-only JWT sessions on first access)
 #
 # So a 1.x/0.x app upgrades to v2 by bumping this gem to "~> 2.0" and redeploying —
 # its unchanged `include Terminalwire::Thor` and

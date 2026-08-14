@@ -12,3 +12,6 @@
 
 /gem/**/*/pkg
 /gem/terminalwire/package/*
+
+# Built gem artifacts (from `gem build` during a release)
+*.gem

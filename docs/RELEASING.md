@@ -58,16 +58,28 @@ Known gaps (fine, but don't be surprised): the gems set the SPDX `license` field
 **don't bundle the `LICENSE.txt` text** (it's at repo root, not in each gem dir), and
 the gem-page READMEs only refresh on the next publish.
 
-## v2 gem (`v2/ruby`) — guarded until GA
+## v2 gems (`v2/ruby` + `gem/terminalwire-rails`) — GA at 2.0.0
 
-The v2 `terminalwire` gem (`v2/ruby/lib/terminalwire/v2/version.rb`, currently
-`2.0.0.alpha1`) is **intentionally unpublishable**: its gemspec raises on
-`gem build|push|release` and its push host is `rubygems.invalid`, so it can't be
-shipped by accident while v2 is in alpha. It's distributed today only by Git ref /
-path while it stabilizes.
+The v2 `terminalwire` gem (`v2/ruby/lib/terminalwire/v2/version.rb`) and the
+`terminalwire-rails` drop-in reached GA at **2.0.0** — the ship-guards and the
+`rubygems.invalid` push host are gone, and their push host is `rubygems.org`. Both
+version off `Terminalwire::V2::VERSION` and `terminalwire-rails` pins `terminalwire`
+to the exact same version, so they release together.
 
-To publish at GA: remove the guard + invalid host in `v2/ruby/terminalwire.gemspec`,
-set the release version, then `cd v2/ruby && gem build && gem push`.
+To cut a v2 release:
+
+```sh
+# 1. bump v2/ruby/lib/terminalwire/v2/version.rb
+# 2. finalize the CHANGELOG heading (date + link ref)
+# 3. build + push both, in dependency order (terminalwire first)
+cd v2/ruby && gem build terminalwire.gemspec && gem push terminalwire-*.gem
+cd ../../gem/terminalwire-rails && gem build terminalwire-rails.gemspec && gem push terminalwire-rails-*.gem
+# 4. tag once: git tag v<x> && git push origin v<x>
+```
+
+The v1 `terminalwire`/`terminalwire-client` gems in the table above are a **separate,
+proprietary line** and are still never published — don't confuse them with the
+Apache-2.0 v2 `terminalwire` gem cut here.
 
 > Note: the `build/` Tebako packaging tasks in the root `Rakefile` are v1-only
 > (the v1 self-contained binary). v2 distribution is the Go client in

@@ -2,7 +2,11 @@
 
 require "forwardable"
 require "pathname"
-require "jwt"
+require "json"
+require "jwt" # legacy (signed-only) session read + migration
+require "active_support/key_generator"
+require "active_support/message_encryptor"
+require "active_support/core_ext/time" # Time#advance, used by expires_in:
 
 require "terminalwire/v2"                  # full v2 server (runtime, handler, …)
 require "terminalwire/v2/server/rack"      # the v2 Rack endpoint
@@ -51,37 +55,61 @@ module Terminalwire
     module Rails
       SUBPROTOCOL = "terminalwire.v2"
 
-      # A JWT-backed session stored on the CLIENT — the v2-native version of v1's
+      # A session stored on the CLIENT — the v2-native version of v1's
       # Terminalwire::Rails::Session, so a v2-only app needs no v1 gem. It reads/writes
-      # an encrypted blob via the context (file/directory/storage_path, which v2
-      # implements identically to v1), signed with the app's secret_key_base.
+      # via the context (file/directory/storage_path, which v2 implements identically
+      # to v1).
       #
-      # Resilient by design: a missing, empty, tampered, or wrong-key session reads as
-      # EMPTY, so the user simply logs in again — upgrading v1 -> v2 (or rotating the
+      # The payload is ENCRYPTED and signed (ActiveSupport::MessageEncryptor,
+      # AES-256-GCM — the same primitive behind Rails' encrypted cookies), so the
+      # contents are confidential on the client machine, not just tamper-proof. The
+      # key is derived from the app's secret_key_base with a Terminalwire-specific
+      # salt, so it is never the raw secret and never shared with any other
+      # verifier/encryptor in the app. Sessions expire (default 30 days, clock reset
+      # on every write); an expired session reads as empty.
+      #
+      # Earlier releases stored the session as an HS256 JWT — signed but NOT
+      # encrypted, despite docs saying otherwise. Those legacy sessions are read one
+      # last time and immediately rewritten encrypted, so upgrading logs nobody out.
+      #
+      # Resilient by design: a missing, empty, tampered, expired, or wrong-key session
+      # reads as EMPTY, so the user simply logs in again — upgrading (or rotating the
       # secret) never crashes a command, it just signs them out.
       class Session
+        # Kept from the JWT era so upgraded clients keep using the same file.
         FILENAME = "session.jwt"
         EMPTY_SESSION = {}.freeze
+        # Key-derivation salt — Terminalwire-specific so the derived key can't
+        # collide with any key the app derives from secret_key_base elsewhere.
+        KEY_SALT = "terminalwire session"
+        # AEAD cipher: encrypts AND authenticates in one primitive (the same one
+        # behind Rails' encrypted cookies). Pinned explicitly, not left to the app's
+        # ActiveSupport default (which is aes-256-cbc unless configured otherwise).
+        CIPHER = "aes-256-gcm"
+        DEFAULT_EXPIRES_IN = 60 * 60 * 24 * 30 # 30 days, refreshed on every write
 
         extend Forwardable
         def_delegators :read, :dig, :fetch, :[]
 
-        def initialize(context:, path: nil, secret_key: self.class.secret_key)
+        def initialize(context:, path: nil, secret_key: self.class.secret_key, expires_in: DEFAULT_EXPIRES_IN)
           @context = context
           @path = Pathname.new(path || context.storage_path)
           @config_file_path = @path.join(FILENAME)
           @secret_key = secret_key
+          @expires_in = expires_in
           ensure_file
         end
 
         # The session payload, or EMPTY_SESSION when there isn't a valid one (missing,
-        # empty, tampered, wrong key, unreadable). To the user these all mean the same
-        # thing — log in again — so none of them raise.
+        # empty, tampered, expired, wrong key, unreadable). To the user these all mean
+        # the same thing — log in again — so none of them raise.
         def read
           token = @context.file.read(@config_file_path)
           return EMPTY_SESSION if token.nil? || token.to_s.empty?
 
-          JWT.decode(token, @secret_key, true, algorithm: "HS256").first || EMPTY_SESSION
+          encryptor.decrypt_and_verify(token) || EMPTY_SESSION
+        rescue ActiveSupport::MessageEncryptor::InvalidMessage
+          read_and_migrate_legacy(token)
         rescue StandardError
           EMPTY_SESSION
         end
@@ -103,7 +131,7 @@ module Terminalwire
         end
 
         def write(config)
-          token = JWT.encode(config, @secret_key, "HS256")
+          token = encryptor.encrypt_and_sign(config, expires_in: @expires_in)
           @context.file.write(@config_file_path, token)
         end
 
@@ -112,6 +140,32 @@ module Terminalwire
         end
 
         private
+
+        def encryptor
+          @encryptor ||= ActiveSupport::MessageEncryptor.new(derived_key, cipher: CIPHER, serializer: JSON)
+        end
+
+        # Explicit digest so the key doesn't shift with the app's
+        # ActiveSupport::KeyGenerator.hash_digest_class config (which would silently
+        # invalidate every session).
+        def derived_key
+          ActiveSupport::KeyGenerator
+            .new(@secret_key, iterations: 1000, hash_digest_class: OpenSSL::Digest::SHA256)
+            .generate_key(KEY_SALT, ActiveSupport::MessageEncryptor.key_len(CIPHER))
+        end
+
+        # Sessions written by earlier releases are HS256 JWTs: signed, NOT encrypted.
+        # Verify one last time and immediately rewrite encrypted, so upgrading never
+        # logs anyone out. Anything unreadable is just an empty session.
+        def read_and_migrate_legacy(token)
+          payload = JWT.decode(token, @secret_key, true, algorithm: "HS256").first
+          return EMPTY_SESSION unless payload
+
+          write(payload)
+          payload
+        rescue StandardError
+          EMPTY_SESSION
+        end
 
         # Best-effort: seed an empty session file if absent. A failure here is not
         # fatal — read/write degrade gracefully on their own.

@@ -4,6 +4,6 @@
 # without loading the rest of the library or assuming Terminalwire is defined.
 module Terminalwire
   module V2
-    VERSION = "2.0.0.alpha1"
+    VERSION = "2.0.0"
   end
 end

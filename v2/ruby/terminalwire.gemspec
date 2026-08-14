@@ -8,21 +8,13 @@ Gem::Specification.new do |spec|
   spec.authors     = ["Brad Gessler"]
   spec.email       = ["brad@terminalwire.com"]
 
-  # NOT FOR RELEASE YET. Developed in-tree; ships as the `terminalwire` gem
-  # ("~> 2.0") when the time comes. The guard + invalid push host below keep it
-  # from shipping by accident.
-  if $PROGRAM_NAME.end_with?("gem") && ARGV.first&.match?(/\A(build|push|release)\z/)
-    raise "terminalwire is not ready to ship — do not build/push this gem yet."
-  end
-
   spec.summary     = "Terminalwire v2 protocol core + Ruby server runtime"
   spec.description = "Sans-IO implementation of the Terminalwire v2 protocol, plus a server runtime and Thor integration."
   spec.homepage    = "https://terminalwire.com"
   spec.license     = "Apache-2.0"
   spec.required_ruby_version = ">= 3.2.0"
 
-  # Belt-and-suspenders: an invalid push host makes `gem push` fail too.
-  spec.metadata["allowed_push_host"] = "https://rubygems.invalid"
+  spec.metadata["allowed_push_host"] = "https://rubygems.org"
 
   spec.files        = Dir.glob("lib/**/*.rb")
   spec.require_paths = ["lib"]
@@ -30,10 +22,14 @@ Gem::Specification.new do |spec|
   spec.add_dependency "msgpack", "~> 1.7"
   # base64 left the Ruby default gems in 3.4; the conformance loader needs it.
   spec.add_dependency "base64", "~> 0.2"
-  # JWT-backed client session (Terminalwire::V2::Rails::Session).
+  # Reads (and migrates away from) legacy signed-only JWT sessions
+  # (Terminalwire::V2::Rails::Session).
   spec.add_dependency "jwt", "~> 2.7"
 
   spec.add_development_dependency "rake", "~> 13.0"
+  # Encrypted client session (terminalwire/v2/rails is only loaded inside Rails
+  # apps, which always have activesupport — dev-only here, for the specs).
+  spec.add_development_dependency "activesupport", ">= 7.1"
   spec.add_development_dependency "rspec", "~> 3.13"
   spec.add_development_dependency "simplecov", "~> 0.22"
   spec.add_development_dependency "thor", "~> 1.3"
