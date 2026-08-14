@@ -17,8 +17,13 @@ module Terminalwire::V2
     # intersects the two sides' sets, so a peer only uses a feature the other
     # advertises. ADD a capability here when you add an optional feature; that is
     # the additive-change path (old peers simply won't list it, and the feature
-    # stays dormant for them). Resource capabilities gate request(); the others
-    # gate optional protocol features.
+    # stays dormant for them).
+    #
+    # NOTE: negotiation records the intersection, but the server does NOT currently
+    # refuse a request() for a capability the client didn't advertise — Context
+    # issues file/directory/browser/env/terminal-query requests regardless, and the
+    # CLIENT is the enforcement point (it rejects an un-granted or un-negotiated op).
+    # Don't rely on this list as a server-side gate; it isn't one yet.
     CAPABILITIES = %w[
       stdio file directory browser env
       signal flow raw-input terminal-query

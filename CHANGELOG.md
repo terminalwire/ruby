@@ -4,7 +4,7 @@ All notable changes to Terminalwire are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow the gem's
 `Terminalwire::V2::VERSION`.
 
-## [2.0.0.alpha1] — Unreleased
+## [2.0.0] — 2026-08-14
 
 Terminalwire v2 is a ground-up rewrite of the protocol and client. v1 streamed a
 Ruby CLI from a server to a thin Tebako-packaged Ruby client; v2 keeps that idea
@@ -104,6 +104,23 @@ its users — the evergreen story end to end:
   on `terminalwire-core` / `-client` / `-server` / `-rails`. Different namespaces,
   no file overlap — they install together. There is no v1→v2 compat shim by design.
 
+### Security
+
+- **The Rails client session is now actually encrypted.** Earlier releases (v1
+  0.x/1.x and prior v2 alphas) stored `session` as an HS256 JWT: **signed but not
+  encrypted**, even though the generated docs said "encrypts and signs" — anyone
+  who could read `session.jwt` on the client machine could base64-decode its
+  contents. The session is now encrypted *and* signed with
+  `ActiveSupport::MessageEncryptor` (AES-256-GCM — the primitive behind Rails'
+  encrypted cookies), keyed off `secret_key_base` via a Terminalwire-specific
+  derived key (never the raw secret, never shared with the app's other
+  verifiers), and **expires** (default 30 days, refreshed on every write).
+  Tampering was never possible — the HMAC held — so this is a confidentiality
+  fix, not an auth bypass. **Upgrading is seamless**: a legacy JWT session is
+  read one last time and rewritten encrypted, so nobody is logged out. If you
+  stored sensitive values in `session` on an earlier release, treat them as
+  having been readable on the client and rotate them.
+
 ### Performance
 
 Measured against the v1 Tebako client, same server, same command, over localhost:
@@ -116,4 +133,4 @@ Measured against the v1 Tebako client, same server, same command, over localhost
   flat-fast from the first byte; v1's throughput only climbs as its fixed startup
   amortizes over a larger payload.
 
-[2.0.0.alpha1]: https://github.com/terminalwire/ruby/tree/main
+[2.0.0]: https://github.com/terminalwire/ruby/releases/tag/v2.0.0

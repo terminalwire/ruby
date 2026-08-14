@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "base64"
 require "terminalwire/v2/rails"
 
 RSpec.describe Terminalwire::V2::Rails::Session do
@@ -37,10 +38,85 @@ RSpec.describe Terminalwire::V2::Rails::Session do
     expect(session.dig("user_id")).to be_nil
   end
 
-  it "persists values across a fresh read (JWT round-trip, string keys)" do
+  it "persists values across a fresh read (round-trip, string keys)" do
     session["user_id"] = 42
     fresh = described_class.new(context: ctx, secret_key: secret)
     expect(fresh["user_id"]).to eq(42)
+  end
+
+  it "stores the payload ENCRYPTED — nothing recoverable from the file without the key" do
+    session["api_token"] = "tw_live_supersecret"
+    raw = ctx.file.read(path_for(ctx))
+
+    # Decode every base64-looking segment of the stored blob (JWTs split on ".",
+    # MessageEncryptor on "--"); the plaintext must not appear in any of them.
+    decoded = raw.split(/--|\./).map do |segment|
+      Base64.decode64(segment.tr("-_", "+/"))
+    rescue StandardError
+      ""
+    end
+    expect(raw).not_to include("supersecret")
+    expect(decoded.join).not_to include("supersecret")
+  end
+
+  it "is SIGNED — a tampered ciphertext fails authentication and reads empty" do
+    session["user_id"] = 42
+    raw = ctx.file.read(path_for(ctx)).dup
+
+    # Flip one base64 byte inside the ciphertext (index 5 is well inside the first
+    # segment, before the "--" delimiters). AES-256-GCM's auth tag no longer matches.
+    raw[5] = (raw[5] == "A" ? "B" : "A")
+    ctx.file.write(path_for(ctx), raw)
+
+    # The encryptor itself rejects it — this is the signature (GCM auth tag) doing its job.
+    expect { session.send(:encryptor).decrypt_and_verify(raw) }
+      .to raise_error(ActiveSupport::MessageEncryptor::InvalidMessage)
+    # And the Session degrades to empty rather than trusting the mutated payload.
+    fresh = described_class.new(context: ctx, secret_key: secret)
+    expect(fresh.read).to eq({})
+    expect(fresh["user_id"]).to be_nil
+  end
+
+  it "uses an authenticated (AEAD) cipher, not a bare/unauthenticated one" do
+    # aes-256-gcm is authenticated encryption: encrypt AND sign in one primitive.
+    # Guard against a regression to an unauthenticated cipher (encrypt-only, forgeable).
+    cipher = session.send(:encryptor).instance_variable_get(:@cipher)
+    expect(cipher).to match(/gcm\z/i)
+  end
+
+  it "round-trips through the real encryptor and rejects a foreign key's ciphertext" do
+    session["user_id"] = 42
+    token = ctx.file.read(path_for(ctx))
+
+    # Same derived key decrypts; a session built on a different secret cannot.
+    expect(session.send(:encryptor).decrypt_and_verify(token)).to eq("user_id" => 42)
+    other = described_class.new(context: FakeContext.new, secret_key: "rotated-secret")
+    expect { other.send(:encryptor).decrypt_and_verify(token) }
+      .to raise_error(ActiveSupport::MessageEncryptor::InvalidMessage)
+  end
+
+  it "reads a legacy signed-only JWT session and rewrites it encrypted (no logout on upgrade)" do
+    legacy = JWT.encode({ "user_id" => 42 }, secret, "HS256")
+    ctx.file.write(path_for(ctx), legacy)
+
+    expect(session.read).to eq("user_id" => 42)
+
+    migrated = ctx.file.read(path_for(ctx))
+    expect(migrated).not_to eq(legacy)
+    expect { JWT.decode(migrated, secret, true, algorithm: "HS256") }.to raise_error(JWT::DecodeError)
+    expect(described_class.new(context: ctx, secret_key: secret).read).to eq("user_id" => 42)
+  end
+
+  it "reads a legacy JWT signed with a different secret as empty" do
+    ctx.file.write(path_for(ctx), JWT.encode({ "user_id" => 42 }, "rotated-secret", "HS256"))
+    expect(session.read).to eq({})
+  end
+
+  it "expires: a stale session reads as empty (log in again)" do
+    short = described_class.new(context: ctx, secret_key: secret, expires_in: 0.01)
+    short["user_id"] = 42
+    sleep 0.05
+    expect(short.read).to eq({})
   end
 
   it "reads as empty — not a crash — when the token is garbage/tampered" do

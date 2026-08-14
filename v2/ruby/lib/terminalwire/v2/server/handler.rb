@@ -59,6 +59,12 @@ module Terminalwire::V2
             dispatch(context, arguments, request[:host])
           rescue Interrupt, Interrupted
             status = 130
+          rescue SystemExit => e
+            # A command that called `exit`/`abort` raises SystemExit (not a
+            # StandardError). Without this it would slip past the rescue below, the
+            # ensure would send the client `exit(0)` — reporting success — and the
+            # exception would then silently kill the CLI thread. Honor the real code.
+            status = e.status
           rescue StandardError => e
             status = handle_error(e, context)
           ensure

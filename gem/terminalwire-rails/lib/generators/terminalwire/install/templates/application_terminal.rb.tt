@@ -9,9 +9,9 @@ class ApplicationTerminal < Thor
   private
 
   def current_user=(user)
-    # The Session object is a hash-like object that encrypts and signs a hash that's
-    # stored on the client's file sytem. Conceptually, it's similar to Rails signed
-    # and encrypted client-side cookies.
+    # The Session object is a hash-like object that's encrypted and signed
+    # (AES-256-GCM, keyed off secret_key_base) and stored on the client's file
+    # system. Conceptually, it's similar to Rails' encrypted client-side cookies.
     session["user_id"] = user.id
   end
 
