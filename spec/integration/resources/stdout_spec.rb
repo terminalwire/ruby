@@ -18,6 +18,14 @@ RSpec.describe Terminalwire::Server::Resource::STDOUT do
     it 'prints line with newline to stdout through client' do
       expect { server_stdout.puts("Hello line") }.to output("Hello line\n").to_stdout
     end
+
+    it 'prints a blank line when called with no arguments' do
+      expect { server_stdout.puts }.to output("\n").to_stdout
+    end
+
+    it 'prints a blank line when called with nil' do
+      expect { server_stdout.puts(nil) }.to output("\n").to_stdout
+    end
   end
 
   describe '#flush' do
